@@ -1,0 +1,64 @@
+== Overview
+
+=== 인증
+
+모든 인증이 필요한 API는 요청 헤더에 Bearer 토큰을 포함해야 합니다.
+
+[source,http]
+----
+Authorization: Bearer {accessToken}
+----
+
+토큰이 없거나 유효하지 않은 경우 401 응답을 반환합니다.
+토큰이 만료된 경우 `/api/v1/auth/refresh` 를 통해 재발급 받아야 합니다.
+
+=== 성공 응답 구조
+
+==== 데이터 응답 (200)
+
+.HTTP Response
+include::{snippets}/overview/success-response/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/overview/success-response/response-fields.adoc[]
+
+==== 빈 응답 (201, 204)
+
+생성(201) 및 삭제(204) 등 응답 바디가 없는 경우 빈 응답을 반환합니다.
+
+==== 페이지네이션 응답
+
+.HTTP Response
+include::{snippets}/overview/page-response/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/overview/page-response/response-fields.adoc[]
+
+=== 에러 응답 구조
+
+모든 에러 응답은 RFC 9457 ProblemDetail 형식을 따릅니다.
+
+==== 비즈니스 예외
+
+.HTTP Response
+include::{snippets}/overview/business-exception/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/overview/business-exception/response-fields.adoc[]
+
+==== 유효성 검증 실패
+
+.HTTP Response
+include::{snippets}/overview/validation-error/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/overview/validation-error/response-fields.adoc[]
+
+==== 서버 에러
+
+.HTTP Response
+include::{snippets}/overview/server-error/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/overview/server-error/response-fields.adoc[]
+
