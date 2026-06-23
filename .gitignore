@@ -44,6 +44,10 @@ out/
 .Spotlight-V100
 .Trashes
 
+### Firebase ###
+.firebase/
+public/
+
 ### Environment ###
 .env
 
