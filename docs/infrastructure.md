@@ -82,7 +82,8 @@ gcloud run deploy moodi-api \
   --allow-unauthenticated \
   --port=8080 \
   --memory=512Mi \
-  --set-env-vars="SPRING_PROFILES_ACTIVE=prod,DB_USERNAME=postgres,DB_PASSWORD=<비밀번호>" \
+  --set-env-vars="SPRING_PROFILES_ACTIVE=prod" \
+  --set-secrets="DB_USERNAME=DB_USERNAME:latest,DB_PASSWORD=DB_PASSWORD:latest" \
   --add-cloudsql-instances=moodi-app-2026:asia-northeast3:moodi-db
 ```
 

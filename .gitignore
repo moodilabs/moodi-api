@@ -46,7 +46,8 @@ out/
 
 ### Firebase ###
 .firebase/
-public/
+public/*
+!public/.gitkeep
 
 ### Environment ###
 .env
