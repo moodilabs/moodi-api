@@ -1,0 +1,53 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT_ID: moodi-app-2026
+  REGION: asia-northeast3
+  SERVICE: moodi-api
+  IMAGE: asia-northeast3-docker.pkg.dev/moodi-app-2026/moodi-repo/moodi-api
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: ./gradlew bootJar -x test
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/954020560650/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-actions@moodi-app-2026.iam.gserviceaccount.com
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - run: gcloud auth configure-docker asia-northeast3-docker.pkg.dev --quiet
+
+      - run: docker build --platform linux/amd64 -t ${{ env.IMAGE }}:${{ github.sha }} -t ${{ env.IMAGE }}:latest .
+
+      - run: docker push --all-tags ${{ env.IMAGE }}
+
+      - run: |
+          gcloud run deploy ${{ env.SERVICE }} \
+            --image=${{ env.IMAGE }}:${{ github.sha }} \
+            --region=${{ env.REGION }} \
+            --platform=managed \
+            --allow-unauthenticated \
+            --port=8080 \
+            --memory=512Mi \
+            --add-cloudsql-instances=moodi-app-2026:asia-northeast3:moodi-db
