@@ -51,5 +51,5 @@ jobs:
             --platform=managed \
             --allow-unauthenticated \
             --port=8080 \
-            --memory=512Mi \
+            --memory=1Gi \
             --add-cloudsql-instances=moodi-app-2026:asia-northeast3:moodi-db

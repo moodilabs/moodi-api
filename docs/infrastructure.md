@@ -41,7 +41,7 @@
 | 항목 | 값 |
 |------|-----|
 | 서비스명 | `moodi-api` |
-| 메모리 | 512Mi |
+| 메모리 | 1Gi |
 | 포트 | 8080 |
 | 서비스 URL | `https://moodi-api-954020560650.asia-northeast3.run.app` |
 | 인증 | 비인증 허용 (공개 API) |
@@ -81,7 +81,7 @@ gcloud run deploy moodi-api \
   --platform=managed \
   --allow-unauthenticated \
   --port=8080 \
-  --memory=512Mi \
+  --memory=1Gi \
   --set-env-vars="SPRING_PROFILES_ACTIVE=prod" \
   --set-secrets="DB_USERNAME=DB_USERNAME:latest,DB_PASSWORD=DB_PASSWORD:latest" \
   --add-cloudsql-instances=moodi-app-2026:asia-northeast3:moodi-db

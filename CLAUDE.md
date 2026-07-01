@@ -83,7 +83,7 @@ Spring REST Docs 기반. 테스트 실행 후 문서 생성:
 ## 인프라 (GCP)
 
 - **프로젝트**: `moodi-app-2026` / 리전: `asia-northeast3` (서울)
-- **Cloud Run**: `moodi-api` (512Mi, 포트 8080)
+- **Cloud Run**: `moodi-api` (1Gi, 포트 8080)
 - **Cloud SQL**: `moodi-db` (PostgreSQL 17, db-f1-micro, 소켓 연결)
 - **Artifact Registry**: `asia-northeast3-docker.pkg.dev/moodi-app-2026/moodi-repo/moodi-api`
 - **Firebase Hosting**: 도메인 프록시 → Cloud Run rewrite
