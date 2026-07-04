@@ -71,9 +71,11 @@ tasks.register("asciidoctorApp", org.asciidoctor.gradle.jvm.AsciidoctorTask::cla
 }
 
 tasks.bootJar {
-	dependsOn(tasks.named("asciidoctorApp"))
-	from(appDocsOutDir.get().asFile) {
-		into("static/docs/app")
+	if (!project.hasProperty("skipDocs")) {
+		dependsOn(tasks.named("asciidoctorApp"))
+		from(appDocsOutDir.get().asFile) {
+			into("static/docs/app")
+		}
 	}
 }
 
