@@ -79,3 +79,15 @@ Spring REST Docs 기반. 테스트 실행 후 문서 생성:
 - Spring Data JPA (orm.xml 방식), Flyway
 - PostgreSQL (운영), H2 (테스트)
 - Lombok, Spring REST Docs, ArchUnit
+
+## 인프라 (GCP)
+
+- **프로젝트**: `moodi-app-2026` / 리전: `asia-northeast3` (서울)
+- **Cloud Run**: `moodi-api` (1Gi, 포트 8080)
+- **Cloud SQL**: `moodi-db` (PostgreSQL 17, db-f1-micro, 소켓 연결)
+- **Artifact Registry**: `asia-northeast3-docker.pkg.dev/moodi-app-2026/moodi-repo/moodi-api`
+- **Firebase Hosting**: 도메인 프록시 → Cloud Run rewrite
+- **도메인**: `moodi.kr` (운영), `dev-api.moodi.kr` (개발) / 가비아 구매, Firebase Hosting 연결
+- **프로필**: 운영 환경은 `prod` 프로필 사용 (`application-prod.yaml`)
+
+상세 내용은 `docs/infrastructure.md` 참고.

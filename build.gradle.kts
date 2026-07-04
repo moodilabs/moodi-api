@@ -28,6 +28,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 
 	runtimeOnly("org.postgresql:postgresql")
+	runtimeOnly("com.google.cloud.sql:postgres-socket-factory:1.24.1")
 
 	implementation("org.flywaydb:flyway-core")
 	implementation("org.flywaydb:flyway-database-postgresql")
