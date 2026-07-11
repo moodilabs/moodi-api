@@ -20,7 +20,6 @@
 |------|-----|
 | 프로젝트 ID | `moodi-app-2026` |
 | 리전 | `asia-northeast3` (서울) |
-| GCP 계정 | `moodikr.2026@gmail.com` |
 
 ## Cloud SQL
 
@@ -32,9 +31,8 @@
 | 에디션 | Enterprise |
 | 스토리지 | 10GB SSD (자동 증가) |
 | 데이터베이스명 | `moodi` |
-| 연결 방식 | Cloud SQL Socket Factory |
+| 연결 방식 | Cloud SQL Java Connector (Socket Factory) |
 | 연결 이름 | `moodi-app-2026:asia-northeast3:moodi-db` |
-| 공인 IP | `34.50.50.117` |
 
 ## Cloud Run
 
