@@ -1,0 +1,36 @@
+# CodeRabbit 설정 — https://docs.coderabbit.ai/reference/yaml-template
+# 역할: PR 자동 리뷰 + 지적사항 resolve 시 자동 approve. (머지는 사람이 수동으로)
+language: ko-KR
+
+reviews:
+  profile: chill                      # assertive보다 덜 깐깐 — 자동 수정 루프의 소음을 줄인다
+  high_level_summary: true
+  request_changes_workflow: true      # CodeRabbit 지적이 모두 resolve되면 자동 approve
+  auto_review:
+    enabled: true
+    base_branches:
+      - develop
+  path_instructions:
+    - path: "src/main/**/domain/**"
+      instructions: >
+        도메인은 순수 POJO여야 한다. JPA/Spring 애노테이션(@Entity, @Table, @Id 등)이 있으면 지적.
+        다른 바운디드 컨텍스트를 직접 참조하지 말고 ID(+스냅샷)로만 참조해야 한다.
+    - path: "src/main/**/infrastructure/**"
+      instructions: >
+        Spring Data 인터페이스는 JpaRepository가 아니라 Repository<T, ID>를 상속하고 필요한 메서드만 선언해야 한다.
+    - path: "src/main/resources/db/migration/**"
+      instructions: >
+        이미 적용된 마이그레이션 파일 수정(checksum 깨짐), 파괴적 변경(DROP/타입변경/컬럼 rename),
+        락을 유발하는 인덱스 생성(CREATE INDEX CONCURRENTLY 권장)을 점검하라.
+    - path: "src/test/**"
+      instructions: >
+        메서드명 snake_case + 한글 @DisplayName, given-when-then, Fixture 정적 팩토리,
+        AssertJ(assertThat)·Mockito(verify) 사용 여부를 확인하라.
+
+# CLAUDE.md(루트 및 컨텍스트별)를 리뷰 기준으로 자동 반영
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "CLAUDE.md"
+      - "**/CLAUDE.md"

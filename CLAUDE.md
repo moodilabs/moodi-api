@@ -114,11 +114,10 @@ push 전 테스트 자동 실행. 최초 설정 시:
 Git Flow.
 - `main`(배포) · `develop`(통합 개발) · `feature/*`(develop 분기) · `release/*` · `hotfix/*`(main 분기).
 - 브랜치명은 기능ID 기반: `feature/AUT-F01-social-login`.
-- `feature` → `develop` PR, 상대 개발자 크로스리뷰 후 머지.
+- `feature` → `develop` PR 후 머지.
 
 ## 협업 규칙
 
-- 컨텍스트 간 계약(다른 컨텍스트 ID 참조, Pick→Route 연계 등)이 담긴 PR은 상대 개발자 크로스리뷰 필수.
 - 공유 커널(`shared`, 무드·공통 정책) 변경은 합의 후에만.
 
 ## API 문서
