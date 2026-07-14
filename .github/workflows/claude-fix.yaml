@@ -1,0 +1,46 @@
+name: Claude Fix
+
+# 역할: CodeRabbit 리뷰를 반영해 코드를 수정하고 커밋·push 한다. (리뷰는 CodeRabbit, 머지는 사람)
+#
+# 기본 동작(안전): PR 코멘트에서 @claude 를 멘션하면 실행된다.
+#   예) CodeRabbit 리뷰를 확인한 뒤 "@claude 위 리뷰 반영해서 수정해줘" 코멘트 → Claude가 수정 push.
+#   Claude는 CLAUDE.md와 .claude/agents 규칙을 자동으로 따르며, CodeRabbit 제안이 규칙과 충돌하면 규칙을 우선한다.
+#
+# ▶ 완전 자동(CodeRabbit 리뷰 즉시 반영)으로 넓히려면 아래 pull_request_review 트리거를 추가한다.
+#   단, 수정 push → CodeRabbit 재리뷰 → 또 수정 의 무한 핑퐁 위험이 있으므로 처음엔 멘션 기반으로 검증할 것.
+#   on:
+#     pull_request_review:
+#       types: [submitted]
+#   job if: github.event.review.user.login == 'coderabbitai[bot]' && github.event.review.state == 'changes_requested'
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+# 수정 커밋을 push해야 하므로 contents: write 필요
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  fix:
+    # @claude 멘션이 담긴 PR 코멘트에서만 실행
+    if: contains(github.event.comment.body, '@claude')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # @claude 멘션 모드: 코멘트 본문이 지시가 되고, CLAUDE.md/.claude/agents 규칙은 자동 반영.
+          # 수정 후 ./gradlew test 로 검증하도록 시스템 프롬프트에 규칙을 덧붙인다.
+          claude_args: >-
+            --max-turns 25
+            --model claude-sonnet-5
+            --append-system-prompt "CodeRabbit 리뷰 반영 시: 제안을 맹목적으로 따르지 말고 CLAUDE.md 규칙과 충돌하면 규칙을 우선한다. 수정 후 ./gradlew test 통과를 확인하고, 통과하지 못하면 통과했다고 말하지 않는다."
