@@ -15,7 +15,7 @@
             <table name="users"/>
             <attributes>
                 <id name="id">
-                    <generated-value strategy="IDENTITY"/>
+                    <generated-value strategy="UUID"/>
                 </id>
                 <basic name="email">
                     <column name="email" nullable="false" unique="true" length="255"/>
@@ -37,5 +37,54 @@
             </basic>
         </attributes>
     </mapped-superclass>
+
+    <entity class="com.moodi.member.domain.Member" access="FIELD">
+        <table name="member">
+            <unique-constraint>
+                <column-name>provider</column-name>
+                <column-name>provider_id</column-name>
+            </unique-constraint>
+        </table>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="UUID"/>
+            </id>
+            <basic name="providerId">
+                <column name="provider_id" nullable="false" length="255"/>
+            </basic>
+            <basic name="email">
+                <column name="email" nullable="true" unique="true" length="255"/>
+            </basic>
+            <basic name="nickname">
+                <column name="nickname" nullable="true" length="50"/>
+            </basic>
+            <basic name="provider">
+                <column name="provider" nullable="false" length="20"/>
+                <enumerated>STRING</enumerated>
+            </basic>
+            <basic name="status">
+                <column name="status" nullable="false" length="20"/>
+                <enumerated>STRING</enumerated>
+            </basic>
+        </attributes>
+    </entity>
+
+    <entity class="com.moodi.member.domain.RefreshToken" access="FIELD">
+        <table name="refresh_token"/>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="UUID"/>
+            </id>
+            <basic name="memberId">
+                <column name="member_id" nullable="false"/>
+            </basic>
+            <basic name="token">
+                <column name="token" nullable="false" unique="true" length="512"/>
+            </basic>
+            <basic name="expiresAt">
+                <column name="expires_at" nullable="false"/>
+            </basic>
+        </attributes>
+    </entity>
 
 </entity-mappings>

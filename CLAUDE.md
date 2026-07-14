@@ -42,7 +42,7 @@ src/main/java/com/moodi/
 
 의존 방향: `presentation → application → domain`, `infrastructure → 포트 구현(application·domain)`.
 domain은 순수(의존 없음). 컨텍스트 간 참조는 ID(+필요 스냅샷)만 — JPA 연관관계를 경계 너머로 걸지 않는다.
-레이어 의존 규칙은 ArchUnit으로 강제한다 (기존 `HexagonalArchitectureTest` → `LayeredArchitectureTest`로 교체 필요).
+레이어 의존 규칙은 ArchUnit `LayeredArchitectureTest`로 강제한다.
 
 ## 패키지 · 네이밍
 

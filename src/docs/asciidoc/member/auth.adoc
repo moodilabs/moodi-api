@@ -1,0 +1,45 @@
+== 인증 (Auth)
+
+provider가 발급한 `id_token`을 백엔드가 JWKS로 검증한 뒤 자체 JWT(access·refresh)를 발급합니다.
+
+=== 소셜 로그인
+
+최초 로그인 시 회원이 자동 생성되며 `isNewMember=true`로 응답합니다.
+
+.HTTP Request
+include::{snippets}/auth/login/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/auth/login/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/auth/login/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/auth/login/response-fields.adoc[]
+
+=== 토큰 재발급
+
+refresh 토큰으로 새 토큰 쌍을 발급합니다(회전). 기존 refresh는 폐기됩니다.
+
+.HTTP Request
+include::{snippets}/auth/reissue/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/auth/reissue/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/auth/reissue/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/auth/reissue/response-fields.adoc[]
+
+=== 로그아웃
+
+해당 회원의 refresh 토큰을 전체 삭제합니다. `Authorization: Bearer {accessToken}` 헤더가 필요합니다.
+
+.HTTP Request
+include::{snippets}/auth/logout/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/auth/logout/http-response.adoc[]
