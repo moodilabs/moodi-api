@@ -11,3 +11,5 @@
 
 include::../shared/overview.adoc[]
 
+include::../member/auth.adoc[]
+
