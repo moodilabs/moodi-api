@@ -17,8 +17,10 @@ import org.springframework.stereotype.Component;
 
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 public class OidcTokenVerifier implements OAuthClient {
@@ -46,12 +48,24 @@ public class OidcTokenVerifier implements OAuthClient {
         JWKSource<SecurityContext> jwkSource = createJwkSource(provider.jwksUri());
         DefaultJWTProcessor<SecurityContext> processor = new DefaultJWTProcessor<>();
         processor.setJWSKeySelector(new JWSVerificationKeySelector<>(JWSAlgorithm.RS256, jwkSource));
-        processor.setJWTClaimsSetVerifier(new DefaultJWTClaimsVerifier<>(
-                provider.audience(),
+        Set<String> audiences = acceptedAudiences(provider.audiences());
+        processor.setJWTClaimsSetVerifier(new DefaultJWTClaimsVerifier<SecurityContext>(
+                audiences,
                 new JWTClaimsSet.Builder().issuer(provider.issuer()).build(),
-                Set.of("sub", "exp")
+                Set.of("sub", "exp"),
+                null
         ));
         return processor;
+    }
+
+    private Set<String> acceptedAudiences(List<String> audiences) {
+        if (audiences == null) {
+            return null;
+        }
+        Set<String> cleaned = audiences.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .collect(Collectors.toSet());
+        return cleaned.isEmpty() ? null : cleaned;
     }
 
     private JWKSource<SecurityContext> createJwkSource(String jwksUri) {

@@ -22,11 +22,11 @@ jwt:
 oauth:
   google:
     issuer: https://accounts.google.com
-    audience: ${GOOGLE_CLIENT_ID}
+    audiences: ${GOOGLE_CLIENT_ID:}
     jwks-uri: https://www.googleapis.com/oauth2/v3/certs
   apple:
     issuer: https://appleid.apple.com
-    audience: ${APPLE_CLIENT_ID}
+    audiences: ${APPLE_CLIENT_ID:}
     jwks-uri: https://appleid.apple.com/auth/keys
 
 logging:
