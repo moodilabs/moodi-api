@@ -35,7 +35,7 @@ com.moodi.member/
 - 클라이언트가 provider `id_token` 전달 → 백엔드가 **JWKS로 서명 검증** 후 자체 JWT 발급.
 - Google·Apple 모두 RS256 JWT → 검증 로직 하나로 통일 (`OidcTokenVerifier`, `com.nimbusds:nimbus-jose-jwt`).
 - 검증 순서: `kid`로 공개키 조회 → 서명 검증 → `iss`·`aud`·`exp` 검증 → `sub`, `email` 추출. 실패 시 `OAUTH_VERIFICATION_FAILED`.
-- provider별 issuer/audience(client-id)/jwks는 `oauth.google.*`, `oauth.apple.*` 설정으로 주입.
+- provider별 issuer/jwks는 `oauth.google.*`, `oauth.apple.*`로 주입. **`aud`(client-id)는 멀티 플랫폼 지원** — `GOOGLE_CLIENT_ID`/`APPLE_CLIENT_ID`에 콤마로 플랫폼별(iOS·Android·Web) client-id를 넣으면 그중 하나와 매칭 시 통과. 비어 있으면 audience 검증 생략.
 
 ## 인증 분기 (AOP · `shared/auth`)
 
