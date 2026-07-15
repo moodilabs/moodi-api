@@ -52,4 +52,5 @@ jobs:
             --allow-unauthenticated \
             --port=8080 \
             --memory=1Gi \
-            --add-cloudsql-instances=moodi-app-2026:asia-northeast3:moodi-db
+            --add-cloudsql-instances=moodi-app-2026:asia-northeast3:moodi-db \
+            --update-env-vars=JWT_SECRET=${{ secrets.JWT_SECRET }},GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},APPLE_CLIENT_ID=${{ secrets.APPLE_CLIENT_ID }}
