@@ -37,6 +37,7 @@ dependencies {
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
 	implementation("com.nimbusds:nimbus-jose-jwt:10.3")
+	implementation("org.apache.commons:commons-csv:1.12.0")
 
 	developmentOnly("org.springframework.boot:spring-boot-docker-compose")
 
