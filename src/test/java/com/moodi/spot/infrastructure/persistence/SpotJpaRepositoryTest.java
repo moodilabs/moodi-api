@@ -5,6 +5,7 @@ import com.moodi.spot.domain.Spot;
 import com.moodi.spot.domain.SpotContentType;
 import com.moodi.spot.domain.SpotRepository;
 import com.moodi.spot.domain.SpotStatus;
+import com.moodi.spot.support.SpotFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +23,7 @@ class SpotJpaRepositoryTest extends RepositoryTestSupport {
     @DisplayName("Spot을 저장하고 source와 contentId로 조회한다")
     void save_and_find_by_source_and_content_id() {
         // given
-        Spot spot = Spot.create("2733967", SpotContentType.TOURIST_ATTRACTION, "서울", "kor_service",
-                126.98, 37.58, null, "HS", "HS03", "HS030200");
+        Spot spot = SpotFixture.create();
 
         // when
         Spot saved = spotRepository.save(spot);
@@ -47,8 +47,7 @@ class SpotJpaRepositoryTest extends RepositoryTestSupport {
     @DisplayName("source와 contentId 존재 여부를 확인한다")
     void exists_by_source_and_content_id() {
         // given
-        Spot spot = Spot.create("2733967", SpotContentType.SHOPPING, "부산", "kor_service",
-                129.05, 35.15, null, null, null, null);
+        Spot spot = SpotFixture.create(SpotContentType.SHOPPING);
         spotRepository.save(spot);
 
         // when & then
