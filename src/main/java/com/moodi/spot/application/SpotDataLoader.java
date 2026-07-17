@@ -10,7 +10,6 @@ import com.moodi.spot.domain.SpotTranslationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -25,7 +24,6 @@ public class SpotDataLoader {
     private final SpotTranslationRepository spotTranslationRepository;
     private final SpotImageRepository spotImageRepository;
 
-    @Transactional
     public LoadResult load(List<SpotCsvRow> rows) {
         int saved = 0;
         int skipped = 0;
