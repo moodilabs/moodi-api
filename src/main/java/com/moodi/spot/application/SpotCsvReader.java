@@ -1,5 +1,6 @@
 package com.moodi.spot.application;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -10,10 +11,11 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Component
 public class SpotCsvReader {
 
-    public List<SpotCsvRow> read(Reader reader) throws IOException {
+    public ReadResult read(Reader reader) throws IOException {
         CSVFormat format = CSVFormat.DEFAULT.builder()
                 .setHeader()
                 .setSkipHeaderRecord(true)
@@ -22,10 +24,18 @@ public class SpotCsvReader {
 
         try (CSVParser parser = new CSVParser(reader, format)) {
             List<SpotCsvRow> rows = new ArrayList<>();
+            int failedRows = 0;
+
             for (CSVRecord record : parser) {
-                rows.add(toRow(record));
+                try {
+                    rows.add(toRow(record));
+                } catch (Exception e) {
+                    failedRows++;
+                    log.warn("CSV 파싱 실패 [행 {}]: {}", record.getRecordNumber() + 1, e.getMessage());
+                }
             }
-            return rows;
+
+            return new ReadResult(rows, failedRows);
         }
     }
 
@@ -47,5 +57,8 @@ public class SpotCsvReader {
                 .lclsSystm2(record.get("lcls_systm2"))
                 .lclsSystm3(record.get("lcls_systm3"))
                 .build();
+    }
+
+    public record ReadResult(List<SpotCsvRow> rows, int failedRows) {
     }
 }

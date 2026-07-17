@@ -1,12 +1,14 @@
 package com.moodi.spot.application;
 
-import com.moodi.shared.support.RepositoryTestSupport;
 import com.moodi.spot.domain.SpotContentType;
 import com.moodi.spot.domain.SpotRepository;
 import com.moodi.spot.domain.SpotStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.jdbc.Sql;
 
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -15,7 +17,11 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class SpotDataLoaderIntegrationTest extends RepositoryTestSupport {
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@ActiveProfiles("test")
+@Sql(statements = "DELETE FROM spot_image; DELETE FROM spot_translation; DELETE FROM spot;",
+        executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
+class SpotDataLoaderIntegrationTest {
 
     @Autowired
     private SpotCsvReader spotCsvReader;
@@ -32,7 +38,8 @@ class SpotDataLoaderIntegrationTest extends RepositoryTestSupport {
         // given
         Reader reader = new InputStreamReader(
                 getClass().getResourceAsStream("/pilot-spots-test.csv"), StandardCharsets.UTF_8);
-        List<SpotCsvRow> rows = spotCsvReader.read(reader);
+        var readResult = spotCsvReader.read(reader);
+        List<SpotCsvRow> rows = readResult.rows();
 
         // when
         SpotDataLoader.LoadResult result = spotDataLoader.load(rows);
@@ -49,12 +56,12 @@ class SpotDataLoaderIntegrationTest extends RepositoryTestSupport {
         // given
         Reader reader1 = new InputStreamReader(
                 getClass().getResourceAsStream("/pilot-spots-test.csv"), StandardCharsets.UTF_8);
-        List<SpotCsvRow> rows = spotCsvReader.read(reader1);
+        List<SpotCsvRow> rows = spotCsvReader.read(reader1).rows();
         spotDataLoader.load(rows);
 
         Reader reader2 = new InputStreamReader(
                 getClass().getResourceAsStream("/pilot-spots-test.csv"), StandardCharsets.UTF_8);
-        List<SpotCsvRow> rowsAgain = spotCsvReader.read(reader2);
+        List<SpotCsvRow> rowsAgain = spotCsvReader.read(reader2).rows();
 
         // when
         SpotDataLoader.LoadResult result = spotDataLoader.load(rowsAgain);
@@ -70,7 +77,8 @@ class SpotDataLoaderIntegrationTest extends RepositoryTestSupport {
         // given
         Reader reader = new InputStreamReader(
                 getClass().getResourceAsStream("/pilot-spots-test.csv"), StandardCharsets.UTF_8);
-        List<SpotCsvRow> rows = spotCsvReader.read(reader);
+        var readResult = spotCsvReader.read(reader);
+        List<SpotCsvRow> rows = readResult.rows();
         spotDataLoader.load(rows);
 
         // when & then

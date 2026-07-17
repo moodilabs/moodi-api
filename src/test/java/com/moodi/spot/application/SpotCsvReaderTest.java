@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -23,11 +22,12 @@ class SpotCsvReaderTest {
                 """;
 
         // when
-        List<SpotCsvRow> rows = reader.read(new StringReader(csv));
+        SpotCsvReader.ReadResult result = reader.read(new StringReader(csv));
 
         // then
-        assertThat(rows).hasSize(1);
-        SpotCsvRow row = rows.get(0);
+        assertThat(result.rows()).hasSize(1);
+        assertThat(result.failedRows()).isZero();
+        SpotCsvRow row = result.rows().get(0);
         assertThat(row.getContentId()).isEqualTo("2733967");
         assertThat(row.getTitle()).isEqualTo("가회동성당");
         assertThat(row.getContentType()).isEqualTo("관광지");
@@ -45,11 +45,11 @@ class SpotCsvReaderTest {
                 """;
 
         // when
-        List<SpotCsvRow> rows = reader.read(new StringReader(csv));
+        SpotCsvReader.ReadResult result = reader.read(new StringReader(csv));
 
         // then
-        assertThat(rows).hasSize(1);
-        assertThat(rows.get(0).getOverview()).isEqualTo("이것은, 쉼표가 포함된 설명");
+        assertThat(result.rows()).hasSize(1);
+        assertThat(result.rows().get(0).getOverview()).isEqualTo("이것은, 쉼표가 포함된 설명");
     }
 
     @Test
@@ -61,9 +61,31 @@ class SpotCsvReaderTest {
                 """;
 
         // when
-        List<SpotCsvRow> rows = reader.read(new StringReader(csv));
+        SpotCsvReader.ReadResult result = reader.read(new StringReader(csv));
 
         // then
-        assertThat(rows).isEmpty();
+        assertThat(result.rows()).isEmpty();
+        assertThat(result.failedRows()).isZero();
+    }
+
+    @Test
+    @DisplayName("필드가 부족한 행은 실패로 기록하고 나머지 행은 정상 파싱한다")
+    void read_skips_malformed_row_and_continues() throws IOException {
+        // given
+        String csv = """
+                content_id,title,content_type,area,source,overview,spot_image,longitude,latitude,addr1,addr2,tel,lcls_systm1,lcls_systm2,lcls_systm3
+                111,정상행,관광지,서울,kor_service,,https://example.com/img.jpg,126.98,37.58,주소,,,,,
+                222,불완전행
+                333,정상행2,문화시설,부산,kor_service,,,129.05,35.15,부산주소,,,,,
+                """;
+
+        // when
+        SpotCsvReader.ReadResult result = reader.read(new StringReader(csv));
+
+        // then
+        assertThat(result.rows()).hasSize(2);
+        assertThat(result.failedRows()).isEqualTo(1);
+        assertThat(result.rows().get(0).getContentId()).isEqualTo("111");
+        assertThat(result.rows().get(1).getContentId()).isEqualTo("333");
     }
 }

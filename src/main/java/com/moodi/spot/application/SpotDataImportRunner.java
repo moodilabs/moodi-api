@@ -31,10 +31,13 @@ public class SpotDataImportRunner implements ApplicationRunner {
         log.info("스팟 데이터 적재 시작: {}", path);
 
         try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-            var rows = spotCsvReader.read(reader);
-            var result = spotDataLoader.load(rows);
-            log.info("스팟 데이터 적재 결과: 저장 {}건, 스킵 {}건, 실패 {}건",
-                    result.saved(), result.skipped(), result.failed());
+            var readResult = spotCsvReader.read(reader);
+            if (readResult.failedRows() > 0) {
+                log.warn("CSV 파싱 실패 {}건 — 정상 행만 적재합니다.", readResult.failedRows());
+            }
+            var loadResult = spotDataLoader.load(readResult.rows());
+            log.info("스팟 데이터 적재 결과: 저장 {}건, 스킵 {}건, 적재실패 {}건, 파싱실패 {}건",
+                    loadResult.saved(), loadResult.skipped(), loadResult.failed(), readResult.failedRows());
         }
     }
 }
