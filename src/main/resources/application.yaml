@@ -29,6 +29,10 @@ oauth:
     audiences: ${APPLE_CLIENT_ID:}
     jwks-uri: https://appleid.apple.com/auth/keys
 
+spot-import:
+  enabled: false
+  path: ./data/pilot/spots.csv
+
 logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{requestId:-}] %-5level %logger{36} - %msg%n"

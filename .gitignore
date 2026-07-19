@@ -62,3 +62,7 @@ gradle-app.setting
 
 ### Test output ###
 test-results/
+
+### Pilot data ###
+data/
+docs/job/

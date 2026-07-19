@@ -87,4 +87,114 @@
         </attributes>
     </entity>
 
+    <!-- Spot 컨텍스트 -->
+
+    <entity class="com.moodi.spot.domain.Spot" access="FIELD">
+        <table name="spot">
+            <unique-constraint>
+                <column-name>source</column-name>
+                <column-name>content_id</column-name>
+            </unique-constraint>
+        </table>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="contentId">
+                <column name="content_id" nullable="false" length="50"/>
+            </basic>
+            <basic name="contentType">
+                <column name="content_type" nullable="false" length="30"/>
+                <enumerated>STRING</enumerated>
+            </basic>
+            <basic name="area">
+                <column name="area" nullable="false" length="50"/>
+            </basic>
+            <basic name="source">
+                <column name="source" nullable="false" length="30"/>
+            </basic>
+            <basic name="longitude">
+                <column name="longitude"/>
+            </basic>
+            <basic name="latitude">
+                <column name="latitude"/>
+            </basic>
+            <basic name="tel">
+                <column name="tel" length="100"/>
+            </basic>
+            <basic name="routeExcluded">
+                <column name="route_excluded" nullable="false"/>
+            </basic>
+            <basic name="status">
+                <column name="status" nullable="false" length="30"/>
+                <enumerated>STRING</enumerated>
+            </basic>
+            <basic name="lclsSystm1">
+                <column name="lcls_systm1" length="20"/>
+            </basic>
+            <basic name="lclsSystm2">
+                <column name="lcls_systm2" length="20"/>
+            </basic>
+            <basic name="lclsSystm3">
+                <column name="lcls_systm3" length="20"/>
+            </basic>
+            <basic name="homepage">
+                <column name="homepage" length="1000"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <entity class="com.moodi.spot.domain.SpotTranslation" access="FIELD">
+        <table name="spot_translation">
+            <unique-constraint>
+                <column-name>spot_id</column-name>
+                <column-name>locale</column-name>
+            </unique-constraint>
+        </table>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="spotId">
+                <column name="spot_id" nullable="false"/>
+            </basic>
+            <basic name="locale">
+                <column name="locale" nullable="false" length="10"/>
+            </basic>
+            <basic name="title">
+                <column name="title" nullable="false" length="500"/>
+            </basic>
+            <basic name="overview">
+                <column name="overview" column-definition="TEXT"/>
+            </basic>
+            <basic name="addr1">
+                <column name="addr1" length="500"/>
+            </basic>
+            <basic name="addr2">
+                <column name="addr2" length="500"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <entity class="com.moodi.spot.domain.SpotImage" access="FIELD">
+        <table name="spot_image"/>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="spotId">
+                <column name="spot_id" nullable="false"/>
+            </basic>
+            <basic name="imageUrl">
+                <column name="image_url" nullable="false" length="1000"/>
+            </basic>
+            <basic name="isPrimary">
+                <column name="is_primary" nullable="false"/>
+            </basic>
+            <basic name="sortOrder">
+                <column name="sort_order" nullable="false"/>
+            </basic>
+        </attributes>
+    </entity>
+
 </entity-mappings>
