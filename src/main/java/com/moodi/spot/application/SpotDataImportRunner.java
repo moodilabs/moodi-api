@@ -5,7 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
@@ -21,6 +23,7 @@ public class SpotDataImportRunner implements ApplicationRunner {
 
     private final SpotCsvReader spotCsvReader;
     private final SpotDataLoader spotDataLoader;
+    private final ApplicationContext applicationContext;
 
     @Value("${spot-import.path}")
     private String csvPath;
@@ -38,6 +41,8 @@ public class SpotDataImportRunner implements ApplicationRunner {
             var loadResult = spotDataLoader.load(readResult.rows());
             log.info("스팟 데이터 적재 결과: 저장 {}건, 스킵 {}건, 적재실패 {}건, 파싱실패 {}건",
                     loadResult.saved(), loadResult.skipped(), loadResult.failed(), readResult.failedRows());
+        } finally {
+            SpringApplication.exit(applicationContext, () -> 0);
         }
     }
 }
