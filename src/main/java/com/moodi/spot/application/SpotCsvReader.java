@@ -56,6 +56,7 @@ public class SpotCsvReader {
                 .lclsSystm1(record.get("lcls_systm1"))
                 .lclsSystm2(record.get("lcls_systm2"))
                 .lclsSystm3(record.get("lcls_systm3"))
+                .homepage(record.get("homepage"))
                 .build();
     }
 

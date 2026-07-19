@@ -12,6 +12,7 @@ CREATE TABLE spot (
     lcls_systm1    VARCHAR(20),
     lcls_systm2    VARCHAR(20),
     lcls_systm3    VARCHAR(20),
+    homepage       VARCHAR(1000),
     created_at     TIMESTAMP    NOT NULL,
     updated_at     TIMESTAMP    NOT NULL,
     CONSTRAINT uk_spot_source_content_id UNIQUE (source, content_id)

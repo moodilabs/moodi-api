@@ -15,17 +15,17 @@ public class SpotFixture {
 
     public static Spot create() {
         return Spot.create(DEFAULT_CONTENT_ID, DEFAULT_CONTENT_TYPE, DEFAULT_AREA, DEFAULT_SOURCE,
-                DEFAULT_LONGITUDE, DEFAULT_LATITUDE, null, "HS", "HS03", "HS030200");
+                DEFAULT_LONGITUDE, DEFAULT_LATITUDE, null, "HS", "HS03", "HS030200", null);
     }
 
     public static Spot create(SpotContentType contentType) {
         return Spot.create(DEFAULT_CONTENT_ID, contentType, DEFAULT_AREA, DEFAULT_SOURCE,
-                DEFAULT_LONGITUDE, DEFAULT_LATITUDE, null, null, null, null);
+                DEFAULT_LONGITUDE, DEFAULT_LATITUDE, null, null, null, null, null);
     }
 
     public static Spot create(String contentId, String source) {
         return Spot.create(contentId, DEFAULT_CONTENT_TYPE, DEFAULT_AREA, source,
-                DEFAULT_LONGITUDE, DEFAULT_LATITUDE, null, null, null, null);
+                DEFAULT_LONGITUDE, DEFAULT_LATITUDE, null, null, null, null, null);
     }
 
     public static Spot createWithId(Long id) {

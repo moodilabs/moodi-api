@@ -100,6 +100,7 @@ class SpotDataLoaderTest {
                 .lclsSystm1("")
                 .lclsSystm2("")
                 .lclsSystm3("")
+                .homepage("")
                 .build();
     }
 }

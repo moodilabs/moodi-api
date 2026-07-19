@@ -22,4 +22,5 @@ public class SpotCsvRow {
     private final String lclsSystm1;
     private final String lclsSystm2;
     private final String lclsSystm3;
+    private final String homepage;
 }

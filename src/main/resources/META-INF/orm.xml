@@ -138,6 +138,9 @@
             <basic name="lclsSystm3">
                 <column name="lcls_systm3" length="20"/>
             </basic>
+            <basic name="homepage">
+                <column name="homepage" length="1000"/>
+            </basic>
         </attributes>
     </entity>
 

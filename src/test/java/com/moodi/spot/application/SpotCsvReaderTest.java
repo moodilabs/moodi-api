@@ -17,8 +17,8 @@ class SpotCsvReaderTest {
     void read_parses_csv_rows() throws IOException {
         // given
         String csv = """
-                content_id,title,content_type,area,source,overview,spot_image,longitude,latitude,addr1,addr2,tel,lcls_systm1,lcls_systm2,lcls_systm3
-                2733967,가회동성당,관광지,서울,kor_service,,https://example.com/img.jpg,126.98,37.58,서울특별시 종로구 북촌로 57,,,HS,HS03,HS030200
+                content_id,title,content_type,area,source,overview,spot_image,longitude,latitude,addr1,addr2,tel,lcls_systm1,lcls_systm2,lcls_systm3,homepage
+                2733967,가회동성당,관광지,서울,kor_service,,https://example.com/img.jpg,126.98,37.58,서울특별시 종로구 북촌로 57,,,HS,HS03,HS030200,
                 """;
 
         // when
@@ -40,8 +40,8 @@ class SpotCsvReaderTest {
     void read_handles_quoted_fields_with_commas() throws IOException {
         // given
         String csv = """
-                content_id,title,content_type,area,source,overview,spot_image,longitude,latitude,addr1,addr2,tel,lcls_systm1,lcls_systm2,lcls_systm3
-                123,테스트,관광지,서울,kor_service,"이것은, 쉼표가 포함된 설명",https://example.com/img.jpg,126.98,37.58,주소,,,,,
+                content_id,title,content_type,area,source,overview,spot_image,longitude,latitude,addr1,addr2,tel,lcls_systm1,lcls_systm2,lcls_systm3,homepage
+                123,테스트,관광지,서울,kor_service,"이것은, 쉼표가 포함된 설명",https://example.com/img.jpg,126.98,37.58,주소,,,,,,
                 """;
 
         // when
@@ -57,7 +57,7 @@ class SpotCsvReaderTest {
     void read_returns_empty_list_for_header_only() throws IOException {
         // given
         String csv = """
-                content_id,title,content_type,area,source,overview,spot_image,longitude,latitude,addr1,addr2,tel,lcls_systm1,lcls_systm2,lcls_systm3
+                content_id,title,content_type,area,source,overview,spot_image,longitude,latitude,addr1,addr2,tel,lcls_systm1,lcls_systm2,lcls_systm3,homepage
                 """;
 
         // when
@@ -73,10 +73,10 @@ class SpotCsvReaderTest {
     void read_skips_malformed_row_and_continues() throws IOException {
         // given
         String csv = """
-                content_id,title,content_type,area,source,overview,spot_image,longitude,latitude,addr1,addr2,tel,lcls_systm1,lcls_systm2,lcls_systm3
-                111,정상행,관광지,서울,kor_service,,https://example.com/img.jpg,126.98,37.58,주소,,,,,
+                content_id,title,content_type,area,source,overview,spot_image,longitude,latitude,addr1,addr2,tel,lcls_systm1,lcls_systm2,lcls_systm3,homepage
+                111,정상행,관광지,서울,kor_service,,https://example.com/img.jpg,126.98,37.58,주소,,,,,,
                 222,불완전행
-                333,정상행2,문화시설,부산,kor_service,,,129.05,35.15,부산주소,,,,,
+                333,정상행2,문화시설,부산,kor_service,,,129.05,35.15,부산주소,,,,,,
                 """;
 
         // when

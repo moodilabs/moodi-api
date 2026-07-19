@@ -36,7 +36,8 @@ public class SpotRowSaver {
                 blankToNull(row.getTel()),
                 blankToNull(row.getLclsSystm1()),
                 blankToNull(row.getLclsSystm2()),
-                blankToNull(row.getLclsSystm3())
+                blankToNull(row.getLclsSystm3()),
+                blankToNull(row.getHomepage())
         ));
 
         spotTranslationRepository.save(SpotTranslation.create(
