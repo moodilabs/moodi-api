@@ -73,4 +73,4 @@ jobs:
             --port=8080 \
             --memory=1Gi \
             --add-cloudsql-instances=moodi-app-2026:asia-northeast3:moodi-db \
-            --update-env-vars="^@^JWT_SECRET=${JWT_SECRET}@GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}@APPLE_CLIENT_ID=${APPLE_CLIENT_ID}"
+            --update-env-vars="^@^SPRING_PROFILES_ACTIVE=prod@JWT_SECRET=${JWT_SECRET}@GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}@APPLE_CLIENT_ID=${APPLE_CLIENT_ID}"

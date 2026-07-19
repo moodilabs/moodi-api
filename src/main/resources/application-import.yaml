@@ -1,0 +1,12 @@
+spring:
+  main:
+    web-application-type: none
+  docker:
+    compose:
+      enabled: false
+
+jwt:
+  secret: import-only-dummy-secret-key-not-used-but-must-be-long-enough-256bit
+
+spot-import:
+  enabled: true
