@@ -71,9 +71,15 @@ public class MoodVector {
         }
 
         for (Map.Entry<E, Double> entry : distribution.entrySet()) {
-            if (entry.getValue() < 0.0 || entry.getValue() > 1.0) {
+            Double value = entry.getValue();
+            if (value == null || Double.isNaN(value)) {
                 throw new IllegalArgumentException(
-                        axisName + "의 " + entry.getKey() + " 가중치가 범위를 벗어났습니다: " + entry.getValue()
+                        axisName + "의 " + entry.getKey() + " 가중치가 유효하지 않습니다: " + value
+                );
+            }
+            if (value < 0.0 || value > 1.0) {
+                throw new IllegalArgumentException(
+                        axisName + "의 " + entry.getKey() + " 가중치가 범위를 벗어났습니다: " + value
                 );
             }
         }
