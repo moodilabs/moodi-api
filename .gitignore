@@ -51,6 +51,7 @@ public/*
 
 ### Environment ###
 .env
+application-local.yaml
 
 ### Logs ###
 *.log

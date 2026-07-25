@@ -90,12 +90,13 @@ class SpotMoodTaggingServiceTest {
         when(spotRepository.save(any(Spot.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // when
-        SpotMoodTaggingService.TaggingResult result = taggingService.tagAll();
+        SpotMoodTaggingService.TaggingResult result = taggingService.tagAll(0);
 
         // then
         assertThat(result.tagged()).isEqualTo(1);
         assertThat(result.skipped()).isZero();
         assertThat(result.failed()).isZero();
+        assertThat(result.invalidResponses()).isZero();
         assertThat(spot.getStatus()).isEqualTo(SpotStatus.PUBLISHED);
         verify(spotMoodRepository).save(any(SpotMood.class));
     }
@@ -109,7 +110,7 @@ class SpotMoodTaggingServiceTest {
         when(spotMoodRepository.existsBySpotId(1L)).thenReturn(true);
 
         // when
-        SpotMoodTaggingService.TaggingResult result = taggingService.tagAll();
+        SpotMoodTaggingService.TaggingResult result = taggingService.tagAll(0);
 
         // then
         assertThat(result.tagged()).isZero();
@@ -134,7 +135,7 @@ class SpotMoodTaggingServiceTest {
         when(spotRepository.save(any(Spot.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // when
-        SpotMoodTaggingService.TaggingResult result = taggingService.tagAll();
+        SpotMoodTaggingService.TaggingResult result = taggingService.tagAll(0);
 
         // then
         assertThat(result.tagged()).isEqualTo(1);

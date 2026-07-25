@@ -30,6 +30,7 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
 
     private static final String OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final int MAX_RETRIES = 1;
 
     private final RestClient restClient;
     private final String model;
@@ -47,16 +48,32 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
 
     @Override
     public MoodAnalysisResult analyze(List<String> imageUrls, String overview) {
-        List<Map<String, Object>> contentParts = buildContentParts(imageUrls, overview);
-        Map<String, Object> requestBody = buildRequest(contentParts);
+        List<Map<String, Object>> messages = new ArrayList<>();
+        messages.add(Map.of("role", "user", "content", buildContentParts(imageUrls, overview)));
 
-        String responseJson = restClient.post()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(requestBody)
-                .retrieve()
-                .body(String.class);
+        for (int attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+            String responseJson = callApi(messages);
+            String content = extractContent(responseJson);
 
-        return parseResponse(responseJson);
+            try {
+                MoodVector vector = parseVector(content);
+                double confidence = parseConfidence(content);
+                return new MoodAnalysisResult(vector, confidence);
+            } catch (InvalidMoodResponseException e) {
+                if (attempt < MAX_RETRIES) {
+                    log.warn("LLM 응답 invalid (시도 {}): {} — 재요청합니다", attempt + 1, e.getMessage());
+                    messages.add(Map.of("role", "assistant", "content", content));
+                    messages.add(Map.of("role", "user", "content",
+                            "응답에 허용되지 않는 키가 포함되어 있습니다: " + e.getMessage()
+                                    + "\n각 축에 허용된 키만 사용하세요. 다시 JSON을 출력하세요."));
+                } else {
+                    throw new IllegalStateException(
+                            "LLM 응답 검증 실패 (재시도 후에도 invalid): " + e.getMessage(), e);
+                }
+            }
+        }
+
+        throw new IllegalStateException("LLM 분석 실패: 최대 재시도 초과");
     }
 
     private List<Map<String, Object>> buildContentParts(List<String> imageUrls, String overview) {
@@ -80,14 +97,15 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
                 아래 이미지와 설명 텍스트를 분석하여 6축 무드 벡터를 JSON으로 출력하세요.
 
                 각 축에서 값별 가중치 분포(합 1.0)를 산출하세요. 0인 값은 생략 가능합니다.
+                반드시 각 축에 정의된 키만 사용하세요. 다른 축의 키를 섞지 마세요.
 
-                축과 값:
-                - atmosphere: cozy(아늑), serene(고요·힐링), lively(활기), romantic(낭만), moody(짙은무드)
-                - color: warm(웜톤), cool(쿨톤), pastel(파스텔), mono(모노톤), vivid(비비드)
-                - lighting: daylight(자연광), golden_hour(골든아워·노을), night_neon(야경·네온), overcast(흐림), indoor(실내조명)
-                - space: nature(자연), ocean(바다), urban(도심), interior(실내), alley_local(골목·로컬)
-                - structure: open(개방·광활), minimal(미니멀·여백), dense(밀집·디테일), geometric(기하·대칭), organic(자연·불규칙)
-                - era: traditional(전통·고전), retro(레트로·뉴트로), modern(모던), futuristic(미래적)
+                축과 허용된 값:
+                - atmosphere: cozy, serene, lively, romantic, moody
+                - color: warm, cool, pastel, mono, vivid
+                - lighting: daylight, golden_hour, night_neon, overcast, indoor
+                - space: nature, ocean, urban, interior, alley_local
+                - structure: open, minimal, dense, geometric, organic
+                - era: traditional, retro, modern, futuristic
 
                 스팟 설명: %s
 
@@ -104,64 +122,90 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
                 """.formatted(overview != null && !overview.isBlank() ? overview : "(설명 없음)");
     }
 
-    private Map<String, Object> buildRequest(List<Map<String, Object>> contentParts) {
-        return Map.of(
+    private String callApi(List<Map<String, Object>> messages) {
+        Map<String, Object> requestBody = Map.of(
                 "model", model,
-                "messages", List.of(
-                        Map.of("role", "user", "content", contentParts)
-                ),
+                "messages", messages,
                 "max_tokens", 500,
                 "temperature", 0.2
         );
+
+        return restClient.post()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(requestBody)
+                .retrieve()
+                .body(String.class);
     }
 
     @SuppressWarnings("unchecked")
-    private MoodAnalysisResult parseResponse(String responseJson) {
+    private String extractContent(String responseJson) {
         try {
             Map<String, Object> response = MAPPER.readValue(responseJson, new TypeReference<Map<String, Object>>() {});
             List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
             Map<String, Object> message = (Map<String, Object>) choices.getFirst().get("message");
-            String content = (String) message.get("content");
+            String content = ((String) message.get("content")).strip();
 
-            // 마크다운 코드블록 제거
-            content = content.strip();
             if (content.startsWith("```")) {
                 content = content.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "");
             }
+            return content;
+        } catch (Exception e) {
+            throw new IllegalStateException("LLM 응답 추출 실패: " + e.getMessage(), e);
+        }
+    }
 
+    private MoodVector parseVector(String content) {
+        try {
             Map<String, Object> parsed = MAPPER.readValue(content, new TypeReference<Map<String, Object>>() {});
-
-            double confidence = parsed.containsKey("confidence")
-                    ? ((Number) parsed.get("confidence")).doubleValue()
-                    : 0.7;
-
-            MoodVector vector = new MoodVector(
-                    parseAxis(parsed, "atmosphere", Atmosphere.class, Atmosphere::fromKey),
-                    parseAxis(parsed, "color", Color.class, Color::fromKey),
-                    parseAxis(parsed, "lighting", Lighting.class, Lighting::fromKey),
-                    parseAxis(parsed, "space", Space.class, Space::fromKey),
-                    parseAxis(parsed, "structure", Structure.class, Structure::fromKey),
-                    parseAxis(parsed, "era", Era.class, Era::fromKey)
+            return new MoodVector(
+                    parseAxisStrict(parsed, "atmosphere", Atmosphere.class, Atmosphere::fromKey),
+                    parseAxisStrict(parsed, "color", Color.class, Color::fromKey),
+                    parseAxisStrict(parsed, "lighting", Lighting.class, Lighting::fromKey),
+                    parseAxisStrict(parsed, "space", Space.class, Space::fromKey),
+                    parseAxisStrict(parsed, "structure", Structure.class, Structure::fromKey),
+                    parseAxisStrict(parsed, "era", Era.class, Era::fromKey)
             );
-
-            return new MoodAnalysisResult(vector, confidence);
+        } catch (InvalidMoodResponseException e) {
+            throw e;
         } catch (Exception e) {
             throw new IllegalStateException("LLM 응답 파싱 실패: " + e.getMessage(), e);
         }
     }
 
+    private double parseConfidence(String content) {
+        try {
+            Map<String, Object> parsed = MAPPER.readValue(content, new TypeReference<Map<String, Object>>() {});
+            return parsed.containsKey("confidence")
+                    ? ((Number) parsed.get("confidence")).doubleValue()
+                    : 0.7;
+        } catch (Exception e) {
+            return 0.7;
+        }
+    }
+
     @SuppressWarnings("unchecked")
-    private <E extends Enum<E>> Map<E, Double> parseAxis(
+    private <E extends Enum<E>> Map<E, Double> parseAxisStrict(
             Map<String, Object> parsed, String axisKey, Class<E> enumType,
             java.util.function.Function<String, E> fromKey) {
         Map<String, Number> raw = (Map<String, Number>) parsed.get(axisKey);
         if (raw == null || raw.isEmpty()) {
-            throw new IllegalStateException("축 '" + axisKey + "'이 응답에 없습니다");
+            throw new InvalidMoodResponseException("축 '" + axisKey + "'이 응답에 없습니다");
         }
 
+        List<String> invalidKeys = new ArrayList<>();
         EnumMap<E, Double> result = new EnumMap<>(enumType);
+
         for (Map.Entry<String, Number> entry : raw.entrySet()) {
-            result.put(fromKey.apply(entry.getKey()), entry.getValue().doubleValue());
+            try {
+                result.put(fromKey.apply(entry.getKey()), entry.getValue().doubleValue());
+            } catch (IllegalArgumentException e) {
+                invalidKeys.add(entry.getKey());
+            }
+        }
+
+        if (!invalidKeys.isEmpty()) {
+            throw new InvalidMoodResponseException(
+                    "축 '" + axisKey + "'에 허용되지 않는 키: " + invalidKeys);
         }
 
         // 합계 보정 (LLM이 정확히 1.0을 맞추지 못할 수 있음)
@@ -170,12 +214,17 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
             log.warn("축 '{}' 합계 {}으로 정규화", axisKey, sum);
             double finalSum = sum;
             result.replaceAll((k, v) -> Math.round(v / finalSum * 100.0) / 100.0);
-            // 반올림 오차 보정
             double newSum = result.values().stream().mapToDouble(Double::doubleValue).sum();
             E firstKey = result.keySet().iterator().next();
             result.merge(firstKey, 1.0 - newSum, Double::sum);
         }
 
         return result;
+    }
+
+    private static class InvalidMoodResponseException extends RuntimeException {
+        InvalidMoodResponseException(String message) {
+            super(message);
+        }
     }
 }

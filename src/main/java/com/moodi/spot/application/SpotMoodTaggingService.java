@@ -19,6 +19,7 @@ import com.moodi.spot.domain.SpotTranslationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -33,14 +34,17 @@ public class SpotMoodTaggingService {
     private final MoodAnalysisClient moodAnalysisClient;
     private final MoodTagRuleEngine moodTagRuleEngine;
 
-    @Transactional
-    public TaggingResult tagAll() {
+    public TaggingResult tagAll(int limit) {
         List<Spot> pendingSpots = spotRepository.findByStatus(SpotStatus.TAGGING_PENDING);
-        log.info("태깅 대상 스팟 {}건 조회", pendingSpots.size());
+        if (limit > 0) {
+            pendingSpots = pendingSpots.subList(0, Math.min(limit, pendingSpots.size()));
+        }
+        log.info("태깅 대상 스팟 {}건 조회 (limit={})", pendingSpots.size(), limit);
 
         int tagged = 0;
         int skipped = 0;
         int failed = 0;
+        int invalidResponses = 0;
 
         for (Spot spot : pendingSpots) {
             try {
@@ -51,17 +55,23 @@ public class SpotMoodTaggingService {
 
                 tagSpot(spot);
                 tagged++;
+                log.info("태깅 성공 spotId={} ({}/{})", spot.getId(), tagged, pendingSpots.size());
             } catch (Exception e) {
                 failed++;
+                if (e.getMessage() != null && e.getMessage().contains("invalid")) {
+                    invalidResponses++;
+                }
                 log.warn("태깅 실패 spotId={}: {}", spot.getId(), e.getMessage());
             }
         }
 
-        log.info("태깅 완료: 성공 {}건, 스킵 {}건, 실패 {}건", tagged, skipped, failed);
-        return new TaggingResult(tagged, skipped, failed);
+        log.info("태깅 완료: 성공 {}건, 스킵 {}건, 실패 {}건 (invalid 응답 {}건 / 전체 요청 {}건)",
+                tagged, skipped, failed, invalidResponses, tagged + failed);
+        return new TaggingResult(tagged, skipped, failed, invalidResponses);
     }
 
-    private void tagSpot(Spot spot) {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void tagSpot(Spot spot) {
         List<String> imageUrls = spotImageRepository.findBySpotId(spot.getId()).stream()
                 .map(SpotImage::getImageUrl)
                 .toList();
@@ -81,5 +91,5 @@ public class SpotMoodTaggingService {
         spotRepository.save(spot);
     }
 
-    public record TaggingResult(int tagged, int skipped, int failed) {}
+    public record TaggingResult(int tagged, int skipped, int failed, int invalidResponses) {}
 }
