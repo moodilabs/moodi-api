@@ -42,8 +42,16 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
         this.restClient = RestClient.builder()
                 .baseUrl(OPENAI_API_URL)
                 .defaultHeader("Authorization", "Bearer " + apiKey)
+                .requestFactory(createRequestFactory())
                 .build();
         this.model = model;
+    }
+
+    private static org.springframework.http.client.ClientHttpRequestFactory createRequestFactory() {
+        var factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(java.time.Duration.ofSeconds(10));
+        factory.setReadTimeout(java.time.Duration.ofSeconds(60));
+        return factory;
     }
 
     @Override
