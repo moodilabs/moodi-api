@@ -9,6 +9,7 @@ import com.moodi.shared.mood.Space;
 import com.moodi.shared.mood.Structure;
 import com.moodi.spot.application.MoodAnalysisClient;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.Map;
 import java.util.Random;
 
 @Component
+@Profile("!llm")
 public class StubMoodAnalysisClient implements MoodAnalysisClient {
 
     private final Random random = new Random();
