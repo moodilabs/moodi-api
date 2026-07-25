@@ -1,5 +1,6 @@
 package com.moodi.spot.domain;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface SpotRepository {
@@ -9,4 +10,6 @@ public interface SpotRepository {
     Optional<Spot> findBySourceAndContentId(String source, String contentId);
 
     boolean existsBySourceAndContentId(String source, String contentId);
+
+    List<Spot> findByStatus(SpotStatus status);
 }

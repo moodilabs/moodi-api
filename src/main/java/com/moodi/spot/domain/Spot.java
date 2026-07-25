@@ -48,4 +48,11 @@ public class Spot extends BaseEntity {
         return new Spot(contentId, contentType, area, source, longitude, latitude, tel,
                 lclsSystm1, lclsSystm2, lclsSystm3, homepage);
     }
+
+    public void publish() {
+        if (this.status != SpotStatus.TAGGING_PENDING) {
+            throw new IllegalStateException("TAGGING_PENDING 상태에서만 PUBLISHED로 변경할 수 있습니다");
+        }
+        this.status = SpotStatus.PUBLISHED;
+    }
 }
