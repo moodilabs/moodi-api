@@ -197,4 +197,31 @@
         </attributes>
     </entity>
 
+    <entity class="com.moodi.spot.domain.SpotMood" access="FIELD">
+        <table name="spot_mood">
+            <unique-constraint>
+                <column-name>spot_id</column-name>
+            </unique-constraint>
+        </table>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="spotId">
+                <column name="spot_id" nullable="false"/>
+            </basic>
+            <basic name="moodVector">
+                <column name="mood_vector" nullable="false" column-definition="jsonb"/>
+                <convert converter="com.moodi.spot.infrastructure.persistence.converter.MoodVectorConverter"/>
+            </basic>
+            <basic name="moodTags">
+                <column name="mood_tags" nullable="false" column-definition="jsonb"/>
+                <convert converter="com.moodi.spot.infrastructure.persistence.converter.MoodTagListConverter"/>
+            </basic>
+            <basic name="confidence">
+                <column name="confidence"/>
+            </basic>
+        </attributes>
+    </entity>
+
 </entity-mappings>
