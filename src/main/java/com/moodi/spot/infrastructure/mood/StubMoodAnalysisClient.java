@@ -32,7 +32,7 @@ public class StubMoodAnalysisClient implements MoodAnalysisClient {
                 randomDistribution(Structure.values()),
                 randomDistribution(Era.values())
         );
-        return new MoodAnalysisResult(vector, 0.5 + random.nextDouble() * 0.5);
+        return new MoodAnalysisResult(vector, 0.5 + random.nextDouble() * 0.5, random.nextDouble());
     }
 
     private <E extends Enum<E>> Map<E, Double> randomDistribution(E[] values) {

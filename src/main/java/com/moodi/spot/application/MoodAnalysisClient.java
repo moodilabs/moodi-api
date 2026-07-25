@@ -8,5 +8,5 @@ public interface MoodAnalysisClient {
 
     MoodAnalysisResult analyze(List<String> imageUrls, String overview);
 
-    record MoodAnalysisResult(MoodVector moodVector, double confidence) {}
+    record MoodAnalysisResult(MoodVector moodVector, double confidence, double seasonalScore) {}
 }

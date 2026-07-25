@@ -23,13 +23,23 @@ public class MoodTagRuleEngine {
     }
 
     public List<MoodTag> deriveTags(MoodVector vector) {
-        return rules.stream()
+        return deriveTags(vector, 0.0);
+    }
+
+    public List<MoodTag> deriveTags(MoodVector vector, double seasonalScore) {
+        List<MoodTag> tags = new java.util.ArrayList<>(rules.stream()
                 .map(rule -> new TagScore(rule.getTag(), rule.score(vector)))
                 .filter(ts -> ts.score >= threshold)
                 .sorted(Comparator.comparingDouble(TagScore::score).reversed())
                 .limit(maxTags)
                 .map(TagScore::tag)
-                .toList();
+                .toList());
+
+        if (seasonalScore >= threshold && !tags.contains(MoodTag.SEASONAL)) {
+            tags.add(MoodTag.SEASONAL);
+        }
+
+        return List.copyOf(tags);
     }
 
     private static List<MoodTagRule> buildRules() {
@@ -148,10 +158,8 @@ public class MoodTagRuleEngine {
                 // #Artsy: 공간:실내/골목 (텍스트 신호는 별도 처리)
                 MoodTagRule.of(MoodTag.ARTSY,
                         v -> v.getWeight(Space.INTERIOR) + v.getWeight(Space.ALLEY_LOCAL)
-                ),
-
-                // #Seasonal: 텍스트 전용 — 벡터 규칙 없음, 점수 0 고정
-                MoodTagRule.of(MoodTag.SEASONAL)
+                )
+                // SEASONAL은 LLM seasonalScore로 별도 판정 — deriveTags(vector, seasonalScore)에서 처리
         );
     }
 

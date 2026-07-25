@@ -85,7 +85,7 @@ class SpotMoodTaggingServiceTest {
         when(spotTranslationRepository.findBySpotIdAndLocale(1L, "ko"))
                 .thenReturn(Optional.of(SpotTranslation.create(1L, "ko", "을지로 골목", "레트로 감성 골목", null, null)));
         when(moodAnalysisClient.analyze(anyList(), anyString()))
-                .thenReturn(new MoodAnalysisClient.MoodAnalysisResult(SAMPLE_VECTOR, 0.85));
+                .thenReturn(new MoodAnalysisClient.MoodAnalysisResult(SAMPLE_VECTOR, 0.85, 0.0));
         when(spotMoodRepository.save(any(SpotMood.class))).thenAnswer(inv -> inv.getArgument(0));
         when(spotRepository.save(any(Spot.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -130,7 +130,7 @@ class SpotMoodTaggingServiceTest {
         when(spotImageRepository.findBySpotId(2L)).thenReturn(List.of());
         when(spotTranslationRepository.findBySpotIdAndLocale(2L, "ko")).thenReturn(Optional.empty());
         when(moodAnalysisClient.analyze(anyList(), anyString()))
-                .thenReturn(new MoodAnalysisClient.MoodAnalysisResult(SAMPLE_VECTOR, 0.85));
+                .thenReturn(new MoodAnalysisClient.MoodAnalysisResult(SAMPLE_VECTOR, 0.85, 0.0));
         when(spotMoodRepository.save(any(SpotMood.class))).thenAnswer(inv -> inv.getArgument(0));
         when(spotRepository.save(any(Spot.class))).thenAnswer(inv -> inv.getArgument(0));
 

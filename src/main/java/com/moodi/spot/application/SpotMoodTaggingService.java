@@ -82,7 +82,7 @@ public class SpotMoodTaggingService {
 
         MoodAnalysisResult result = moodAnalysisClient.analyze(imageUrls, overview);
         MoodVector vector = result.moodVector();
-        List<MoodTag> tags = moodTagRuleEngine.deriveTags(vector);
+        List<MoodTag> tags = moodTagRuleEngine.deriveTags(vector, result.seasonalScore());
 
         SpotMood spotMood = SpotMood.create(spot.getId(), vector, tags, result.confidence());
         spotMoodRepository.save(spotMood);

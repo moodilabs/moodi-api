@@ -98,6 +98,46 @@ class MoodTagRuleEngineTest {
     }
 
     @Test
+    @DisplayName("seasonalScore가 임계값 이상이면 SEASONAL 태그가 추가된다")
+    void seasonal_tag_added_when_score_above_threshold() {
+        // given
+        MoodVector vector = new MoodVector(
+                Map.of(Atmosphere.SERENE, 0.7, Atmosphere.ROMANTIC, 0.3),
+                Map.of(Color.WARM, 0.8, Color.PASTEL, 0.2),
+                Map.of(Lighting.DAYLIGHT, 0.9, Lighting.GOLDEN_HOUR, 0.1),
+                Map.of(Space.NATURE, 0.9, Space.OCEAN, 0.1),
+                Map.of(Structure.OPEN, 0.85, Structure.ORGANIC, 0.15),
+                Map.of(Era.MODERN, 1.0)
+        );
+
+        // when
+        List<MoodTag> tags = engine.deriveTags(vector, 0.8);
+
+        // then
+        assertThat(tags).contains(MoodTag.SEASONAL);
+    }
+
+    @Test
+    @DisplayName("seasonalScore가 임계값 미만이면 SEASONAL 태그가 부여되지 않는다")
+    void seasonal_tag_not_added_when_score_below_threshold() {
+        // given
+        MoodVector vector = new MoodVector(
+                Map.of(Atmosphere.SERENE, 0.7, Atmosphere.ROMANTIC, 0.3),
+                Map.of(Color.WARM, 0.8, Color.PASTEL, 0.2),
+                Map.of(Lighting.DAYLIGHT, 0.9, Lighting.GOLDEN_HOUR, 0.1),
+                Map.of(Space.NATURE, 0.9, Space.OCEAN, 0.1),
+                Map.of(Structure.OPEN, 0.85, Structure.ORGANIC, 0.15),
+                Map.of(Era.MODERN, 1.0)
+        );
+
+        // when
+        List<MoodTag> tags = engine.deriveTags(vector, 0.3);
+
+        // then
+        assertThat(tags).doesNotContain(MoodTag.SEASONAL);
+    }
+
+    @Test
     @DisplayName("최대 태그 수를 초과하지 않는다")
     void tags_limited_to_max() {
         // given — 여러 태그가 높은 점수를 받도록 설계

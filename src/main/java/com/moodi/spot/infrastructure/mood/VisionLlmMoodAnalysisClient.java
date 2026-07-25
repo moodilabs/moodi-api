@@ -58,7 +58,8 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
             try {
                 MoodVector vector = parseVector(content);
                 double confidence = parseConfidence(content);
-                return new MoodAnalysisResult(vector, confidence);
+                double seasonalScore = parseSeasonalScore(content);
+                return new MoodAnalysisResult(vector, confidence, seasonalScore);
             } catch (InvalidMoodResponseException e) {
                 if (attempt < MAX_RETRIES) {
                     log.warn("LLM 응답 invalid (시도 {}): {} — 재요청합니다", attempt + 1, e.getMessage());
@@ -109,6 +110,10 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
 
                 스팟 설명: %s
 
+                추가로 이 스팟의 계절성(seasonal) 점수를 0.0~1.0으로 판단하세요.
+                벚꽃·단풍·설경처럼 특정 계절에 분위기가 크게 달라지는 장소라면 높은 점수를 주세요.
+                이미지와 설명 텍스트를 종합하여 판단합니다.
+
                 JSON만 출력하세요. 마크다운이나 설명 없이 순수 JSON만:
                 {
                   "atmosphere": {"cozy": 0.6, "serene": 0.4},
@@ -117,7 +122,8 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
                   "space": {"interior": 0.9, "alley_local": 0.1},
                   "structure": {"dense": 0.8, "geometric": 0.2},
                   "era": {"retro": 0.9, "modern": 0.1},
-                  "confidence": 0.85
+                  "confidence": 0.85,
+                  "seasonalScore": 0.3
                 }
                 """.formatted(overview != null && !overview.isBlank() ? overview : "(설명 없음)");
     }
@@ -180,6 +186,17 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
                     : 0.7;
         } catch (Exception e) {
             return 0.7;
+        }
+    }
+
+    private double parseSeasonalScore(String content) {
+        try {
+            Map<String, Object> parsed = MAPPER.readValue(content, new TypeReference<Map<String, Object>>() {});
+            return parsed.containsKey("seasonalScore")
+                    ? ((Number) parsed.get("seasonalScore")).doubleValue()
+                    : 0.0;
+        } catch (Exception e) {
+            return 0.0;
         }
     }
 
