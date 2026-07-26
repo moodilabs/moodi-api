@@ -7,6 +7,8 @@ public interface SpotRepository {
 
     Spot save(Spot spot);
 
+    Optional<Spot> findById(Long id);
+
     Optional<Spot> findBySourceAndContentId(String source, String contentId);
 
     boolean existsBySourceAndContentId(String source, String contentId);

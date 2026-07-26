@@ -7,4 +7,6 @@ public interface SpotImageRepository {
     SpotImage save(SpotImage spotImage);
 
     List<SpotImage> findBySpotId(Long spotId);
+
+    List<SpotImage> findBySpotIdInAndPrimaryTrue(List<Long> spotIds);
 }
