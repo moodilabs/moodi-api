@@ -67,6 +67,7 @@ public class BookmarkService {
 
         if (existing.isPresent()) {
             bookmarkRepository.delete(existing.get());
+            bookmarkQueryRepository.flush();
             long count = bookmarkQueryRepository.countBySpotId(spotId);
             return new BookmarkToggleResult(spotId, false, count);
         }
@@ -77,6 +78,7 @@ public class BookmarkService {
 
         try {
             bookmarkRepository.save(Bookmark.create(memberId, spotId));
+            bookmarkQueryRepository.flush();
         } catch (DataIntegrityViolationException e) {
             // 동시 중복 저장 시 유니크 제약 위반 → 이미 저장된 상태로 처리
             long count = bookmarkQueryRepository.countBySpotId(spotId);

@@ -152,10 +152,11 @@ class MoodTagRuleEngineTest {
                 Map.of(Era.RETRO, 0.82, Era.TRADITIONAL, 0.10, Era.MODERN, 0.08)
         );
 
-        // when
-        List<MoodTag> tags = strictEngine.deriveTags(vector);
+        // when — SEASONAL 태그가 추가되어도 maxTags를 초과하지 않아야 한다
+        List<MoodTag> tags = strictEngine.deriveTags(vector, 0.8);
 
         // then
         assertThat(tags).hasSizeLessThanOrEqualTo(2);
+        assertThat(tags).contains(MoodTag.SEASONAL);
     }
 }

@@ -17,6 +17,8 @@ public interface BookmarkQueryRepository {
                                                Long cursorSpotId, Long cursorBookmarkCount,
                                                int size);
 
+    void flush();
+
     long countBySpotId(Long spotId);
 
     Map<Long, Long> countBySpotIds(List<Long> spotIds);

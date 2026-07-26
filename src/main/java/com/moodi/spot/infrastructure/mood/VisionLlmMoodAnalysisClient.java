@@ -182,7 +182,7 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
         } catch (InvalidMoodResponseException e) {
             throw e;
         } catch (Exception e) {
-            throw new IllegalStateException("LLM 응답 파싱 실패: " + e.getMessage(), e);
+            throw new InvalidMoodResponseException("LLM 응답 파싱 실패: " + e.getMessage(), e);
         }
     }
 
@@ -250,6 +250,10 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
     private static class InvalidMoodResponseException extends RuntimeException {
         InvalidMoodResponseException(String message) {
             super(message);
+        }
+
+        InvalidMoodResponseException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 }

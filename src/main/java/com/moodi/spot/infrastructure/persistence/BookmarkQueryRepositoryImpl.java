@@ -112,6 +112,11 @@ public class BookmarkQueryRepositoryImpl implements BookmarkQueryRepository {
     }
 
     @Override
+    public void flush() {
+        em.flush();
+    }
+
+    @Override
     public long countBySpotId(Long spotId) {
         String jpql = "SELECT COUNT(b) FROM Bookmark b WHERE b.spotId = :spotId";
         return em.createQuery(jpql, Long.class)
