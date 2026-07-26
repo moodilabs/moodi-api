@@ -127,6 +127,11 @@ Spring REST Docs 기반. 테스트 실행 후 문서 생성:
 ./gradlew asciidoctorApp
 ```
 
+**DocsTest 작성 후 체크리스트:**
+1. `src/docs/asciidoc/{context}/` 에 해당 API의 adoc 파일이 있는지 확인. 없으면 생성.
+2. `src/docs/asciidoc/app/index.adoc`에 해당 adoc이 include 되어 있는지 확인. 없으면 추가.
+3. `./gradlew asciidoctorApp` 실행 후 문서에 정상 노출되는지 확인.
+
 ## 기술 스택
 
 - Java 21, Spring Boot 4.1.0
