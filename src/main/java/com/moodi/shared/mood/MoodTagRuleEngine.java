@@ -27,15 +27,21 @@ public class MoodTagRuleEngine {
     }
 
     public List<MoodTag> deriveTags(MoodVector vector, double seasonalScore) {
-        List<MoodTag> tags = new java.util.ArrayList<>(rules.stream()
+        List<TagScore> scored = rules.stream()
                 .map(rule -> new TagScore(rule.getTag(), rule.score(vector)))
                 .filter(ts -> ts.score >= threshold)
                 .sorted(Comparator.comparingDouble(TagScore::score).reversed())
-                .limit(maxTags)
+                .toList();
+
+        boolean addSeasonal = seasonalScore >= threshold;
+        int generalLimit = addSeasonal ? maxTags - 1 : maxTags;
+
+        List<MoodTag> tags = new java.util.ArrayList<>(scored.stream()
+                .limit(generalLimit)
                 .map(TagScore::tag)
                 .toList());
 
-        if (seasonalScore >= threshold && !tags.contains(MoodTag.SEASONAL)) {
+        if (addSeasonal && !tags.contains(MoodTag.SEASONAL)) {
             tags.add(MoodTag.SEASONAL);
         }
 

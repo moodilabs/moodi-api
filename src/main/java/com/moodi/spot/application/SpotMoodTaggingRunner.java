@@ -40,7 +40,8 @@ public class SpotMoodTaggingRunner implements ApplicationRunner {
             log.error("스팟 무드 태깅 중 예외 발생: {}", e.getMessage(), e);
             exitCode[0] = 1;
         } finally {
-            SpringApplication.exit(applicationContext, () -> exitCode[0]);
+            int code = SpringApplication.exit(applicationContext, () -> exitCode[0]);
+            System.exit(code);
         }
     }
 }
