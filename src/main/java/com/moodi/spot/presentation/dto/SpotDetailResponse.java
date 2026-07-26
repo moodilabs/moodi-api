@@ -20,7 +20,9 @@ public record SpotDetailResponse(
         Double latitude,
         Double longitude,
         String addr1,
-        String addr2
+        String addr2,
+        List<SimilarMoodSpotResponse> similarMoodSpots,
+        List<PopularSpotResponse> popularAreaSpots
 ) {
 
     public record SpotImageResponse(

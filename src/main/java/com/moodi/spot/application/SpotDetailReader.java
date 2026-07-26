@@ -14,6 +14,8 @@ import com.moodi.spot.domain.SpotRepository;
 import com.moodi.spot.domain.SpotStatus;
 import com.moodi.spot.domain.SpotTranslation;
 import com.moodi.spot.domain.SpotTranslationRepository;
+import com.moodi.spot.presentation.dto.PopularSpotResponse;
+import com.moodi.spot.presentation.dto.SimilarMoodSpotResponse;
 import com.moodi.spot.presentation.dto.SpotDetailResponse.SpotImageResponse;
 import jakarta.annotation.Nullable;
 import org.springframework.stereotype.Component;
@@ -27,6 +29,8 @@ import java.util.UUID;
 public class SpotDetailReader {
 
     private static final String DEFAULT_LOCALE = "ko-KR";
+    private static final int SIMILAR_MOOD_LIMIT = 5;
+    private static final int POPULAR_AREA_LIMIT = 5;
 
     private final SpotRepository spotRepository;
     private final SpotTranslationRepository translationRepository;
@@ -34,19 +38,22 @@ public class SpotDetailReader {
     private final SpotMoodRepository moodRepository;
     private final BookmarkRepository bookmarkRepository;
     private final BookmarkQueryRepository bookmarkQueryRepository;
+    private final SpotDetailQueryRepository spotDetailQueryRepository;
 
     public SpotDetailReader(SpotRepository spotRepository,
                             SpotTranslationRepository translationRepository,
                             SpotImageRepository imageRepository,
                             SpotMoodRepository moodRepository,
                             BookmarkRepository bookmarkRepository,
-                            BookmarkQueryRepository bookmarkQueryRepository) {
+                            BookmarkQueryRepository bookmarkQueryRepository,
+                            SpotDetailQueryRepository spotDetailQueryRepository) {
         this.spotRepository = spotRepository;
         this.translationRepository = translationRepository;
         this.imageRepository = imageRepository;
         this.moodRepository = moodRepository;
         this.bookmarkRepository = bookmarkRepository;
         this.bookmarkQueryRepository = bookmarkQueryRepository;
+        this.spotDetailQueryRepository = spotDetailQueryRepository;
     }
 
     public SpotDetailSnapshot read(Long spotId, @Nullable UUID memberId) {
@@ -59,11 +66,16 @@ public class SpotDetailReader {
 
         List<SpotImage> images = imageRepository.findBySpotId(spotId);
 
-        List<String> moodTags = moodRepository.findBySpotId(spotId)
+        List<MoodTag> rawMoodTags = moodRepository.findBySpotId(spotId)
                 .map(SpotMood::getMoodTags)
-                .orElse(List.of())
-                .stream()
+                .orElse(List.of());
+
+        List<String> moodTags = rawMoodTags.stream()
                 .map(MoodTag::getDisplayTag)
+                .toList();
+
+        List<String> moodTagKeys = rawMoodTags.stream()
+                .map(MoodTag::getKey)
                 .toList();
 
         long bookmarkCount = bookmarkQueryRepository.countBySpotId(spotId);
@@ -75,6 +87,12 @@ public class SpotDetailReader {
                 .map(img -> new SpotImageResponse(img.getImageUrl(), img.isPrimary(), img.getSortOrder()))
                 .toList();
 
+        List<SimilarMoodSpotResponse> similarMoodSpots =
+                spotDetailQueryRepository.findSimilarMoodSpots(spotId, moodTagKeys, SIMILAR_MOOD_LIMIT);
+
+        List<PopularSpotResponse> popularAreaSpots =
+                spotDetailQueryRepository.findPopularSpotsByArea(spotId, spot.getArea(), spot.getDistrict(), POPULAR_AREA_LIMIT);
+
         return new SpotDetailSnapshot(
                 spot.getId(),
                 translation.getTitle(),
@@ -85,13 +103,16 @@ public class SpotDetailReader {
                 spot.getTel(),
                 spot.getContentType(),
                 moodTags,
+                moodTagKeys,
                 imageResponses,
                 bookmarkCount,
                 bookmarked,
                 spot.getLatitude(),
                 spot.getLongitude(),
                 translation.getAddr1(),
-                translation.getAddr2()
+                translation.getAddr2(),
+                similarMoodSpots,
+                popularAreaSpots
         );
     }
 }

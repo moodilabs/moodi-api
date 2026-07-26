@@ -42,7 +42,9 @@ public class SpotDetailService {
                 snapshot.latitude(),
                 snapshot.longitude(),
                 snapshot.addr1(),
-                snapshot.addr2()
+                snapshot.addr2(),
+                snapshot.similarMoodSpots(),
+                snapshot.popularAreaSpots()
         );
     }
 }
