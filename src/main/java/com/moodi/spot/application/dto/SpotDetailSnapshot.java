@@ -1,10 +1,11 @@
-package com.moodi.spot.presentation.dto;
+package com.moodi.spot.application.dto;
 
-import com.moodi.shared.mood.MoodTag;
+import com.moodi.spot.domain.SpotContentType;
+import com.moodi.spot.presentation.dto.SpotDetailResponse.SpotImageResponse;
 
 import java.util.List;
 
-public record SpotDetailResponse(
+public record SpotDetailSnapshot(
         Long spotId,
         String title,
         String area,
@@ -12,9 +13,9 @@ public record SpotDetailResponse(
         String overview,
         String homepage,
         String tel,
+        SpotContentType contentType,
         List<String> moodTags,
         List<SpotImageResponse> images,
-        String aiDescription,
         long bookmarkCount,
         boolean bookmarked,
         Double latitude,
@@ -22,11 +23,4 @@ public record SpotDetailResponse(
         String addr1,
         String addr2
 ) {
-
-    public record SpotImageResponse(
-            String imageUrl,
-            boolean isPrimary,
-            int sortOrder
-    ) {
-    }
 }
