@@ -2,7 +2,6 @@ package com.moodi.spot.application;
 
 import com.moodi.spot.application.dto.SpotDescriptionContext;
 import com.moodi.spot.application.dto.SpotDetailSnapshot;
-import com.moodi.spot.presentation.dto.SpotDetailResponse;
 import jakarta.annotation.Nullable;
 import org.springframework.stereotype.Service;
 
@@ -20,13 +19,13 @@ public class SpotDetailService {
         this.descriptionGenerator = descriptionGenerator;
     }
 
-    public SpotDetailResponse getDetail(Long spotId, @Nullable UUID memberId) {
+    public SpotDetailSnapshot getDetail(Long spotId, @Nullable UUID memberId) {
         SpotDetailSnapshot snapshot = spotDetailReader.read(spotId, memberId);
 
         SpotDescriptionContext context = SpotDescriptionContext.from(snapshot);
         String aiDescription = descriptionGenerator.getOrGenerate(context);
 
-        return new SpotDetailResponse(
+        return new SpotDetailSnapshot(
                 snapshot.spotId(),
                 snapshot.title(),
                 snapshot.area(),
@@ -34,9 +33,10 @@ public class SpotDetailService {
                 snapshot.overview(),
                 snapshot.homepage(),
                 snapshot.tel(),
+                snapshot.contentType(),
                 snapshot.moodTags(),
+                snapshot.moodTagKeys(),
                 snapshot.images(),
-                aiDescription,
                 snapshot.bookmarkCount(),
                 snapshot.bookmarked(),
                 snapshot.latitude(),
@@ -44,7 +44,8 @@ public class SpotDetailService {
                 snapshot.addr1(),
                 snapshot.addr2(),
                 snapshot.similarMoodSpots(),
-                snapshot.popularAreaSpots()
+                snapshot.popularAreaSpots(),
+                aiDescription
         );
     }
 }

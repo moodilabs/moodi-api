@@ -3,7 +3,10 @@ package com.moodi.spot.application;
 import com.moodi.shared.error.BusinessException;
 import com.moodi.shared.error.ErrorCode;
 import com.moodi.shared.mood.MoodTag;
+import com.moodi.spot.application.dto.PopularAreaSpotItem;
+import com.moodi.spot.application.dto.SimilarMoodSpotItem;
 import com.moodi.spot.application.dto.SpotDetailSnapshot;
+import com.moodi.spot.application.dto.SpotImageItem;
 import com.moodi.spot.domain.BookmarkRepository;
 import com.moodi.spot.domain.Spot;
 import com.moodi.spot.domain.SpotImage;
@@ -14,9 +17,6 @@ import com.moodi.spot.domain.SpotRepository;
 import com.moodi.spot.domain.SpotStatus;
 import com.moodi.spot.domain.SpotTranslation;
 import com.moodi.spot.domain.SpotTranslationRepository;
-import com.moodi.spot.presentation.dto.PopularSpotResponse;
-import com.moodi.spot.presentation.dto.SimilarMoodSpotResponse;
-import com.moodi.spot.presentation.dto.SpotDetailResponse.SpotImageResponse;
 import jakarta.annotation.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -83,14 +83,14 @@ public class SpotDetailReader {
         boolean bookmarked = memberId != null
                 && bookmarkRepository.existsByMemberIdAndSpotId(memberId, spotId);
 
-        List<SpotImageResponse> imageResponses = images.stream()
-                .map(img -> new SpotImageResponse(img.getImageUrl(), img.isPrimary(), img.getSortOrder()))
+        List<SpotImageItem> imageItems = images.stream()
+                .map(img -> new SpotImageItem(img.getImageUrl(), img.isPrimary(), img.getSortOrder()))
                 .toList();
 
-        List<SimilarMoodSpotResponse> similarMoodSpots =
+        List<SimilarMoodSpotItem> similarMoodSpots =
                 spotDetailQueryRepository.findSimilarMoodSpots(spotId, moodTagKeys, SIMILAR_MOOD_LIMIT);
 
-        List<PopularSpotResponse> popularAreaSpots =
+        List<PopularAreaSpotItem> popularAreaSpots =
                 spotDetailQueryRepository.findPopularSpotsByArea(spotId, spot.getArea(), spot.getDistrict(), POPULAR_AREA_LIMIT);
 
         return new SpotDetailSnapshot(
@@ -104,7 +104,7 @@ public class SpotDetailReader {
                 spot.getContentType(),
                 moodTags,
                 moodTagKeys,
-                imageResponses,
+                imageItems,
                 bookmarkCount,
                 bookmarked,
                 spot.getLatitude(),
@@ -112,7 +112,8 @@ public class SpotDetailReader {
                 translation.getAddr1(),
                 translation.getAddr2(),
                 similarMoodSpots,
-                popularAreaSpots
+                popularAreaSpots,
+                null
         );
     }
 }

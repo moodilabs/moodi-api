@@ -2,8 +2,8 @@ package com.moodi.spot.infrastructure.persistence;
 
 import com.moodi.shared.mood.MoodTag;
 import com.moodi.spot.application.SpotDetailQueryRepository;
-import com.moodi.spot.presentation.dto.PopularSpotResponse;
-import com.moodi.spot.presentation.dto.SimilarMoodSpotResponse;
+import com.moodi.spot.application.dto.PopularAreaSpotItem;
+import com.moodi.spot.application.dto.SimilarMoodSpotItem;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Repository;
 
@@ -20,7 +20,7 @@ public class SpotDetailQueryRepositoryImpl implements SpotDetailQueryRepository 
     }
 
     @Override
-    public List<SimilarMoodSpotResponse> findSimilarMoodSpots(Long spotId, List<String> moodTagKeys, int limit) {
+    public List<SimilarMoodSpotItem> findSimilarMoodSpots(Long spotId, List<String> moodTagKeys, int limit) {
         if (moodTagKeys.isEmpty()) {
             return List.of();
         }
@@ -49,7 +49,7 @@ public class SpotDetailQueryRepositoryImpl implements SpotDetailQueryRepository 
                 .getResultList();
 
         return rows.stream()
-                .map(row -> new SimilarMoodSpotResponse(
+                .map(row -> new SimilarMoodSpotItem(
                         ((Number) row[0]).longValue(),
                         (String) row[1],
                         (String) row[2],
@@ -60,7 +60,7 @@ public class SpotDetailQueryRepositoryImpl implements SpotDetailQueryRepository 
     }
 
     @Override
-    public List<PopularSpotResponse> findPopularSpotsByArea(Long spotId, String area, String district, int limit) {
+    public List<PopularAreaSpotItem> findPopularSpotsByArea(Long spotId, String area, String district, int limit) {
         if (area == null || district == null) {
             return List.of();
         }
@@ -88,7 +88,7 @@ public class SpotDetailQueryRepositoryImpl implements SpotDetailQueryRepository 
                 .getResultList();
 
         return rows.stream()
-                .map(row -> new PopularSpotResponse(
+                .map(row -> new PopularAreaSpotItem(
                         ((Number) row[0]).longValue(),
                         (String) row[1],
                         (String) row[2],
