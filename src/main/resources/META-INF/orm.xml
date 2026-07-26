@@ -197,6 +197,26 @@
         </attributes>
     </entity>
 
+    <entity class="com.moodi.spot.domain.Bookmark" access="FIELD">
+        <table name="bookmark">
+            <unique-constraint>
+                <column-name>member_id</column-name>
+                <column-name>spot_id</column-name>
+            </unique-constraint>
+        </table>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="memberId">
+                <column name="member_id" nullable="false"/>
+            </basic>
+            <basic name="spotId">
+                <column name="spot_id" nullable="false"/>
+            </basic>
+        </attributes>
+    </entity>
+
     <entity class="com.moodi.spot.domain.SpotMood" access="FIELD">
         <table name="spot_mood">
             <unique-constraint>
