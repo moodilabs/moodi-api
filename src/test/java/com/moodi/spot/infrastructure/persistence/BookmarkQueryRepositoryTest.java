@@ -305,7 +305,7 @@ class BookmarkQueryRepositoryTest extends PostgresTestSupport {
 
     private Long insertPublishedSpot(String area) {
         Spot spot = Spot.create("content-" + UUID.randomUUID(), SpotContentType.TOURIST_ATTRACTION,
-                area, "kor_service", 126.0, 37.0, null, null, null, null, null);
+                area, null, null, "kor_service", 126.0, 37.0, null, null, null, null, null);
         spot.publish();
         em.persist(spot);
         em.flush();

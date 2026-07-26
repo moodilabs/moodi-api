@@ -110,6 +110,12 @@
             <basic name="area">
                 <column name="area" nullable="false" length="50"/>
             </basic>
+            <basic name="district">
+                <column name="district" length="30"/>
+            </basic>
+            <basic name="neighborhood">
+                <column name="neighborhood" length="30"/>
+            </basic>
             <basic name="source">
                 <column name="source" nullable="false" length="30"/>
             </basic>

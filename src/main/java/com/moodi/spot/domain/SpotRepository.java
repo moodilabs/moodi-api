@@ -14,4 +14,6 @@ public interface SpotRepository {
     boolean existsBySourceAndContentId(String source, String contentId);
 
     List<Spot> findByStatus(SpotStatus status);
+
+    List<Spot> findByDistrictIsNull();
 }
