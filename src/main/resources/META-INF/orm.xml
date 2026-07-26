@@ -223,6 +223,29 @@
         </attributes>
     </entity>
 
+    <entity class="com.moodi.spot.domain.SpotDescription" access="FIELD">
+        <table name="spot_description">
+            <unique-constraint>
+                <column-name>spot_id</column-name>
+                <column-name>locale</column-name>
+            </unique-constraint>
+        </table>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="spotId">
+                <column name="spot_id" nullable="false"/>
+            </basic>
+            <basic name="locale">
+                <column name="locale" nullable="false" length="10"/>
+            </basic>
+            <basic name="content">
+                <column name="content" nullable="false" column-definition="TEXT"/>
+            </basic>
+        </attributes>
+    </entity>
+
     <entity class="com.moodi.spot.domain.SpotMood" access="FIELD">
         <table name="spot_mood">
             <unique-constraint>
