@@ -9,5 +9,7 @@ public interface BookmarkRepository {
 
     Optional<Bookmark> findByMemberIdAndSpotId(UUID memberId, Long spotId);
 
+    boolean existsByMemberIdAndSpotId(UUID memberId, Long spotId);
+
     void delete(Bookmark bookmark);
 }
