@@ -5,7 +5,7 @@ import com.moodi.shared.mood.MoodTag;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record BookmarkSpotResponse(
+public record BookmarkSpotItem(
         Long spotId,
         String title,
         String imageUrl,

@@ -4,8 +4,8 @@ import com.moodi.shared.mood.MoodTag;
 import com.moodi.shared.response.CursorResponse;
 import com.moodi.spot.application.BookmarkService;
 import com.moodi.spot.application.dto.BookmarkListRequest;
-import com.moodi.spot.application.dto.BookmarkSpotResponse;
-import com.moodi.spot.application.dto.BookmarkToggleResponse;
+import com.moodi.spot.application.dto.BookmarkSpotItem;
+import com.moodi.spot.application.dto.BookmarkToggleResult;
 import com.moodi.spot.presentation.dto.BookmarkDeleteRequest;
 import com.moodi.shared.support.AuthenticatedRestDocsSupport;
 import org.junit.jupiter.api.DisplayName;
@@ -46,7 +46,7 @@ class BookmarkControllerDocsTest extends AuthenticatedRestDocsSupport {
     @DisplayName("북마크 토글 - 저장")
     void toggle_bookmark_save() throws Exception {
         when(bookmarkService.toggle(eq(memberId), eq(1L)))
-                .thenReturn(new BookmarkToggleResponse(1L, true, 12L));
+                .thenReturn(new BookmarkToggleResult(1L, true, 12L));
 
         mockMvc.perform(post("/api/spots/{spotId}/bookmark", 1L))
                 .andExpect(status().isOk())
@@ -66,19 +66,19 @@ class BookmarkControllerDocsTest extends AuthenticatedRestDocsSupport {
     @Test
     @DisplayName("저장한 스팟 목록 조회")
     void get_bookmarks() throws Exception {
-        List<BookmarkSpotResponse> items = List.of(
-                new BookmarkSpotResponse(1L, "익선동 한옥 골목", "https://img.moodi.kr/spot1.jpg",
+        List<BookmarkSpotItem> items = List.of(
+                new BookmarkSpotItem(1L, "익선동 한옥 골목", "https://img.moodi.kr/spot1.jpg",
                         "서울", List.of(MoodTag.TRADITIONAL, MoodTag.COZY), 12L,
                         LocalDateTime.of(2026, 7, 25, 10, 0), true),
-                new BookmarkSpotResponse(2L, "성수동 카페", "https://img.moodi.kr/spot2.jpg",
+                new BookmarkSpotItem(2L, "성수동 카페", "https://img.moodi.kr/spot2.jpg",
                         "서울", List.of(MoodTag.RETRO, MoodTag.INDUSTRIAL), 8L,
                         LocalDateTime.of(2026, 7, 24, 15, 30), true)
         );
-        CursorResponse<BookmarkSpotResponse> response = CursorResponse.of(items,
+        CursorResponse<BookmarkSpotItem> result = CursorResponse.of(items,
                 "2026-07-24T15:30,2", true);
 
         when(bookmarkService.getBookmarks(eq(memberId), any(BookmarkListRequest.class)))
-                .thenReturn(response);
+                .thenReturn(result);
 
         mockMvc.perform(get("/api/bookmarks")
                         .param("area", "서울")

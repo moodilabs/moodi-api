@@ -18,8 +18,8 @@ import com.moodi.spot.domain.SpotTranslationRepository;
 import com.moodi.spot.application.dto.BookmarkSpotRow;
 import com.moodi.spot.application.dto.BookmarkListRequest;
 import com.moodi.spot.application.dto.BookmarkSortType;
-import com.moodi.spot.application.dto.BookmarkSpotResponse;
-import com.moodi.spot.application.dto.BookmarkToggleResponse;
+import com.moodi.spot.application.dto.BookmarkSpotItem;
+import com.moodi.spot.application.dto.BookmarkToggleResult;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,7 +59,7 @@ public class BookmarkService {
     }
 
     @Transactional
-    public BookmarkToggleResponse toggle(UUID memberId, Long spotId) {
+    public BookmarkToggleResult toggle(UUID memberId, Long spotId) {
         Spot spot = spotRepository.findById(spotId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SPOT_NOT_FOUND));
 
@@ -68,7 +68,7 @@ public class BookmarkService {
         if (existing.isPresent()) {
             bookmarkRepository.delete(existing.get());
             long count = bookmarkQueryRepository.countBySpotId(spotId);
-            return new BookmarkToggleResponse(spotId, false, count);
+            return new BookmarkToggleResult(spotId, false, count);
         }
 
         if (spot.getStatus() != SpotStatus.PUBLISHED) {
@@ -80,13 +80,13 @@ public class BookmarkService {
         } catch (DataIntegrityViolationException e) {
             // 동시 중복 저장 시 유니크 제약 위반 → 이미 저장된 상태로 처리
             long count = bookmarkQueryRepository.countBySpotId(spotId);
-            return new BookmarkToggleResponse(spotId, true, count);
+            return new BookmarkToggleResult(spotId, true, count);
         }
         long count = bookmarkQueryRepository.countBySpotId(spotId);
-        return new BookmarkToggleResponse(spotId, true, count);
+        return new BookmarkToggleResult(spotId, true, count);
     }
 
-    public CursorResponse<BookmarkSpotResponse> getBookmarks(UUID memberId, BookmarkListRequest request) {
+    public CursorResponse<BookmarkSpotItem> getBookmarks(UUID memberId, BookmarkListRequest request) {
         List<String> moodTagKeys = request.moodTagKeys();
         List<BookmarkSpotRow> rows;
 
@@ -123,10 +123,10 @@ public class BookmarkService {
                 .stream()
                 .collect(Collectors.toMap(SpotMood::getSpotId, SpotMood::getMoodTags, (a, b) -> a));
 
-        List<BookmarkSpotResponse> items = pageRows.stream()
+        List<BookmarkSpotItem> items = pageRows.stream()
                 .map(row -> {
                     SpotTranslation translation = translationMap.get(row.spotId());
-                    return new BookmarkSpotResponse(
+                    return new BookmarkSpotItem(
                             row.spotId(),
                             translation != null ? translation.getTitle() : null,
                             imageMap.get(row.spotId()),

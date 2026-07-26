@@ -7,10 +7,12 @@ import com.moodi.shared.response.SuccessResponse;
 import com.moodi.spot.application.BookmarkService;
 import com.moodi.spot.application.dto.BookmarkListRequest;
 import com.moodi.spot.application.dto.BookmarkSortType;
-import com.moodi.spot.application.dto.BookmarkSpotResponse;
-import com.moodi.spot.application.dto.BookmarkToggleResponse;
+import com.moodi.spot.application.dto.BookmarkSpotItem;
+import com.moodi.spot.application.dto.BookmarkToggleResult;
 import com.moodi.spot.presentation.dto.BookmarkDeleteRequest;
 import com.moodi.spot.presentation.dto.BookmarkDeleteResponse;
+import com.moodi.spot.presentation.dto.BookmarkSpotResponse;
+import com.moodi.spot.presentation.dto.BookmarkToggleResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,8 +40,8 @@ public class BookmarkController {
             @AuthMember UUID memberId,
             @PathVariable Long spotId
     ) {
-        BookmarkToggleResponse response = bookmarkService.toggle(memberId, spotId);
-        return SuccessResponse.of(response);
+        BookmarkToggleResult result = bookmarkService.toggle(memberId, spotId);
+        return SuccessResponse.of(BookmarkToggleResponse.from(result));
     }
 
     @GetMapping("/api/bookmarks")
@@ -52,7 +54,8 @@ public class BookmarkController {
             @RequestParam(defaultValue = "20") int size
     ) {
         BookmarkListRequest request = BookmarkListRequest.of(area, moodTags, sort, cursor, size);
-        CursorResponse<BookmarkSpotResponse> response = bookmarkService.getBookmarks(memberId, request);
+        CursorResponse<BookmarkSpotItem> result = bookmarkService.getBookmarks(memberId, request);
+        CursorResponse<BookmarkSpotResponse> response = result.map(BookmarkSpotResponse::from);
         return SuccessResponse.of(response);
     }
 

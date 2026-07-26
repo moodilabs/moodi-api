@@ -2,7 +2,7 @@ package com.moodi.spot.application;
 
 import com.moodi.shared.error.BusinessException;
 import com.moodi.shared.error.ErrorCode;
-import com.moodi.spot.application.dto.BookmarkToggleResponse;
+import com.moodi.spot.application.dto.BookmarkToggleResult;
 import com.moodi.spot.domain.Bookmark;
 import com.moodi.spot.domain.BookmarkRepository;
 import com.moodi.spot.domain.Spot;
@@ -69,7 +69,7 @@ class BookmarkServiceTest {
         when(bookmarkRepository.save(any(Bookmark.class))).thenReturn(BookmarkFixture.createWithId(1L, memberId, spotId));
         when(bookmarkQueryRepository.countBySpotId(spotId)).thenReturn(1L);
 
-        BookmarkToggleResponse response = bookmarkService.toggle(memberId, spotId);
+        BookmarkToggleResult response = bookmarkService.toggle(memberId, spotId);
 
         assertThat(response.bookmarked()).isTrue();
         assertThat(response.spotId()).isEqualTo(spotId);
@@ -89,7 +89,7 @@ class BookmarkServiceTest {
         when(bookmarkRepository.findByMemberIdAndSpotId(memberId, spotId)).thenReturn(Optional.of(existing));
         when(bookmarkQueryRepository.countBySpotId(spotId)).thenReturn(0L);
 
-        BookmarkToggleResponse response = bookmarkService.toggle(memberId, spotId);
+        BookmarkToggleResult response = bookmarkService.toggle(memberId, spotId);
 
         assertThat(response.bookmarked()).isFalse();
         assertThat(response.bookmarkCount()).isEqualTo(0L);
@@ -139,7 +139,7 @@ class BookmarkServiceTest {
         when(bookmarkRepository.save(any(Bookmark.class))).thenThrow(new DataIntegrityViolationException("unique constraint"));
         when(bookmarkQueryRepository.countBySpotId(spotId)).thenReturn(1L);
 
-        BookmarkToggleResponse response = bookmarkService.toggle(memberId, spotId);
+        BookmarkToggleResult response = bookmarkService.toggle(memberId, spotId);
 
         assertThat(response.bookmarked()).isTrue();
         assertThat(response.bookmarkCount()).isEqualTo(1L);
@@ -159,14 +159,14 @@ class BookmarkServiceTest {
         when(bookmarkRepository.save(any(Bookmark.class))).thenReturn(BookmarkFixture.createWithId(1L, memberA, spotId));
         when(bookmarkQueryRepository.countBySpotId(spotId)).thenReturn(1L);
 
-        BookmarkToggleResponse responseA = bookmarkService.toggle(memberA, spotId);
+        BookmarkToggleResult responseA = bookmarkService.toggle(memberA, spotId);
         assertThat(responseA.bookmarked()).isTrue();
 
         when(bookmarkRepository.findByMemberIdAndSpotId(memberB, spotId)).thenReturn(Optional.empty());
         when(bookmarkRepository.save(any(Bookmark.class))).thenReturn(BookmarkFixture.createWithId(2L, memberB, spotId));
         when(bookmarkQueryRepository.countBySpotId(spotId)).thenReturn(2L);
 
-        BookmarkToggleResponse responseB = bookmarkService.toggle(memberB, spotId);
+        BookmarkToggleResult responseB = bookmarkService.toggle(memberB, spotId);
         assertThat(responseB.bookmarked()).isTrue();
         assertThat(responseB.bookmarkCount()).isEqualTo(2L);
     }
