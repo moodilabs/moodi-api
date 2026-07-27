@@ -1,5 +1,6 @@
 package com.moodi.spot.presentation;
 
+import com.moodi.shared.auth.OptionalAuthMember;
 import com.moodi.spot.application.SpotDetailService;
 import com.moodi.spot.application.dto.PopularAreaSpotItem;
 import com.moodi.spot.application.dto.SimilarMoodSpotItem;
@@ -9,9 +10,15 @@ import com.moodi.spot.domain.SpotContentType;
 import com.moodi.shared.support.RestDocsSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.MethodParameter;
 import org.springframework.restdocs.payload.JsonFieldType;
+import org.springframework.web.bind.support.WebDataBinderFactory;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.method.support.ModelAndViewContainer;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -32,6 +39,26 @@ class SpotControllerDocsTest extends RestDocsSupport {
     @Override
     protected Object initController() {
         return new SpotController(spotDetailService);
+    }
+
+    @Override
+    protected HandlerMethodArgumentResolver[] argumentResolvers() {
+        return new HandlerMethodArgumentResolver[]{new OptionalAuthMemberResolverStub()};
+    }
+
+    private static class OptionalAuthMemberResolverStub implements HandlerMethodArgumentResolver {
+
+        @Override
+        public boolean supportsParameter(MethodParameter parameter) {
+            return parameter.hasParameterAnnotation(OptionalAuthMember.class)
+                    && parameter.getParameterType().equals(UUID.class);
+        }
+
+        @Override
+        public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+                                      NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
+            return null;
+        }
     }
 
     @Test

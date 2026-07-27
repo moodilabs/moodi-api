@@ -29,13 +29,23 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (!(handler instanceof HandlerMethod handlerMethod)) {
             return true;
         }
-        if (!requiresLogin(handlerMethod)) {
+        if (requiresLogin(handlerMethod)) {
+            UUID memberId = jwtProvider.parseAccessToken(extractToken(request))
+                    .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
+            request.setAttribute(MEMBER_ID_ATTRIBUTE, memberId);
             return true;
         }
-        UUID memberId = jwtProvider.parseAccessToken(extractToken(request))
-                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
-        request.setAttribute(MEMBER_ID_ATTRIBUTE, memberId);
+        trySetMemberId(request);
         return true;
+    }
+
+    private void trySetMemberId(HttpServletRequest request) {
+        String header = request.getHeader(AUTHORIZATION_HEADER);
+        if (header == null || !header.startsWith(BEARER_PREFIX)) {
+            return;
+        }
+        jwtProvider.parseAccessToken(header.substring(BEARER_PREFIX.length()))
+                .ifPresent(memberId -> request.setAttribute(MEMBER_ID_ATTRIBUTE, memberId));
     }
 
     private boolean requiresLogin(HandlerMethod handlerMethod) {
