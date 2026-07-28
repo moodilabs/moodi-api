@@ -9,22 +9,27 @@ public class SpotFixture {
     private static final String DEFAULT_CONTENT_ID = "2733967";
     private static final SpotContentType DEFAULT_CONTENT_TYPE = SpotContentType.TOURIST_ATTRACTION;
     private static final String DEFAULT_AREA = "서울";
+    private static final String DEFAULT_DISTRICT = "종로구";
+    private static final String DEFAULT_NEIGHBORHOOD = "가회동";
     private static final String DEFAULT_SOURCE = "kor_service";
     private static final Double DEFAULT_LONGITUDE = 126.9846467509;
     private static final Double DEFAULT_LATITUDE = 37.5820334711;
 
     public static Spot create() {
-        return Spot.create(DEFAULT_CONTENT_ID, DEFAULT_CONTENT_TYPE, DEFAULT_AREA, DEFAULT_SOURCE,
+        return Spot.create(DEFAULT_CONTENT_ID, DEFAULT_CONTENT_TYPE, DEFAULT_AREA,
+                DEFAULT_DISTRICT, DEFAULT_NEIGHBORHOOD, DEFAULT_SOURCE,
                 DEFAULT_LONGITUDE, DEFAULT_LATITUDE, null, "HS", "HS03", "HS030200", null);
     }
 
     public static Spot create(SpotContentType contentType) {
-        return Spot.create(DEFAULT_CONTENT_ID, contentType, DEFAULT_AREA, DEFAULT_SOURCE,
+        return Spot.create(DEFAULT_CONTENT_ID, contentType, DEFAULT_AREA,
+                DEFAULT_DISTRICT, DEFAULT_NEIGHBORHOOD, DEFAULT_SOURCE,
                 DEFAULT_LONGITUDE, DEFAULT_LATITUDE, null, null, null, null, null);
     }
 
     public static Spot create(String contentId, String source) {
-        return Spot.create(contentId, DEFAULT_CONTENT_TYPE, DEFAULT_AREA, source,
+        return Spot.create(contentId, DEFAULT_CONTENT_TYPE, DEFAULT_AREA,
+                DEFAULT_DISTRICT, DEFAULT_NEIGHBORHOOD, source,
                 DEFAULT_LONGITUDE, DEFAULT_LATITUDE, null, null, null, null, null);
     }
 

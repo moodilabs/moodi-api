@@ -25,11 +25,14 @@ public class SpotRowSaver {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void save(SpotCsvRow row) {
         SpotContentType contentType = SpotContentType.fromLabel(row.getContentType());
+        ParsedRegion region = RegionParser.parse(row.getAddr1());
 
         Spot spot = spotRepository.save(Spot.create(
                 row.getContentId(),
                 contentType,
                 row.getArea(),
+                region.district(),
+                region.neighborhood(),
                 row.getSource(),
                 parseDouble(row.getLongitude()),
                 parseDouble(row.getLatitude()),

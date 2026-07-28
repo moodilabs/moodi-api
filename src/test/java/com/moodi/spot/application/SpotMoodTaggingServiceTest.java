@@ -104,7 +104,7 @@ class SpotMoodTaggingServiceTest {
 
     private Spot createSpot(Long id) {
         Spot spot = Spot.create("content-" + id, SpotContentType.TOURIST_ATTRACTION,
-                "서울", "korservice", null, null, null, null, null, null, null);
+                "서울", "종로구", null, "korservice", null, null, null, null, null, null, null);
         try {
             var field = spot.getClass().getDeclaredField("id");
             field.setAccessible(true);

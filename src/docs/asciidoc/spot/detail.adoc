@@ -1,0 +1,17 @@
+== 스팟 상세 조회 (Spot Detail)
+
+스팟의 상세 정보를 조회합니다.
+
+=== 스팟 상세 조회
+
+.HTTP Request
+include::{snippets}/spot/detail/http-request.adoc[]
+
+.Path Parameters
+include::{snippets}/spot/detail/path-parameters.adoc[]
+
+.HTTP Response
+include::{snippets}/spot/detail/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/spot/detail/response-fields.adoc[]

@@ -13,6 +13,8 @@ public class Spot extends BaseEntity {
     private String contentId;
     private SpotContentType contentType;
     private String area;
+    private String district;
+    private String neighborhood;
     private String source;
     private Double longitude;
     private Double latitude;
@@ -24,12 +26,15 @@ public class Spot extends BaseEntity {
     private String lclsSystm3;
     private String homepage;
 
-    private Spot(String contentId, SpotContentType contentType, String area, String source,
+    private Spot(String contentId, SpotContentType contentType, String area,
+                 String district, String neighborhood, String source,
                  Double longitude, Double latitude, String tel,
                  String lclsSystm1, String lclsSystm2, String lclsSystm3, String homepage) {
         this.contentId = contentId;
         this.contentType = contentType;
         this.area = area;
+        this.district = district;
+        this.neighborhood = neighborhood;
         this.source = source;
         this.longitude = longitude;
         this.latitude = latitude;
@@ -42,11 +47,17 @@ public class Spot extends BaseEntity {
         this.homepage = homepage;
     }
 
-    public static Spot create(String contentId, SpotContentType contentType, String area, String source,
+    public static Spot create(String contentId, SpotContentType contentType, String area,
+                              String district, String neighborhood, String source,
                               Double longitude, Double latitude, String tel,
                               String lclsSystm1, String lclsSystm2, String lclsSystm3, String homepage) {
-        return new Spot(contentId, contentType, area, source, longitude, latitude, tel,
-                lclsSystm1, lclsSystm2, lclsSystm3, homepage);
+        return new Spot(contentId, contentType, area, district, neighborhood, source,
+                longitude, latitude, tel, lclsSystm1, lclsSystm2, lclsSystm3, homepage);
+    }
+
+    public void updateRegion(String district, String neighborhood) {
+        this.district = district;
+        this.neighborhood = neighborhood;
     }
 
     public void publish() {
