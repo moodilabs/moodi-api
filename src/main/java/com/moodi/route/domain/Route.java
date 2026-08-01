@@ -19,7 +19,7 @@ import java.util.UUID;
 public class Route extends BaseEntity {
 
     public static final int MAX_DAYS = 5;
-    public static final int MAX_TITLE_LENGTH = 30;
+    public static final int MAX_TITLE_LENGTH = 40;
 
     private Long id;
     private UUID publicId;

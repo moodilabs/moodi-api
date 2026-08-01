@@ -96,9 +96,9 @@ class RouteTest {
     }
 
     @Test
-    @DisplayName("제목이 30자 초과이면 실패")
+    @DisplayName("제목이 40자 초과이면 실패")
     void create_route_title_too_long() {
-        String longTitle = "가".repeat(31);
+        String longTitle = "가".repeat(41);
         List<RouteDay> days = List.of(RouteFixture.createDay(1, START, 1));
 
         assertThatThrownBy(() -> Route.create(MEMBER_ID, longTitle, START, START, days))
