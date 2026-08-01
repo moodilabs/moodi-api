@@ -3,7 +3,7 @@ package com.moodi.route.application;
 import com.moodi.route.domain.TravelMode;
 import com.moodi.shared.error.BusinessException;
 import com.moodi.shared.error.ErrorCode;
-import com.moodi.spot.domain.SpotContentType;
+import com.moodi.route.domain.RouteSpotType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,17 +12,23 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
 class RouteGenerateServiceTest {
+
+    @Spy
+    private Clock clock = Clock.system(ZoneId.of("Asia/Seoul"));
 
     @Mock
     private SpotSnapshotReader spotSnapshotReader;
@@ -33,7 +39,7 @@ class RouteGenerateServiceTest {
     @Mock
     private LegCalculator legCalculator;
 
-    @Spy
+    @Mock
     private DayScheduleValidator dayScheduleValidator;
 
     @Mock
@@ -60,6 +66,8 @@ class RouteGenerateServiceTest {
         given(spotSnapshotReader.readBySpotIds(command.spotIds())).willReturn(snapshots);
         given(legCalculator.calculate(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
                 .willReturn(Optional.of(new LegResult(TravelMode.WALK, 600, 800, null)));
+        given(dayScheduleValidator.validateAndRebalance(any(), any()))
+                .willAnswer(invocation -> invocation.getArgument(0));
         given(titleGenerator.generate(List.of("서울"), 2)).willReturn("서울 1박 2일 코스");
 
         // when
@@ -144,7 +152,7 @@ class RouteGenerateServiceTest {
         return new SpotSnapshot(
                 spotId, "스팟 " + spotId, "https://img.example.com/" + spotId + ".jpg",
                 "서울", "성동구", lat, lng,
-                SpotContentType.TOURIST_ATTRACTION, null
+                RouteSpotType.TOURIST_ATTRACTION, null
         );
     }
 }

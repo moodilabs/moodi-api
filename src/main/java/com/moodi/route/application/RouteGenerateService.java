@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -24,6 +25,7 @@ public class RouteGenerateService {
 
     private static final int MAX_SPOTS_PER_DAY = 6;
 
+    private final Clock clock;
     private final SpotSnapshotReader spotSnapshotReader;
     private final SpotDistributor spotDistributor;
     private final LegCalculator legCalculator;
@@ -62,7 +64,7 @@ public class RouteGenerateService {
         if (totalDays < 1 || totalDays > 5) {
             throw new BusinessException(ErrorCode.ROUTE_INVALID_DATE_RANGE);
         }
-        if (command.startDate().isBefore(LocalDate.now())) {
+        if (command.startDate().isBefore(LocalDate.now(clock))) {
             throw new BusinessException(ErrorCode.ROUTE_PAST_START_DATE);
         }
         if (new HashSet<>(command.spotIds()).size() != command.spotIds().size()) {

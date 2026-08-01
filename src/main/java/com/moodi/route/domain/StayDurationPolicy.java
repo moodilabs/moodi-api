@@ -1,12 +1,10 @@
 package com.moodi.route.domain;
 
-import com.moodi.spot.domain.SpotContentType;
-
 public class StayDurationPolicy {
 
     private static final int DEFAULT_MINUTES = 60;
 
-    public static int getEstimatedMinutes(SpotContentType contentType) {
+    public static int getEstimatedMinutes(RouteSpotType contentType) {
         return switch (contentType) {
             case TOURIST_ATTRACTION -> 120;
             case CULTURAL_FACILITY -> 90;

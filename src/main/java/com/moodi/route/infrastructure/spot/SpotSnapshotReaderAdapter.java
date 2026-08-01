@@ -2,8 +2,8 @@ package com.moodi.route.infrastructure.spot;
 
 import com.moodi.route.application.SpotSnapshot;
 import com.moodi.route.application.SpotSnapshotReader;
+import com.moodi.route.domain.RouteSpotType;
 import com.moodi.spot.domain.Spot;
-import com.moodi.spot.domain.SpotContentType;
 import com.moodi.spot.domain.SpotDescription;
 import com.moodi.spot.domain.SpotImage;
 import com.moodi.spot.domain.SpotRepository;
@@ -48,7 +48,7 @@ public class SpotSnapshotReaderAdapter implements SpotSnapshotReader {
                 spots.stream().map(Spot::getId).toList()
         ).stream()
                 .filter(t -> DEFAULT_LOCALE.equals(t.getLocale()))
-                .collect(Collectors.toMap(SpotTranslation::getSpotId, Function.identity()));
+                .collect(Collectors.toMap(SpotTranslation::getSpotId, Function.identity(), (a, b) -> a));
 
         Map<Long, SpotImage> primaryImageMap = imageRepository.findBySpotIdInAndPrimaryTrue(
                 spots.stream().map(Spot::getId).toList()
@@ -67,7 +67,7 @@ public class SpotSnapshotReaderAdapter implements SpotSnapshotReader {
                             spot.getDistrict(),
                             spot.getLatitude(),
                             spot.getLongitude(),
-                            spot.getContentType(),
+                            RouteSpotType.valueOf(spot.getContentType().name()),
                             translation != null ? translation.getOverview() : null
                     );
                 })

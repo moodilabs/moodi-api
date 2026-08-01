@@ -40,7 +40,7 @@ public class SpotDistributor {
      * Nearest Neighbor 알고리즘으로 방문 순서 결정.
      * 첫 스팟부터 시작하여 가장 가까운 다음 스팟을 선택한다.
      */
-    private List<SpotSnapshot> orderByNearestNeighbor(List<SpotSnapshot> spots) {
+    List<SpotSnapshot> orderByNearestNeighbor(List<SpotSnapshot> spots) {
         if (spots.size() <= 1) {
             return spots;
         }

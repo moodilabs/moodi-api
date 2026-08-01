@@ -1,6 +1,6 @@
 package com.moodi.route.application;
 
-import com.moodi.spot.domain.SpotContentType;
+import com.moodi.route.domain.RouteSpotType;
 
 public record SpotSnapshot(
         Long spotId,
@@ -10,7 +10,7 @@ public record SpotSnapshot(
         String district,
         Double latitude,
         Double longitude,
-        SpotContentType contentType,
+        RouteSpotType contentType,
         String description
 ) {
 }
