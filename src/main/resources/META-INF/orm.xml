@@ -273,4 +273,130 @@
         </attributes>
     </entity>
 
+    <!-- Route 컨텍스트 -->
+
+    <entity class="com.moodi.route.domain.Route" access="FIELD">
+        <table name="route"/>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="publicId">
+                <column name="public_id" nullable="false" unique="true"/>
+            </basic>
+            <basic name="memberId">
+                <column name="member_id" nullable="false"/>
+            </basic>
+            <basic name="title">
+                <column name="title" nullable="false" length="40"/>
+            </basic>
+            <basic name="startDate">
+                <column name="start_date" nullable="false"/>
+            </basic>
+            <basic name="endDate">
+                <column name="end_date" nullable="false"/>
+            </basic>
+            <one-to-many name="days" orphan-removal="true">
+                <join-column name="route_id" nullable="false"/>
+                <cascade>
+                    <cascade-all/>
+                </cascade>
+            </one-to-many>
+        </attributes>
+    </entity>
+
+    <entity class="com.moodi.route.domain.RouteDay" access="FIELD">
+        <table name="route_day"/>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="dayNumber">
+                <column name="day_number" nullable="false"/>
+            </basic>
+            <basic name="date">
+                <column name="date" nullable="false"/>
+            </basic>
+            <one-to-many name="spots" orphan-removal="true">
+                <join-column name="route_day_id" nullable="false"/>
+                <cascade>
+                    <cascade-all/>
+                </cascade>
+            </one-to-many>
+            <one-to-many name="legs" orphan-removal="true">
+                <join-column name="route_day_id" nullable="false"/>
+                <cascade>
+                    <cascade-all/>
+                </cascade>
+            </one-to-many>
+        </attributes>
+    </entity>
+
+    <entity class="com.moodi.route.domain.RouteSpot" access="FIELD">
+        <table name="route_spot"/>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="spotId">
+                <column name="spot_id" nullable="false"/>
+            </basic>
+            <basic name="sequence">
+                <column name="sequence" nullable="false"/>
+            </basic>
+            <basic name="estimatedMinutes">
+                <column name="estimated_minutes" nullable="false"/>
+            </basic>
+            <basic name="spotTitle">
+                <column name="spot_title" nullable="false" length="500"/>
+            </basic>
+            <basic name="spotImageUrl">
+                <column name="spot_image_url" length="1000"/>
+            </basic>
+            <basic name="spotArea">
+                <column name="spot_area" nullable="false" length="50"/>
+            </basic>
+            <basic name="spotDistrict">
+                <column name="spot_district" length="30"/>
+            </basic>
+            <basic name="spotLatitude">
+                <column name="spot_latitude"/>
+            </basic>
+            <basic name="spotLongitude">
+                <column name="spot_longitude"/>
+            </basic>
+            <basic name="spotContentType">
+                <column name="spot_content_type" nullable="false" length="30"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <entity class="com.moodi.route.domain.RouteLeg" access="FIELD">
+        <table name="route_leg"/>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="fromSequence">
+                <column name="from_sequence" nullable="false"/>
+            </basic>
+            <basic name="toSequence">
+                <column name="to_sequence" nullable="false"/>
+            </basic>
+            <basic name="travelMode">
+                <column name="travel_mode" nullable="false" length="20"/>
+                <enumerated>STRING</enumerated>
+            </basic>
+            <basic name="durationSeconds">
+                <column name="duration_seconds" nullable="false"/>
+            </basic>
+            <basic name="distanceMeters">
+                <column name="distance_meters" nullable="false"/>
+            </basic>
+            <basic name="landingUrl">
+                <column name="landing_url" length="1000"/>
+            </basic>
+        </attributes>
+    </entity>
+
 </entity-mappings>
