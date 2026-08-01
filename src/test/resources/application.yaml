@@ -19,6 +19,10 @@ jwt:
   access-token-expiry-ms: 1800000
   refresh-token-expiry-ms: 1209600000
 
+moodi:
+  kakao:
+    rest-api-key: test-kakao-key
+
 oauth:
   google:
     issuer: https://accounts.google.com
