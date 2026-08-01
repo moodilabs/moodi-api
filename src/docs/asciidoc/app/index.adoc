@@ -17,3 +17,5 @@ include::../spot/detail.adoc[]
 
 include::../spot/bookmark.adoc[]
 
+include::../route/generate.adoc[]
+
