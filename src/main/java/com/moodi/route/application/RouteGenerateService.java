@@ -124,7 +124,8 @@ public class RouteGenerateService {
                         snap.title(), snap.imageUrl(),
                         snap.area(), snap.district(),
                         snap.latitude(), snap.longitude(),
-                        snap.contentType().getLabel()
+                        snap.contentType().getLabel(),
+                        snap.description()
                 ));
             }
 
@@ -134,7 +135,8 @@ public class RouteGenerateService {
                 legItems.add(new LegResultItem(
                         legIndex + 1, legIndex + 2,
                         leg.travelMode().name(),
-                        leg.durationSeconds(), leg.distanceMeters()
+                        leg.durationSeconds(), leg.distanceMeters(),
+                        leg.landingUrl()
                 ));
             }
 

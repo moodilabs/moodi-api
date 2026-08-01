@@ -27,7 +27,8 @@ public record RouteGenerateResponse(
             String spotDistrict,
             Double spotLatitude,
             Double spotLongitude,
-            String spotContentType
+            String spotContentType,
+            String spotDescription
     ) {
     }
 
@@ -36,7 +37,8 @@ public record RouteGenerateResponse(
             int toSequence,
             String travelMode,
             int durationSeconds,
-            int distanceMeters
+            int distanceMeters,
+            String landingUrl
     ) {
     }
 }

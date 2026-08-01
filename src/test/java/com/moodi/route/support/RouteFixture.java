@@ -53,7 +53,7 @@ public class RouteFixture {
                 "스팟 " + sequence, "https://img.example.com/" + sequence + ".jpg",
                 "서울", "성동구",
                 37.5445 + sequence * 0.001, 127.0560 + sequence * 0.001,
-                "TOURIST_ATTRACTION"
+                "TOURIST_ATTRACTION", null
         );
     }
 

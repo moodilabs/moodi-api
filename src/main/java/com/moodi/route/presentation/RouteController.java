@@ -52,12 +52,13 @@ public class RouteController {
                                                 s.spotTitle(), s.spotImageUrl(),
                                                 s.spotArea(), s.spotDistrict(),
                                                 s.spotLatitude(), s.spotLongitude(),
-                                                s.spotContentType()))
+                                                s.spotContentType(), s.spotDescription()))
                                         .toList(),
                                 day.legs().stream()
                                         .map(l -> new LegPlan(
                                                 l.fromSequence(), l.toSequence(),
-                                                l.travelMode(), l.durationSeconds(), l.distanceMeters()))
+                                                l.travelMode(), l.durationSeconds(), l.distanceMeters(),
+                                                l.landingUrl()))
                                         .toList()))
                         .toList()
         );

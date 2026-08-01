@@ -368,6 +368,9 @@
             <basic name="spotContentType">
                 <column name="spot_content_type" nullable="false" length="30"/>
             </basic>
+            <basic name="spotDescription">
+                <column name="spot_description" length="2000"/>
+            </basic>
         </attributes>
     </entity>
 
