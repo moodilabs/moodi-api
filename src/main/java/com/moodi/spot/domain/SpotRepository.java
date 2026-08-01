@@ -16,4 +16,6 @@ public interface SpotRepository {
     List<Spot> findByStatus(SpotStatus status);
 
     List<Spot> findByDistrictIsNull();
+
+    List<Spot> findByIdIn(List<Long> ids);
 }

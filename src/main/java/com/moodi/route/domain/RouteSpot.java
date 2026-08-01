@@ -21,10 +21,12 @@ public class RouteSpot {
     private Double spotLatitude;
     private Double spotLongitude;
     private String spotContentType;
+    private String spotDescription;
 
     private RouteSpot(Long spotId, int sequence, int estimatedMinutes,
                       String spotTitle, String spotImageUrl, String spotArea, String spotDistrict,
-                      Double spotLatitude, Double spotLongitude, String spotContentType) {
+                      Double spotLatitude, Double spotLongitude, String spotContentType,
+                      String spotDescription) {
         this.spotId = spotId;
         this.sequence = sequence;
         this.estimatedMinutes = estimatedMinutes;
@@ -35,15 +37,16 @@ public class RouteSpot {
         this.spotLatitude = spotLatitude;
         this.spotLongitude = spotLongitude;
         this.spotContentType = spotContentType;
+        this.spotDescription = spotDescription;
     }
 
     public static RouteSpot create(Long spotId, int sequence, int estimatedMinutes,
                                     String spotTitle, String spotImageUrl,
                                     String spotArea, String spotDistrict,
                                     Double spotLatitude, Double spotLongitude,
-                                    String spotContentType) {
+                                    String spotContentType, String spotDescription) {
         return new RouteSpot(spotId, sequence, estimatedMinutes,
                 spotTitle, spotImageUrl, spotArea, spotDistrict,
-                spotLatitude, spotLongitude, spotContentType);
+                spotLatitude, spotLongitude, spotContentType, spotDescription);
     }
 }

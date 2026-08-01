@@ -1,0 +1,17 @@
+== 루트 초안 생성 (Route Generate)
+
+사용자의 여행 정보와 기준 스팟을 바탕으로 AI 루트 초안을 생성합니다. DB에 저장하지 않으며, Step 2 확인용 응답만 반환합니다.
+
+=== 루트 초안 생성
+
+.HTTP Request
+include::{snippets}/route-generate/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/route-generate/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/route-generate/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/route-generate/response-fields.adoc[]
