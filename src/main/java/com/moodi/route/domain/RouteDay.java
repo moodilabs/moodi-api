@@ -19,7 +19,6 @@ public class RouteDay {
     private List<RouteLeg> legs = new ArrayList<>();
 
     private RouteDay(int dayNumber, LocalDate date, List<RouteSpot> spots, List<RouteLeg> legs) {
-        validateDayNumber(dayNumber);
         this.dayNumber = dayNumber;
         this.date = date;
         this.spots = spots;
@@ -33,11 +32,5 @@ public class RouteDay {
 
     public int getSpotCount() {
         return spots.size();
-    }
-
-    private void validateDayNumber(int dayNumber) {
-        if (dayNumber < 1 || dayNumber > 5) {
-            throw new IllegalArgumentException("일차는 1~5 범위여야 합니다");
-        }
     }
 }
