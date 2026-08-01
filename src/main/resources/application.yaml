@@ -41,6 +41,8 @@ moodi:
   llm:
     api-key: ${LLM_API_KEY:}
     model: gpt-4o-mini
+  kakao:
+    rest-api-key: ${KAKAO_REST_API_KEY:}
 
 logging:
   pattern:
