@@ -1,18 +1,25 @@
 package com.moodi.route.domain;
 
 import com.moodi.shared.BaseEntity;
+import com.moodi.shared.error.BusinessException;
+import com.moodi.shared.error.ErrorCode;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Route extends BaseEntity {
+
+    public static final int MAX_DAYS = 5;
+    public static final int MAX_TITLE_LENGTH = 30;
 
     private Long id;
     private UUID publicId;
@@ -24,6 +31,9 @@ public class Route extends BaseEntity {
 
     private Route(UUID memberId, String title, LocalDate startDate, LocalDate endDate,
                   List<RouteDay> days) {
+        validateTitle(title);
+        validateDateRange(startDate, endDate);
+        validateDays(days);
         this.publicId = UUID.randomUUID();
         this.memberId = memberId;
         this.title = title;
@@ -38,10 +48,33 @@ public class Route extends BaseEntity {
     }
 
     public void updateTitle(String title) {
+        validateTitle(title);
         this.title = title;
     }
 
     public int getTotalDays() {
         return (int) (endDate.toEpochDay() - startDate.toEpochDay()) + 1;
+    }
+
+    private void validateTitle(String title) {
+        if (title == null || title.isBlank() || title.strip().length() > MAX_TITLE_LENGTH) {
+            throw new BusinessException(ErrorCode.ROUTE_INVALID_TITLE);
+        }
+    }
+
+    private void validateDateRange(LocalDate startDate, LocalDate endDate) {
+        int totalDays = (int) (endDate.toEpochDay() - startDate.toEpochDay()) + 1;
+        if (totalDays < 1 || totalDays > MAX_DAYS) {
+            throw new BusinessException(ErrorCode.ROUTE_INVALID_DATE_RANGE);
+        }
+    }
+
+    private void validateDays(List<RouteDay> days) {
+        Set<Integer> dayNumbers = new HashSet<>();
+        for (RouteDay day : days) {
+            if (!dayNumbers.add(day.getDayNumber())) {
+                throw new BusinessException(ErrorCode.ROUTE_DUPLICATE_DAY_NUMBER);
+            }
+        }
     }
 }
