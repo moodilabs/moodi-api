@@ -1,0 +1,11 @@
+== 루트 삭제 (Route Delete)
+
+저장된 루트를 삭제합니다. 삭제된 루트는 목록·상세 조회에서 제외됩니다.
+
+=== 루트 삭제
+
+.HTTP Request
+include::{snippets}/route-delete/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/route-delete/http-response.adoc[]
