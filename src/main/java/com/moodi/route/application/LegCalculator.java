@@ -1,5 +1,6 @@
 package com.moodi.route.application;
 
+import com.moodi.route.domain.TravelMode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -11,7 +12,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class LegCalculator {
 
-    private static final double WALK_THRESHOLD_METERS = 2_000;
+    private static final double SAME_LOCATION_THRESHOLD_METERS = 1.0;
 
     private final LegClient legClient;
 
@@ -20,25 +21,33 @@ public class LegCalculator {
         double straightDistance = calculateStraightDistance(startLatitude, startLongitude,
                 endLatitude, endLongitude);
 
-        if (straightDistance < WALK_THRESHOLD_METERS) {
-            return findWalkRoute(startLongitude, startLatitude, endLongitude, endLatitude);
+        if (straightDistance <= SAME_LOCATION_THRESHOLD_METERS) {
+            return Optional.of(new LegResult(TravelMode.WALK, 0, 0, null));
         }
 
-        Optional<LegResult> transit = legClient.findTransitRoute(
+        Optional<LegResult> walkResult = legClient.findWalkRoute(
+                startLongitude, startLatitude, endLongitude, endLatitude);
+        Optional<LegResult> transitResult = legClient.findTransitRoute(
                 startLongitude, startLatitude, endLongitude, endLatitude);
 
-        if (transit.isPresent()) {
-            return transit;
+        if (walkResult.isEmpty() && transitResult.isEmpty()) {
+            log.warn("도보·대중교통 경로 모두 조회 실패: ({}, {}) → ({}, {})",
+                    startLongitude, startLatitude, endLongitude, endLatitude);
+            return Optional.empty();
         }
 
-        log.info("대중교통 경로 없음, 도보 fallback: ({}, {}) → ({}, {})",
-                startLongitude, startLatitude, endLongitude, endLatitude);
-        return findWalkRoute(startLongitude, startLatitude, endLongitude, endLatitude);
-    }
+        if (walkResult.isEmpty()) {
+            return transitResult;
+        }
 
-    private Optional<LegResult> findWalkRoute(double startLongitude, double startLatitude,
-                                               double endLongitude, double endLatitude) {
-        return legClient.findWalkRoute(startLongitude, startLatitude, endLongitude, endLatitude);
+        if (transitResult.isEmpty()) {
+            return walkResult;
+        }
+
+        if (walkResult.get().durationSeconds() <= transitResult.get().durationSeconds()) {
+            return walkResult;
+        }
+        return transitResult;
     }
 
     /**
