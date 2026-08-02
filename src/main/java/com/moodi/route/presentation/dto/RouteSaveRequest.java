@@ -22,7 +22,7 @@ public record RouteSaveRequest(
         @NotNull(message = "일자 정보는 필수입니다.")
         @Size(min = 1, message = "최소 1일 이상의 일정이 필요합니다.")
         @Valid
-        List<DayRequest> days
+        List<@NotNull(message = "일자 항목은 null일 수 없습니다.") DayRequest> days
 ) {
     public record DayRequest(
             @NotNull(message = "일차 번호는 필수입니다.")
@@ -32,7 +32,7 @@ public record RouteSaveRequest(
             LocalDate date,
 
             @NotNull(message = "스팟 목록은 필수입니다.")
-            List<Long> spotIds
+            List<@NotNull(message = "스팟 ID는 null일 수 없습니다.") Long> spotIds
     ) {
     }
 }
