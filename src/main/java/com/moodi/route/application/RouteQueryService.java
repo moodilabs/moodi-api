@@ -2,7 +2,6 @@ package com.moodi.route.application;
 
 import com.moodi.route.domain.Route;
 import com.moodi.route.domain.RouteRepository;
-import com.moodi.route.presentation.dto.RouteListResponse;
 import com.moodi.shared.error.BusinessException;
 import com.moodi.shared.error.ErrorCode;
 import com.moodi.shared.response.CursorResponse;
@@ -22,7 +21,7 @@ public class RouteQueryService {
     private final RouteRepository routeRepository;
     private final RouteQueryRepository routeQueryRepository;
 
-    public CursorResponse<RouteListResponse> getList(UUID memberId, String cursor, int size) {
+    public CursorResponse<RouteListRow> getList(UUID memberId, String cursor, int size) {
         Long cursorId = null;
         LocalDateTime cursorUpdatedAt = null;
 
@@ -42,21 +41,13 @@ public class RouteQueryService {
             return CursorResponse.empty();
         }
 
-        List<RouteListResponse> items = pageRows.stream()
-                .map(row -> new RouteListResponse(
-                        row.publicId(), row.title(),
-                        row.startDate(), row.endDate(),
-                        (int) (row.endDate().toEpochDay() - row.startDate().toEpochDay()) + 1,
-                        row.updatedAt()))
-                .toList();
-
         String nextCursor = null;
         if (hasNext) {
             RouteListRow last = pageRows.getLast();
             nextCursor = last.updatedAt().toString() + "," + last.id();
         }
 
-        return CursorResponse.of(items, nextCursor, hasNext);
+        return CursorResponse.of(pageRows, nextCursor, hasNext);
     }
 
     public Route getDetail(UUID publicId, UUID memberId) {

@@ -4,6 +4,7 @@ import com.moodi.route.application.RouteDeleteService;
 import com.moodi.route.application.RouteGenerateCommand;
 import com.moodi.route.application.RouteGenerateResult;
 import com.moodi.route.application.RouteGenerateService;
+import com.moodi.route.application.RouteListRow;
 import com.moodi.route.application.RouteQueryService;
 import com.moodi.route.application.RouteSaveCommand;
 import com.moodi.route.application.RouteSaveCommand.DayCommand;
@@ -63,7 +64,8 @@ public class RouteController {
             @AuthMember UUID memberId,
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "20") int size) {
-        CursorResponse<RouteListResponse> response = routeQueryService.getList(memberId, cursor, size);
+        CursorResponse<RouteListRow> result = routeQueryService.getList(memberId, cursor, size);
+        CursorResponse<RouteListResponse> response = result.map(RouteController::toListResponse);
         return SuccessResponse.of(response);
     }
 
@@ -143,6 +145,15 @@ public class RouteController {
                                                 l.landingUrl()))
                                         .toList()))
                         .toList()
+        );
+    }
+
+    private static RouteListResponse toListResponse(RouteListRow row) {
+        return new RouteListResponse(
+                row.publicId(), row.title(),
+                row.startDate(), row.endDate(),
+                (int) (row.endDate().toEpochDay() - row.startDate().toEpochDay()) + 1,
+                row.updatedAt()
         );
     }
 }
