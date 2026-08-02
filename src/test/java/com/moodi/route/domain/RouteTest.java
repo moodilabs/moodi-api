@@ -108,6 +108,27 @@ class RouteTest {
     }
 
     @Test
+    @DisplayName("소유 회원 검증 성공")
+    void validate_owner_success() {
+        Route route = RouteFixture.createRoute(MEMBER_ID, TITLE, START, START,
+                List.of(RouteFixture.createDay(1, START, 1)));
+
+        route.validateOwner(MEMBER_ID);
+    }
+
+    @Test
+    @DisplayName("소유 회원이 아니면 실패")
+    void validate_owner_fail() {
+        Route route = RouteFixture.createRoute(MEMBER_ID, TITLE, START, START,
+                List.of(RouteFixture.createDay(1, START, 1)));
+
+        assertThatThrownBy(() -> route.validateOwner(UUID.randomUUID()))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.ROUTE_FORBIDDEN);
+    }
+
+    @Test
     @DisplayName("제목 수정 성공")
     void update_title_success() {
         Route route = RouteFixture.createRoute(1);
