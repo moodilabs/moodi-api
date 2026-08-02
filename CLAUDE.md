@@ -119,6 +119,7 @@ Git Flow.
 ## 협업 규칙
 
 - 공유 커널(`shared`, 무드·공통 정책) 변경은 합의 후에만.
+- **PR 생성은 반드시 `/pr` 스킬을 사용한다.** 스킬 없이 직접 `gh pr create`하지 않는다. PR 작성 컨벤션(API 스펙·DB 스키마 변경·테스트 결과 등)은 `.claude/skills/pr/SKILL.md`에 정의되어 있다.
 
 ## API 문서
 
