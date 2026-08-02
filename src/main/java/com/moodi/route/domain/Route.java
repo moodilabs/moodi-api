@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -28,6 +29,7 @@ public class Route extends BaseEntity {
     private LocalDate startDate;
     private LocalDate endDate;
     private List<RouteDay> days = new ArrayList<>();
+    private LocalDateTime deletedAt;
 
     private Route(UUID memberId, String title, LocalDate startDate, LocalDate endDate,
                   List<RouteDay> days) {
@@ -67,6 +69,14 @@ public class Route extends BaseEntity {
     public void updateTitle(String title) {
         validateTitle(title);
         this.title = title;
+    }
+
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
     }
 
     public int getTotalDays() {
