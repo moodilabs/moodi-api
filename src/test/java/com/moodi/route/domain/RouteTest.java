@@ -148,4 +148,23 @@ class RouteTest {
                 .extracting(e -> ((BusinessException) e).getErrorCode())
                 .isEqualTo(ErrorCode.ROUTE_INVALID_TITLE);
     }
+
+    @Test
+    @DisplayName("Soft Delete 성공")
+    void soft_delete_success() {
+        Route route = RouteFixture.createRoute(1);
+
+        route.softDelete();
+
+        assertThat(route.isDeleted()).isTrue();
+        assertThat(route.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("삭제되지 않은 루트는 isDeleted가 false")
+    void is_deleted_false_when_not_deleted() {
+        Route route = RouteFixture.createRoute(1);
+
+        assertThat(route.isDeleted()).isFalse();
+    }
 }
