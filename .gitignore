@@ -67,3 +67,6 @@ test-results/
 ### Pilot data ###
 data/
 docs/job/
+
+### Postman ###
+*.postman_collection.json

@@ -39,12 +39,29 @@ public class Route extends BaseEntity {
         this.title = title;
         this.startDate = startDate;
         this.endDate = endDate;
-        this.days = days;
+        this.days = new ArrayList<>(days);
     }
 
     public static Route create(UUID memberId, String title, LocalDate startDate, LocalDate endDate,
                                 List<RouteDay> days) {
         return new Route(memberId, title, startDate, endDate, days);
+    }
+
+    public void validateOwner(UUID requestMemberId) {
+        if (!this.memberId.equals(requestMemberId)) {
+            throw new BusinessException(ErrorCode.ROUTE_FORBIDDEN);
+        }
+    }
+
+    public void update(String title, LocalDate startDate, LocalDate endDate, List<RouteDay> days) {
+        validateTitle(title);
+        validateDateRange(startDate, endDate);
+        validateDays(days);
+        this.title = title;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.days.clear();
+        this.days.addAll(days);
     }
 
     public void updateTitle(String title) {

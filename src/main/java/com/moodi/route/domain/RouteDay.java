@@ -16,8 +16,6 @@ import java.util.Set;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RouteDay {
 
-    public static final int MAX_SPOTS_PER_DAY = 6;
-
     private Long id;
     private int dayNumber;
     private LocalDate date;
@@ -25,7 +23,6 @@ public class RouteDay {
     private List<RouteLeg> legs = new ArrayList<>();
 
     private RouteDay(int dayNumber, LocalDate date, List<RouteSpot> spots, List<RouteLeg> legs) {
-        validateSpotCount(spots);
         validateSpotSequences(spots);
         this.dayNumber = dayNumber;
         this.date = date;
@@ -40,12 +37,6 @@ public class RouteDay {
 
     public int getSpotCount() {
         return spots.size();
-    }
-
-    private void validateSpotCount(List<RouteSpot> spots) {
-        if (spots.size() > MAX_SPOTS_PER_DAY) {
-            throw new BusinessException(ErrorCode.ROUTE_DAY_SPOT_LIMIT_EXCEEDED);
-        }
     }
 
     private void validateSpotSequences(List<RouteSpot> spots) {

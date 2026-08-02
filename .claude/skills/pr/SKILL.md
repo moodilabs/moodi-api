@@ -12,6 +12,7 @@ PR은 코드 변경 목록이 아니라 **기능과 구현 의도를 설명하�
 
 - `CLAUDE.md` — 프로젝트 컨벤션 및 아키텍처
 - `.github/pull_request_template.md` — PR 템플릿 원본
+- `CLAUDE.md > API 문서` — DocsTest 작성 후 adoc 파일·index include 체크리스트
 
 ## 절차
 

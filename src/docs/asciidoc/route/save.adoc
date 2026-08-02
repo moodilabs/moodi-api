@@ -1,0 +1,31 @@
+== 루트 저장·수정 (Route Save)
+
+Step 2에서 사용자가 수정한 루트를 최종 저장하거나, 저장된 루트를 수정합니다.
+
+=== 루트 저장
+
+.HTTP Request
+include::{snippets}/route-save/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/route-save/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/route-save/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/route-save/response-fields.adoc[]
+
+=== 루트 수정
+
+.HTTP Request
+include::{snippets}/route-update/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/route-update/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/route-update/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/route-update/response-fields.adoc[]
