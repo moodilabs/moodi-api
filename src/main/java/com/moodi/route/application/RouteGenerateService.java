@@ -4,7 +4,6 @@ import com.moodi.route.application.RouteGenerateResult.DayResult;
 import com.moodi.route.application.RouteGenerateResult.LegResultItem;
 import com.moodi.route.application.RouteGenerateResult.SpotResult;
 import com.moodi.route.domain.StayDurationPolicy;
-import com.moodi.route.domain.TravelMode;
 import com.moodi.shared.error.BusinessException;
 import com.moodi.shared.error.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -100,9 +99,7 @@ public class RouteGenerateService {
                     from.longitude(), from.latitude(),
                     to.longitude(), to.latitude()
             );
-            legs.add(legResult.orElse(
-                    new LegResult(TravelMode.WALK, 0, 0, null)
-            ));
+            legs.add(legResult.orElse(LegResult.unavailable()));
         }
         return legs;
     }
@@ -134,7 +131,7 @@ public class RouteGenerateService {
                 LegResult leg = dayLegs.get(legIndex);
                 legItems.add(new LegResultItem(
                         legIndex + 1, legIndex + 2,
-                        leg.travelMode().name(),
+                        leg.isAvailable() ? leg.travelMode().name() : null,
                         leg.durationSeconds(), leg.distanceMeters(),
                         leg.landingUrl()
                 ));

@@ -88,7 +88,7 @@ public record RouteSaveResponse(
     private static LegPlan toLegPlan(RouteLeg leg) {
         return new LegPlan(
                 leg.getFromSequence(), leg.getToSequence(),
-                leg.getTravelMode().name(),
+                leg.getTravelMode() != null ? leg.getTravelMode().name() : null,
                 leg.getDurationSeconds(), leg.getDistanceMeters(),
                 leg.getLandingUrl()
         );

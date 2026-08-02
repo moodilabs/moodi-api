@@ -7,7 +7,6 @@ import com.moodi.route.domain.RouteLeg;
 import com.moodi.route.domain.RouteRepository;
 import com.moodi.route.domain.RouteSpot;
 import com.moodi.route.domain.StayDurationPolicy;
-import com.moodi.route.domain.TravelMode;
 import com.moodi.shared.error.BusinessException;
 import com.moodi.shared.error.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -173,7 +172,7 @@ public class RouteSaveService {
                     to.longitude(), to.latitude()
             );
 
-            LegResult leg = result.orElse(new LegResult(TravelMode.WALK, 0, 0, null));
+            LegResult leg = result.orElse(LegResult.unavailable());
             legs.add(RouteLeg.create(
                     i + 1, i + 2,
                     leg.travelMode(), leg.durationSeconds(),
