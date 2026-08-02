@@ -21,3 +21,7 @@ include::../route/generate.adoc[]
 
 include::../route/save.adoc[]
 
+include::../route/query.adoc[]
+
+include::../route/delete.adoc[]
+
