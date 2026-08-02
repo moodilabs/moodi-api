@@ -296,6 +296,9 @@
             <basic name="endDate">
                 <column name="end_date" nullable="false"/>
             </basic>
+            <basic name="deletedAt">
+                <column name="deleted_at"/>
+            </basic>
             <one-to-many name="days" orphan-removal="true">
                 <join-column name="route_id" nullable="false"/>
                 <cascade>
