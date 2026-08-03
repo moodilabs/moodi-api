@@ -20,21 +20,28 @@ public class FeedImpressionRepositoryImpl implements FeedImpressionRepository {
         this.em = em;
     }
 
+    /**
+     * 한 문장의 {@code ON CONFLICT DO UPDATE}가 같은 충돌 대상을 두 번 건드리면 Postgres가
+     * "command cannot affect row a second time"로 실패한다. 지금은 피드 쿼리의 조인이 전부
+     * 유니크 제약으로 1:1이라 중복이 올라올 일이 없지만, 상위 쿼리가 바뀌면 500으로 드러나는
+     * 실패라 여기서 막는다.
+     */
     @Override
     public void recordShown(UUID memberId, List<Long> spotIds, LocalDateTime shownAt) {
-        if (spotIds.isEmpty()) {
+        List<Long> distinctSpotIds = spotIds.stream().distinct().toList();
+        if (distinctSpotIds.isEmpty()) {
             return;
         }
 
         String sql = "INSERT INTO feed_impression (member_id, spot_id, shown_at) VALUES "
-                + valuesClause(spotIds.size())
+                + valuesClause(distinctSpotIds.size())
                 + " ON CONFLICT (member_id, spot_id) DO UPDATE SET shown_at = EXCLUDED.shown_at";
 
         Query query = em.createNativeQuery(sql)
                 .setParameter("memberId", memberId)
                 .setParameter("shownAt", shownAt);
-        IntStream.range(0, spotIds.size())
-                .forEach(i -> query.setParameter("spotId" + i, spotIds.get(i)));
+        IntStream.range(0, distinctSpotIds.size())
+                .forEach(i -> query.setParameter("spotId" + i, distinctSpotIds.get(i)));
 
         query.executeUpdate();
     }
