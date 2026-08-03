@@ -2,7 +2,7 @@
 
 인증 · 온보딩 · 프로필 · 약관 · 사전조사를 담당하는 바운디드 컨텍스트 (기능명세서 `ONB`, `AUT`).
 이 문서는 **인증 슬라이스(AUT-F01: 로그인 · 로그아웃 · 토큰 재발급)** 와 **온보딩(AUT-F03~F06 · ONB)** 설계 기준이다.
-인증 슬라이스는 팀 레퍼런스 구현, 온보딩은 설계 초안(미구현).
+인증 슬라이스는 팀 레퍼런스 구현. 온보딩은 A단계(프로필·약관) 구현 완료, B(사전조사)·C(상태조회)는 설계만 되어 있다.
 
 > 프로젝트 전역 규칙은 루트 `CLAUDE.md` 참고. 여기서는 **회원 컨텍스트 한정 규칙**만 다룬다.
 
@@ -91,7 +91,7 @@ com.moodi.member/
 - 컨트롤러: 로그인·재발급은 `RestDocsSupport`, 로그아웃은 `AuthenticatedRestDocsSupport`로 문서화.
 - Fixture: `MemberFixture` · `RefreshTokenFixture` (support).
 
-## 온보딩 (AUT-F03~F06 · ONB) — 설계 초안, 미구현
+## 온보딩 (AUT-F03~F06 · ONB) — A단계 구현 완료 / B·C단계 미구현
 
 인증 슬라이스 위에 얹는 온보딩. 로그인으로 만들어진 `PENDING` 회원을 프로필·약관으로 `ACTIVE` 승격시키고, 선호 무드를 사전조사로 수집한다.
 
@@ -106,72 +106,100 @@ com.moodi.member/
 | 단계 | 기능 | 로드맵 | 무드 의존 | 비고 |
 |---|---|---|---|---|
 | A 프로필+약관+가입완료 | F03/F04/F05 | 2주차 | ✕ | 로그인 슬라이스와 직결, 즉시 완결 |
-| B 사전조사(선호 무드) | F06 | 3주차 | ○ | 무드 20종(공유 커널) 확정 대기 |
+| B 사전조사(선호 무드) | F06 | 3주차 | ○ | 무드 20종은 `MoodTag`로 확정됨 |
 | C 스플래시 상태조회 | ONB-F01 | 5주차 | ✕ | `GET /members/me` 하나 |
 
 ### 도메인 모델 (Member 애그리거트 — 물리 매핑은 실용적 레이어드)
 
 - **Member 확장**: `country`(ISO 3166-1 alpha-2, 예 `KR`) · `birthYear`(Integer) · `gender`(`Gender` = `MALE`/`FEMALE`/`OTHER`). `nickname`은 온보딩에서 채운다.
 - **MemberAgreement**(신설): 약관 종류별 1행. `member_id · type · agreed · agreed_at`, unique `(member_id, type)`. `type` = `TERMS_OF_SERVICE`·`PRIVACY_POLICY`·`AGE_OVER_14`(필수 3) / `MARKETING`(선택).
-- **MemberPreferredMood**(B, 신설): `member_id · mood`. 무드는 공유 커널 `Mood`(20종 닫힌 집합, **미정** — 1주차 산출물 대기).
+- **MemberPreferredMood**(B, 신설): `member_id · mood`. 무드는 공유 커널 `com.moodi.shared.mood.MoodTag`(20종 닫힌 집합, 확정 완료).
 
 ### 불변식 · 규칙
 
-- 닉네임 **`2~20자, [가-힣A-Za-z0-9_.]`** (한글 포함), 중복은 서버 검증(`existsByNickname`). `AUT-F03`
+- 닉네임 **`2~20자, [A-Za-z0-9_.]`** — 명세서 `AUT-F03` 기준 **한글 불가**. 중복은 서버 검증(`existsByNickname`) + `uk_member_nickname`으로 이중 보장.
 - 만 14세 미만 가입 불가: `현재연도 − birthYear < 14` 차단. `birthYear`는 `1900~현재연도`. `AUT-F03/F04`
+- 국가는 `Locale.getISOCountries()` 실존 코드만 허용.
 - 필수 약관 3종 미동의 시 가입 완료 불가. 마케팅은 개별. `AUT-F04`
 - 선호 무드는 **`0개 또는 3개 이상`**. 스킵 허용 → 미설정이 정상 상태. `AUT-F06` `FED-F02`
-- `Member.completeOnboarding(nickname, country, birthYear, gender, currentYear)`: `isPending()` 아니면 `ALREADY_ONBOARDED` → 연도·나이 검증 → 프로필 세팅 → `status` `ACTIVE`. `currentYear`는 서비스가 주입(domain 순수 유지).
+- 프로필과 약관은 **2단계로 분리**(명세 `AUT-F03` 출력 "프로필 저장 → 약관동의 진입"):
+  - `Member.updateProfile(nickname, country, birthYear, gender, currentYear)` — `isPending()` 아니면 `ALREADY_ONBOARDED` → 닉네임·국가·연도·나이 검증 → 프로필 세팅. **상태는 `PENDING` 유지**.
+  - `Member.activate()` — `isPending()` 아니면 `ALREADY_ONBOARDED`, `hasProfile()` 아니면 `PROFILE_REQUIRED` → `status` `ACTIVE`.
+  - `currentYear`는 서비스가 `Clock`(`shared/config/ClockConfig`)으로 주입(domain 순수 유지).
+- 프로필 단계는 뒤로가기 후 재제출이 가능하므로, **자기 자신의 닉네임은 중복으로 보지 않는다**(`MemberOnboardingService.validateNicknameAvailable`).
 
 ### 필드 유효성 검증 (서버)
 
 명세상 형식 검증은 클라이언트 실시간, 닉네임 중복은 `[다음]` 클릭 시 서버 1회(`AUT-F03`). 그러나 **백엔드는 클라를 신뢰하지 않고 전 필드를 재검증**한다. 요청 DTO는 Bean Validation(`@Valid`)으로 1차, 도메인 불변식으로 2차.
 
-| 필드 | 서버 검증 | 위반 시 |
-|---|---|---|
-| `nickname` | not blank · 2~20자 · `^[가-힣A-Za-z0-9_.]+$` | `INVALID_REQUEST` |
-| `nickname` | 중복 아님 (`existsByNickname`) | `DUPLICATE_NICKNAME` |
-| `country` | not blank · ISO 3166-1 alpha-2 (대문자 2자·실존 코드) | `INVALID_REQUEST` |
-| `birthYear` | not null · `1900 ≤ birthYear ≤ 현재연도` | `INVALID_BIRTH_YEAR` |
-| `birthYear` | `현재연도 − birthYear ≥ 14` | `UNDERAGE` |
-| `gender` | not null · enum(`MALE`/`FEMALE`/`OTHER`) | `INVALID_REQUEST` |
-| `agreements.{termsOfService, privacyPolicy, ageOver14}` | 모두 `true` | `REQUIRED_AGREEMENT_MISSING` |
-| `agreements.marketing` | 선택(제약 없음) | — |
-| `moods` (B) | 크기 `0 또는 ≥3` · 원소는 유효 `Mood` | `INSUFFICIENT_MOOD_SELECTION` |
+요청 DTO의 Bean Validation은 **필드 존재 여부만**(`@NotBlank`/`@NotNull` → `INVALID_REQUEST`) 검증하고,
+형식·범위 등 비즈니스 규칙은 전부 도메인에서 **전용 에러 코드**로 던진다. 규칙의 출처를 한 곳으로 모으기 위함.
 
-- 닉네임 중복 확인 API(`GET /nickname-availability`)는 UX용 사전 체크일 뿐, `POST /onboarding`에서 **한 번 더 검증**한다(TOCTOU 방지).
+| 필드 | 서버 검증 | 위반 시 | 검증 위치 |
+|---|---|---|---|
+| `nickname` | not blank | `INVALID_REQUEST` | `ProfileRequest` |
+| `nickname` | 2~20자 · `^[A-Za-z0-9_.]+$` | `INVALID_NICKNAME` | `Member` |
+| `nickname` | 중복 아님 (`existsByNickname`) | `DUPLICATE_NICKNAME` | `MemberOnboardingService` |
+| `country` | not blank | `INVALID_REQUEST` | `ProfileRequest` |
+| `country` | ISO 3166-1 alpha-2 실존 코드 | `INVALID_COUNTRY` | `Member` |
+| `birthYear` | not null | `INVALID_REQUEST` | `ProfileRequest` |
+| `birthYear` | `1900 ≤ birthYear ≤ 현재연도` | `INVALID_BIRTH_YEAR` | `Member` |
+| `birthYear` | `현재연도 − birthYear ≥ 14` | `UNDERAGE` | `Member` |
+| `gender` | not null · enum(`MALE`/`FEMALE`/`OTHER`) | `INVALID_REQUEST` | `ProfileRequest` |
+| `agreements.{termsOfService, privacyPolicy, ageOver14}` | 모두 `true` | `REQUIRED_AGREEMENT_MISSING` | `MemberOnboardingService` |
+| `agreements.marketing` | 존재만 필수, 값은 자유 | `INVALID_REQUEST` | `AgreementRequest` |
+| — | 프로필 없이 약관 동의 호출 | `PROFILE_REQUIRED` | `Member` |
+| `moods` (B) | 크기 `0 또는 ≥3` · 원소는 유효 `MoodTag` | `INSUFFICIENT_MOOD_SELECTION` | 미구현 |
+
+- 닉네임 중복 확인 API(`GET /nickname-availability`)는 UX용 사전 체크일 뿐, `POST /members/profile`에서 **한 번 더 검증**한다.
+  조회와 저장 사이의 선점은 `uk_member_nickname` 위반을 잡아 `DUPLICATE_NICKNAME`으로 변환해 막는다(TOCTOU 방지).
+- 중복 조회는 **자기 자신을 제외**한다(`existsByNicknameAndIdNot`). 프로필 단계는 뒤로가기 후 재제출이 가능하기 때문이다.
+  사전 체크 API와 저장 API가 같은 기준을 써야 "사용 불가"로 보였다가 저장은 되는 불일치가 없다.
 - 사용자 노출 문구(예: "이미 사용 중인 닉네임이에요")는 `ErrorCode.message`로 매핑한다.
 
 ### API 계약 (전부 `@LoginRequired` — `PENDING`도 통과. 컨트롤러 `MemberController` 신설)
 
-| Method | Path | Body → 응답 | 단계 |
-|---|---|---|---|
-| GET | `/api/v1/members/nickname-availability?nickname=` | → `{ available }` | A |
-| POST | `/api/v1/members/onboarding` | `{ nickname, country, birthYear, gender, agreements: { termsOfService, privacyPolicy, ageOver14, marketing } }` → `204` (PENDING→ACTIVE) | A |
-| GET | `/api/v1/members/me` | → `{ status, nickname, hasPreferredMood }` | C |
-| POST | `/api/v1/members/me/preferred-moods` | `{ moods: [ …≥3 ] }` → `204` | B |
+| Method | Path | Body → 응답 | 단계 | 상태 |
+|---|---|---|---|---|
+| GET | `/api/v1/members/nickname-availability?nickname=` | → `{ available }` | A | ✅ |
+| POST | `/api/v1/members/profile` | `{ nickname, country, birthYear, gender }` → `204` (PENDING 유지) | A | ✅ |
+| POST | `/api/v1/members/agreements` | `{ termsOfService, privacyPolicy, ageOver14, marketing }` → `204` (PENDING→ACTIVE) | A | ✅ |
+| GET | `/api/v1/members/me` | → `{ status, nickname, hasPreferredMood }` | C | ✕ |
+| POST | `/api/v1/members/me/preferred-moods` | `{ moods: [ …≥3 ] }` → `204` | B | ✕ |
 
 ### 에러 코드 (`ErrorCode` 추가)
 
-| 코드 | HTTP | 단계 |
-|---|---|---|
-| `DUPLICATE_NICKNAME` | 409 | A |
-| `UNDERAGE` | 400 | A |
-| `INVALID_BIRTH_YEAR` | 400 | A |
-| `REQUIRED_AGREEMENT_MISSING` | 400 | A |
-| `ALREADY_ONBOARDED` | 409 | A |
-| `MEMBER_NOT_FOUND` | 404 | A·C |
-| `INSUFFICIENT_MOOD_SELECTION` | 400 | B |
+사용자 노출 문구는 명세서 `AUT-F03` 인라인 메시지를 그대로 `ErrorCode.message`에 넣었다.
+
+| 코드 | HTTP | 단계 | 상태 |
+|---|---|---|---|
+| `DUPLICATE_NICKNAME` | 409 | A | ✅ |
+| `INVALID_NICKNAME` | 400 | A | ✅ |
+| `UNDERAGE` | 400 | A | ✅ |
+| `INVALID_BIRTH_YEAR` | 400 | A | ✅ |
+| `INVALID_COUNTRY` | 400 | A | ✅ |
+| `REQUIRED_AGREEMENT_MISSING` | 400 | A | ✅ |
+| `PROFILE_REQUIRED` | 400 | A | ✅ |
+| `ALREADY_ONBOARDED` | 409 | A | ✅ |
+| `MEMBER_NOT_FOUND` | 404 | A·C | ✅ |
+| `INSUFFICIENT_MOOD_SELECTION` | 400 | B | ✕ |
 
 ### 영속성
 
-- `V2__add_onboarding.sql`: `member`에 `country`·`birth_year`·`gender` 컬럼 추가 + `member_agreement`(B에서 `member_preferred_mood`) 신설. **`V1`은 건드리지 않는다.**
-- orm.xml에 `Member` 속성 3개 + `<entity>` 추가. orm ↔ 마이그레이션 일치 유지.
+- `V9__add_onboarding.sql`: `member`에 `country`·`birth_year`·`gender` 컬럼 + `uk_member_nickname` 추가, `member_agreement` 신설. **`V1`은 건드리지 않는다.** (V2~V8은 spot·route가 점유)
+- B단계의 `member_preferred_mood`는 다음 마이그레이션에서 신설.
+- orm.xml에 `Member` 속성 3개 + `MemberAgreement` `<entity>` 추가 완료. orm ↔ 마이그레이션 일치 유지.
+- 도메인 Repository 포트는 **단건 `save`만 선언**한다. `Repository<T, ID>`는 `saveAll`을 CRUD 메서드로 인식하지 못해 쿼리 파생을 시도하다 컨텍스트 로딩에 실패한다.
 
 ### 미결 (구현 전 확정 필요)
 
-- **무드 20종 정의**(공유 커널 `Mood`) — B의 선결 조건. 1주차 산출물이나 아직 코드 미반영.
-- **약관 저장 방식** — 종류별 1행(현 설계) vs append-only 이력. 법적 요건 확정 필요.
+- **사전조사 입력 형태**(B) — 명세 `AUT-F06` 출력이 "선택 **이미지**에서 추출한 무드 태그를 저장"이다.
+  큐레이션 이미지 20종 ↔ `MoodTag` 20종이 1:1이면 `{ moods: [...] }`로 충분하지만,
+  이미지 1장이 무드 여러 개로 풀리면 **이미지 ID를 받아 서버가 변환**해야 한다. 기획 확인 필요.
+- **약관 저장 방식** — 종류별 1행(현 구현) vs append-only 이력. 법적 요건 확정 필요.
+- **회원 탈퇴** — 명세서에 행 자체가 없다(마이페이지 영역 명세 부재).
+
+> 무드 20종은 `com.moodi.shared.mood.MoodTag`로 확정 완료 — B단계 선결 조건 해소됨.
 
 ## 주의
 

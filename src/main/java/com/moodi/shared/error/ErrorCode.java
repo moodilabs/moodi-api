@@ -17,6 +17,16 @@ public enum ErrorCode {
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "INVALID_REFRESH_TOKEN", "유효하지 않은 리프레시 토큰입니다."),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "DUPLICATE_EMAIL", "이미 가입된 이메일입니다."),
 
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER_NOT_FOUND", "회원을 찾을 수 없습니다."),
+    DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "DUPLICATE_NICKNAME", "이미 사용 중인 닉네임이에요."),
+    INVALID_NICKNAME(HttpStatus.BAD_REQUEST, "INVALID_NICKNAME", "닉네임은 2~20자의 영문·숫자·'_'·'.'만 사용할 수 있어요."),
+    INVALID_BIRTH_YEAR(HttpStatus.BAD_REQUEST, "INVALID_BIRTH_YEAR", "올바른 출생연도를 입력해주세요."),
+    UNDERAGE(HttpStatus.BAD_REQUEST, "UNDERAGE", "만 14세 이상부터 가입할 수 있어요."),
+    INVALID_COUNTRY(HttpStatus.BAD_REQUEST, "INVALID_COUNTRY", "올바른 국가를 선택해주세요."),
+    REQUIRED_AGREEMENT_MISSING(HttpStatus.BAD_REQUEST, "REQUIRED_AGREEMENT_MISSING", "필수 약관에 모두 동의해야 가입할 수 있어요."),
+    PROFILE_REQUIRED(HttpStatus.BAD_REQUEST, "PROFILE_REQUIRED", "프로필 설정을 먼저 완료해주세요."),
+    ALREADY_ONBOARDED(HttpStatus.CONFLICT, "ALREADY_ONBOARDED", "이미 가입이 완료된 회원입니다."),
+
     SPOT_NOT_FOUND(HttpStatus.NOT_FOUND, "SPOT_NOT_FOUND", "스팟을 찾을 수 없습니다."),
     SPOT_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "SPOT_NOT_AVAILABLE", "북마크할 수 없는 스팟입니다."),
 

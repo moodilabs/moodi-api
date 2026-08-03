@@ -12,4 +12,8 @@ public interface MemberRepository {
     Optional<Member> findByProviderAndProviderId(OAuthProvider provider, String providerId);
 
     boolean existsByEmail(String email);
+
+    boolean existsByNicknameAndIdNot(String nickname, UUID id);
+
+    void flush();
 }
