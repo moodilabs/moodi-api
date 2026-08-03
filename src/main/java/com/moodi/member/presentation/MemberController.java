@@ -31,8 +31,11 @@ public class MemberController {
     }
 
     @GetMapping("/nickname-availability")
-    public SuccessResponse<NicknameAvailabilityResponse> checkNicknameAvailability(@RequestParam String nickname) {
-        boolean available = memberOnboardingService.isNicknameAvailable(nickname);
+    public SuccessResponse<NicknameAvailabilityResponse> checkNicknameAvailability(
+            @AuthMember UUID memberId,
+            @RequestParam String nickname
+    ) {
+        boolean available = memberOnboardingService.isNicknameAvailable(memberId, nickname);
         return SuccessResponse.of(new NicknameAvailabilityResponse(available));
     }
 

@@ -9,6 +9,7 @@ import com.moodi.member.domain.MemberAgreementRepository;
 import com.moodi.member.domain.MemberRepository;
 import com.moodi.shared.error.BusinessException;
 import com.moodi.shared.error.ErrorCode;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,14 +38,14 @@ public class MemberOnboardingService {
         this.clock = clock;
     }
 
-    public boolean isNicknameAvailable(String nickname) {
-        return !memberRepository.existsByNickname(nickname);
+    public boolean isNicknameAvailable(UUID memberId, String nickname) {
+        return !memberRepository.existsByNicknameAndIdNot(nickname, memberId);
     }
 
     @Transactional
     public void updateProfile(UUID memberId, ProfileCommand command) {
         Member member = findMember(memberId);
-        validateNicknameAvailable(member, command.nickname());
+        validateNicknameAvailable(memberId, command.nickname());
         member.updateProfile(
                 command.nickname(),
                 command.country(),
@@ -52,7 +53,7 @@ public class MemberOnboardingService {
                 command.gender(),
                 Year.now(clock).getValue()
         );
-        memberRepository.save(member);
+        saveWithNicknameConflictCheck(member);
     }
 
     @Transactional
@@ -72,11 +73,22 @@ public class MemberOnboardingService {
     /**
      * 프로필 단계는 [뒤로가기] 후 재제출이 가능하므로, 자기 자신의 닉네임은 중복으로 보지 않는다.
      */
-    private void validateNicknameAvailable(Member member, String nickname) {
-        if (nickname == null || nickname.equals(member.getNickname())) {
-            return;
+    private void validateNicknameAvailable(UUID memberId, String nickname) {
+        if (memberRepository.existsByNicknameAndIdNot(nickname, memberId)) {
+            throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
         }
-        if (memberRepository.existsByNickname(nickname)) {
+    }
+
+    /**
+     * 조회와 저장 사이에 다른 회원이 같은 닉네임을 선점할 수 있다.
+     * uk_member_nickname 위반을 500이 아니라 409로 돌려주기 위해 flush로 즉시 반영한다.
+     * updateProfile에서 바뀌는 유니크 컬럼은 nickname뿐이다.
+     */
+    private void saveWithNicknameConflictCheck(Member member) {
+        try {
+            memberRepository.save(member);
+            memberRepository.flush();
+        } catch (DataIntegrityViolationException e) {
             throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
         }
     }

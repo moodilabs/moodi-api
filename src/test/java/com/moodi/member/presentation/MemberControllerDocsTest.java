@@ -39,7 +39,7 @@ class MemberControllerDocsTest extends AuthenticatedRestDocsSupport {
     @Test
     @DisplayName("닉네임 중복 확인 성공")
     void nickname_availability_success() throws Exception {
-        when(memberOnboardingService.isNicknameAvailable(anyString())).thenReturn(true);
+        when(memberOnboardingService.isNicknameAvailable(any(), anyString())).thenReturn(true);
 
         mockMvc.perform(get("/api/v1/members/nickname-availability")
                         .param("nickname", "moodi_user"))
@@ -53,6 +53,8 @@ class MemberControllerDocsTest extends AuthenticatedRestDocsSupport {
                                 fieldWithPath("data.available").type(JsonFieldType.BOOLEAN).description("사용 가능 여부")
                         )
                 ));
+
+        verify(memberOnboardingService).isNicknameAvailable(memberId, "moodi_user");
     }
 
     @Test
