@@ -71,3 +71,52 @@ include::{snippets}/member/agreements/http-response.adoc[]
 | `ALREADY_ONBOARDED` | 409 | 이미 가입이 완료된 회원
 | `MEMBER_NOT_FOUND` | 404 | 회원 없음
 |===
+
+=== 선호 무드 설정 (사전조사)
+
+사전조사에서 선택한 선호 무드를 저장합니다. 기존 선택은 전체 교체됩니다.
+
+건너뛰기를 허용하므로 **0개 또는 3개 이상**만 유효합니다. 중복 무드는 서버에서 제거한 뒤 개수를 셉니다.
+
+.HTTP Request
+include::{snippets}/member/preferred-moods/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/member/preferred-moods/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/member/preferred-moods/http-response.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `INSUFFICIENT_MOOD_SELECTION` | 400 | 무드를 1~2개만 선택
+| `MEMBER_NOT_FOUND` | 404 | 회원 없음
+|===
+
+=== 내 정보 조회
+
+스플래시(`ONB-F01`)에서 진입 화면을 분기할 때 사용합니다.
+
+* `status` 가 `PENDING` 이면 온보딩 미완료 → 프로필 설정으로
+* `ACTIVE` 이면서 `hasPreferredMood` 가 `false` 이면 Feed 메인 B로
+* `ACTIVE` 이면서 `true` 이면 Feed 메인 A로
+
+.HTTP Request
+include::{snippets}/member/me/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/member/me/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/member/me/response-fields.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `MEMBER_NOT_FOUND` | 404 | 회원 없음
+|===

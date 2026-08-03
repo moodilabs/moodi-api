@@ -6,9 +6,13 @@ import com.moodi.member.domain.AgreementType;
 import com.moodi.member.domain.Member;
 import com.moodi.member.domain.MemberAgreement;
 import com.moodi.member.domain.MemberAgreementRepository;
+import com.moodi.member.domain.MemberPreferredMood;
+import com.moodi.member.domain.MemberPreferredMoodRepository;
 import com.moodi.member.domain.MemberRepository;
+import com.moodi.member.domain.PreferredMoods;
 import com.moodi.shared.error.BusinessException;
 import com.moodi.shared.error.ErrorCode;
+import com.moodi.shared.mood.MoodTag;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,15 +29,18 @@ public class MemberOnboardingService {
 
     private final MemberRepository memberRepository;
     private final MemberAgreementRepository memberAgreementRepository;
+    private final MemberPreferredMoodRepository memberPreferredMoodRepository;
     private final Clock clock;
 
     public MemberOnboardingService(
             MemberRepository memberRepository,
             MemberAgreementRepository memberAgreementRepository,
+            MemberPreferredMoodRepository memberPreferredMoodRepository,
             Clock clock
     ) {
         this.memberRepository = memberRepository;
         this.memberAgreementRepository = memberAgreementRepository;
+        this.memberPreferredMoodRepository = memberPreferredMoodRepository;
         this.clock = clock;
     }
 
@@ -62,6 +69,25 @@ public class MemberOnboardingService {
         member.activate();
         toAgreements(memberId, command).forEach(memberAgreementRepository::save);
         memberRepository.save(member);
+    }
+
+    /**
+     * 사전조사는 재선택이 가능하므로 기존 선택을 지우고 다시 넣는다(전체 교체).
+     */
+    @Transactional
+    public void updatePreferredMoods(UUID memberId, List<MoodTag> moods) {
+        PreferredMoods preferredMoods = PreferredMoods.of(moods);
+        validateMemberExists(memberId);
+        memberPreferredMoodRepository.deleteByMemberId(memberId);
+        preferredMoods.values().stream()
+                .map(mood -> MemberPreferredMood.of(memberId, mood))
+                .forEach(memberPreferredMoodRepository::save);
+    }
+
+    private void validateMemberExists(UUID memberId) {
+        if (!memberRepository.existsById(memberId)) {
+            throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
+        }
     }
 
     private Member findMember(UUID memberId) {

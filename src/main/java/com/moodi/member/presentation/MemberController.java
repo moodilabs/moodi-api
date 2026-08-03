@@ -1,8 +1,12 @@
 package com.moodi.member.presentation;
 
 import com.moodi.member.application.MemberOnboardingService;
+import com.moodi.member.application.MemberQueryService;
+import com.moodi.member.application.dto.MemberInfo;
 import com.moodi.member.presentation.dto.AgreementRequest;
+import com.moodi.member.presentation.dto.MemberMeResponse;
 import com.moodi.member.presentation.dto.NicknameAvailabilityResponse;
+import com.moodi.member.presentation.dto.PreferredMoodRequest;
 import com.moodi.member.presentation.dto.ProfileRequest;
 import com.moodi.shared.auth.AuthMember;
 import com.moodi.shared.auth.LoginRequired;
@@ -25,9 +29,20 @@ import java.util.UUID;
 public class MemberController {
 
     private final MemberOnboardingService memberOnboardingService;
+    private final MemberQueryService memberQueryService;
 
-    public MemberController(MemberOnboardingService memberOnboardingService) {
+    public MemberController(
+            MemberOnboardingService memberOnboardingService,
+            MemberQueryService memberQueryService
+    ) {
         this.memberOnboardingService = memberOnboardingService;
+        this.memberQueryService = memberQueryService;
+    }
+
+    @GetMapping("/me")
+    public SuccessResponse<MemberMeResponse> getMe(@AuthMember UUID memberId) {
+        MemberInfo info = memberQueryService.getMe(memberId);
+        return SuccessResponse.of(MemberMeResponse.from(info));
     }
 
     @GetMapping("/nickname-availability")
@@ -46,5 +61,11 @@ public class MemberController {
     @PostMapping("/agreements")
     public void agree(@AuthMember UUID memberId, @Valid @RequestBody AgreementRequest request) {
         memberOnboardingService.agree(memberId, request.toCommand());
+    }
+
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PostMapping("/me/preferred-moods")
+    public void updatePreferredMoods(@AuthMember UUID memberId, @Valid @RequestBody PreferredMoodRequest request) {
+        memberOnboardingService.updatePreferredMoods(memberId, request.moods());
     }
 }

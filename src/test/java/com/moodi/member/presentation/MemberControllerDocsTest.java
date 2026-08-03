@@ -1,18 +1,26 @@
 package com.moodi.member.presentation;
 
 import com.moodi.member.application.MemberOnboardingService;
+import com.moodi.member.application.MemberQueryService;
 import com.moodi.member.application.dto.AgreementCommand;
+import com.moodi.member.application.dto.MemberInfo;
 import com.moodi.member.application.dto.ProfileCommand;
 import com.moodi.member.domain.Gender;
+import com.moodi.member.domain.MemberStatus;
 import com.moodi.member.presentation.dto.AgreementRequest;
+import com.moodi.member.presentation.dto.PreferredMoodRequest;
 import com.moodi.member.presentation.dto.ProfileRequest;
+import com.moodi.shared.mood.MoodTag;
 import com.moodi.shared.support.AuthenticatedRestDocsSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.JsonFieldType;
 
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -30,10 +38,48 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class MemberControllerDocsTest extends AuthenticatedRestDocsSupport {
 
     private final MemberOnboardingService memberOnboardingService = mock(MemberOnboardingService.class);
+    private final MemberQueryService memberQueryService = mock(MemberQueryService.class);
 
     @Override
     protected Object initController() {
-        return new MemberController(memberOnboardingService);
+        return new MemberController(memberOnboardingService, memberQueryService);
+    }
+
+    @Test
+    @DisplayName("내 정보 조회 성공")
+    void get_me_success() throws Exception {
+        when(memberQueryService.getMe(any()))
+                .thenReturn(new MemberInfo(MemberStatus.ACTIVE, "moodi_user", true));
+
+        mockMvc.perform(get("/api/v1/members/me"))
+                .andExpect(status().isOk())
+                .andDo(document("member/me",
+                        responseFields(
+                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("회원 상태 정보"),
+                                fieldWithPath("data.status").type(JsonFieldType.STRING).description("회원 상태 (PENDING: 온보딩 전, ACTIVE: 가입 완료)"),
+                                fieldWithPath("data.nickname").type(JsonFieldType.STRING).optional().description("닉네임 (온보딩 전이면 null)"),
+                                fieldWithPath("data.hasPreferredMood").type(JsonFieldType.BOOLEAN).description("선호 무드 설정 여부 (false면 Feed 메인 B로 분기)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("선호 무드 설정 성공")
+    void update_preferred_moods_success() throws Exception {
+        PreferredMoodRequest request = new PreferredMoodRequest(
+                List.of(MoodTag.NATURE, MoodTag.OCEAN, MoodTag.COZY));
+
+        mockMvc.perform(post("/api/v1/members/me/preferred-moods")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("member/preferred-moods",
+                        requestFields(
+                                fieldWithPath("moods").type(JsonFieldType.ARRAY).description("선호 무드 목록 (0개 또는 3개 이상, 무드 20종 중 선택)")
+                        )
+                ));
+
+        verify(memberOnboardingService).updatePreferredMoods(any(), anyList());
     }
 
     @Test
