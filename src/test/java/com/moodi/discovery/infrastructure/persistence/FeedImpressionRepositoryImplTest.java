@@ -59,11 +59,22 @@ class FeedImpressionRepositoryImplTest extends PostgresTestSupport {
     }
 
     @Test
-    @DisplayName("빈 목록이면 쿼리를 실행하지 않는다")
+    @DisplayName("빈 목록이면 아무것도 기록되지 않는다")
     void record_ignores_empty_spot_ids() {
         repository.recordShown(memberId, List.of(), FIRST_SHOWN_AT);
 
         assertThat(countImpressions()).isZero();
+    }
+
+    @Test
+    @DisplayName("같은 스팟이 중복으로 들어와도 upsert가 실패하지 않는다")
+    void record_deduplicates_spot_ids() {
+        Long spotId = insertSpot();
+
+        repository.recordShown(memberId, List.of(spotId, spotId), FIRST_SHOWN_AT);
+
+        assertThat(countImpressions()).isEqualTo(1);
+        assertThat(findShownAt(spotId)).isEqualTo(FIRST_SHOWN_AT);
     }
 
     private long countImpressions() {
