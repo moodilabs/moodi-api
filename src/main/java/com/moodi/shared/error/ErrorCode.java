@@ -26,6 +26,7 @@ public enum ErrorCode {
     REQUIRED_AGREEMENT_MISSING(HttpStatus.BAD_REQUEST, "REQUIRED_AGREEMENT_MISSING", "필수 약관에 모두 동의해야 가입할 수 있어요."),
     PROFILE_REQUIRED(HttpStatus.BAD_REQUEST, "PROFILE_REQUIRED", "프로필 설정을 먼저 완료해주세요."),
     ALREADY_ONBOARDED(HttpStatus.CONFLICT, "ALREADY_ONBOARDED", "이미 가입이 완료된 회원입니다."),
+    INSUFFICIENT_MOOD_SELECTION(HttpStatus.BAD_REQUEST, "INSUFFICIENT_MOOD_SELECTION", "무드는 3개 이상 선택해주세요."),
 
     SPOT_NOT_FOUND(HttpStatus.NOT_FOUND, "SPOT_NOT_FOUND", "스팟을 찾을 수 없습니다."),
     SPOT_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "SPOT_NOT_AVAILABLE", "북마크할 수 없는 스팟입니다."),

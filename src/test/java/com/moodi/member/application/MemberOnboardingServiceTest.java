@@ -7,17 +7,21 @@ import com.moodi.member.domain.Gender;
 import com.moodi.member.domain.Member;
 import com.moodi.member.domain.MemberAgreement;
 import com.moodi.member.domain.MemberAgreementRepository;
+import com.moodi.member.domain.MemberPreferredMood;
+import com.moodi.member.domain.MemberPreferredMoodRepository;
 import com.moodi.member.domain.MemberRepository;
 import com.moodi.member.domain.MemberStatus;
 import com.moodi.member.support.MemberFixture;
 import com.moodi.shared.error.BusinessException;
 import com.moodi.shared.error.ErrorCode;
+import com.moodi.shared.mood.MoodTag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -34,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -54,6 +59,9 @@ class MemberOnboardingServiceTest {
     @Mock
     private MemberAgreementRepository memberAgreementRepository;
 
+    @Mock
+    private MemberPreferredMoodRepository memberPreferredMoodRepository;
+
     @Captor
     private ArgumentCaptor<MemberAgreement> agreementsCaptor;
 
@@ -61,7 +69,8 @@ class MemberOnboardingServiceTest {
 
     @BeforeEach
     void setUp() {
-        memberOnboardingService = new MemberOnboardingService(memberRepository, memberAgreementRepository, FIXED_CLOCK);
+        memberOnboardingService = new MemberOnboardingService(
+                memberRepository, memberAgreementRepository, memberPreferredMoodRepository, FIXED_CLOCK);
     }
 
     @Test
@@ -210,6 +219,55 @@ class MemberOnboardingServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.ALREADY_ONBOARDED);
+    }
+
+    @Test
+    @DisplayName("선호 무드 3개 저장 시 기존 선택을 지우고 다시 저장한다")
+    void update_preferred_moods_replaces_existing() {
+        when(memberRepository.existsById(MEMBER_ID)).thenReturn(true);
+
+        memberOnboardingService.updatePreferredMoods(
+                MEMBER_ID, List.of(MoodTag.NATURE, MoodTag.OCEAN, MoodTag.COZY));
+
+        InOrder inOrder = inOrder(memberPreferredMoodRepository);
+        inOrder.verify(memberPreferredMoodRepository).deleteByMemberId(MEMBER_ID);
+        inOrder.verify(memberPreferredMoodRepository, times(3)).save(any(MemberPreferredMood.class));
+    }
+
+    @Test
+    @DisplayName("빈 목록이면 기존 선택만 삭제한다")
+    void update_preferred_moods_with_empty_only_deletes() {
+        when(memberRepository.existsById(MEMBER_ID)).thenReturn(true);
+
+        memberOnboardingService.updatePreferredMoods(MEMBER_ID, List.of());
+
+        verify(memberPreferredMoodRepository).deleteByMemberId(MEMBER_ID);
+        verify(memberPreferredMoodRepository, never()).save(any(MemberPreferredMood.class));
+    }
+
+    @Test
+    @DisplayName("선호 무드가 3개 미만이면 저장에 실패한다")
+    void update_preferred_moods_below_minimum_throws() {
+        assertThatThrownBy(() -> memberOnboardingService.updatePreferredMoods(MEMBER_ID, List.of(MoodTag.NATURE)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.INSUFFICIENT_MOOD_SELECTION);
+
+        verify(memberPreferredMoodRepository, never()).deleteByMemberId(any());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 회원이면 선호 무드 저장에 실패한다")
+    void update_preferred_moods_with_unknown_member_throws() {
+        when(memberRepository.existsById(MEMBER_ID)).thenReturn(false);
+
+        assertThatThrownBy(() -> memberOnboardingService.updatePreferredMoods(
+                MEMBER_ID, List.of(MoodTag.NATURE, MoodTag.OCEAN, MoodTag.COZY)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.MEMBER_NOT_FOUND);
+
+        verify(memberPreferredMoodRepository, never()).deleteByMemberId(any());
     }
 
     private AgreementCommand agreementCommand(

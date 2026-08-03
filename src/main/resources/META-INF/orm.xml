@@ -106,6 +106,27 @@
         </attributes>
     </entity>
 
+    <entity class="com.moodi.member.domain.MemberPreferredMood" access="FIELD">
+        <table name="member_preferred_mood">
+            <unique-constraint>
+                <column-name>member_id</column-name>
+                <column-name>mood</column-name>
+            </unique-constraint>
+        </table>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="UUID"/>
+            </id>
+            <basic name="memberId">
+                <column name="member_id" nullable="false"/>
+            </basic>
+            <basic name="mood">
+                <column name="mood" nullable="false" length="30"/>
+                <enumerated>STRING</enumerated>
+            </basic>
+        </attributes>
+    </entity>
+
     <entity class="com.moodi.member.domain.RefreshToken" access="FIELD">
         <table name="refresh_token"/>
         <attributes>

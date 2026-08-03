@@ -2,7 +2,7 @@
 
 인증 · 온보딩 · 프로필 · 약관 · 사전조사를 담당하는 바운디드 컨텍스트 (기능명세서 `ONB`, `AUT`).
 이 문서는 **인증 슬라이스(AUT-F01: 로그인 · 로그아웃 · 토큰 재발급)** 와 **온보딩(AUT-F03~F06 · ONB)** 설계 기준이다.
-인증 슬라이스는 팀 레퍼런스 구현. 온보딩은 A단계(프로필·약관) 구현 완료, B(사전조사)·C(상태조회)는 설계만 되어 있다.
+인증 슬라이스는 팀 레퍼런스 구현. 온보딩은 A(프로필·약관)·B(사전조사)·C(상태조회) 모두 구현 완료.
 
 > 프로젝트 전역 규칙은 루트 `CLAUDE.md` 참고. 여기서는 **회원 컨텍스트 한정 규칙**만 다룬다.
 
@@ -91,7 +91,7 @@ com.moodi.member/
 - 컨트롤러: 로그인·재발급은 `RestDocsSupport`, 로그아웃은 `AuthenticatedRestDocsSupport`로 문서화.
 - Fixture: `MemberFixture` · `RefreshTokenFixture` (support).
 
-## 온보딩 (AUT-F03~F06 · ONB) — A단계 구현 완료 / B·C단계 미구현
+## 온보딩 (AUT-F03~F06 · ONB) — A·B·C단계 구현 완료
 
 인증 슬라이스 위에 얹는 온보딩. 로그인으로 만들어진 `PENDING` 회원을 프로필·약관으로 `ACTIVE` 승격시키고, 선호 무드를 사전조사로 수집한다.
 
@@ -149,7 +149,8 @@ com.moodi.member/
 | `agreements.{termsOfService, privacyPolicy, ageOver14}` | 모두 `true` | `REQUIRED_AGREEMENT_MISSING` | `MemberOnboardingService` |
 | `agreements.marketing` | 존재만 필수, 값은 자유 | `INVALID_REQUEST` | `AgreementRequest` |
 | — | 프로필 없이 약관 동의 호출 | `PROFILE_REQUIRED` | `Member` |
-| `moods` (B) | 크기 `0 또는 ≥3` · 원소는 유효 `MoodTag` | `INSUFFICIENT_MOOD_SELECTION` | 미구현 |
+| `moods` (B) | not null · 원소는 유효 `MoodTag` | `INVALID_REQUEST` | `PreferredMoodRequest` |
+| `moods` (B) | 중복 제거 후 크기 `0 또는 ≥3` | `INSUFFICIENT_MOOD_SELECTION` | `PreferredMoods` |
 
 - 닉네임 중복 확인 API(`GET /nickname-availability`)는 UX용 사전 체크일 뿐, `POST /members/profile`에서 **한 번 더 검증**한다.
   조회와 저장 사이의 선점은 `uk_member_nickname` 위반을 잡아 `DUPLICATE_NICKNAME`으로 변환해 막는다(TOCTOU 방지).
@@ -164,8 +165,8 @@ com.moodi.member/
 | GET | `/api/v1/members/nickname-availability?nickname=` | → `{ available }` | A | ✅ |
 | POST | `/api/v1/members/profile` | `{ nickname, country, birthYear, gender }` → `204` (PENDING 유지) | A | ✅ |
 | POST | `/api/v1/members/agreements` | `{ termsOfService, privacyPolicy, ageOver14, marketing }` → `204` (PENDING→ACTIVE) | A | ✅ |
-| GET | `/api/v1/members/me` | → `{ status, nickname, hasPreferredMood }` | C | ✕ |
-| POST | `/api/v1/members/me/preferred-moods` | `{ moods: [ …≥3 ] }` → `204` | B | ✕ |
+| GET | `/api/v1/members/me` | → `{ status, nickname, hasPreferredMood }` | C | ✅ |
+| POST | `/api/v1/members/me/preferred-moods` | `{ moods: [ …0개 또는 ≥3 ] }` → `204` | B | ✅ |
 
 ### 에러 코드 (`ErrorCode` 추가)
 
@@ -182,20 +183,21 @@ com.moodi.member/
 | `PROFILE_REQUIRED` | 400 | A | ✅ |
 | `ALREADY_ONBOARDED` | 409 | A | ✅ |
 | `MEMBER_NOT_FOUND` | 404 | A·C | ✅ |
-| `INSUFFICIENT_MOOD_SELECTION` | 400 | B | ✕ |
+| `INSUFFICIENT_MOOD_SELECTION` | 400 | B | ✅ |
 
 ### 영속성
 
 - `V9__add_onboarding.sql`: `member`에 `country`·`birth_year`·`gender` 컬럼 + `uk_member_nickname` 추가, `member_agreement` 신설. **`V1`은 건드리지 않는다.** (V2~V8은 spot·route가 점유)
-- B단계의 `member_preferred_mood`는 다음 마이그레이션에서 신설.
+- `V10__create_member_preferred_mood.sql`: `member_preferred_mood` 신설. 무드당 1행, `uk_member_preferred_mood_member_mood (member_id, mood)`.
 - orm.xml에 `Member` 속성 3개 + `MemberAgreement` `<entity>` 추가 완료. orm ↔ 마이그레이션 일치 유지.
 - 도메인 Repository 포트는 **단건 `save`만 선언**한다. `Repository<T, ID>`는 `saveAll`을 CRUD 메서드로 인식하지 못해 쿼리 파생을 시도하다 컨텍스트 로딩에 실패한다.
 
 ### 미결 (구현 전 확정 필요)
 
 - **사전조사 입력 형태**(B) — 명세 `AUT-F06` 출력이 "선택 **이미지**에서 추출한 무드 태그를 저장"이다.
-  큐레이션 이미지 20종 ↔ `MoodTag` 20종이 1:1이면 `{ moods: [...] }`로 충분하지만,
-  이미지 1장이 무드 여러 개로 풀리면 **이미지 ID를 받아 서버가 변환**해야 한다. 기획 확인 필요.
+  큐레이션 이미지 20종 ↔ `MoodTag` 20종이 **1:1이라 가정**하고 `{ moods: [...] }`(무드 키 직접 전달)로 구현했다.
+  이미지 1장이 무드 여러 개로 풀리는 구조라면 `PreferredMoodRequest`가 이미지 ID를 받고
+  서버가 매핑 테이블로 변환하도록 바꿔야 한다. **기획 확인 필요.**
 - **약관 저장 방식** — 종류별 1행(현 구현) vs append-only 이력. 법적 요건 확정 필요.
 - **회원 탈퇴** — 명세서에 행 자체가 없다(마이페이지 영역 명세 부재).
 
