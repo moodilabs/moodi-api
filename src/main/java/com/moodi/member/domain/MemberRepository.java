@@ -12,4 +12,6 @@ public interface MemberRepository {
     Optional<Member> findByProviderAndProviderId(OAuthProvider provider, String providerId);
 
     boolean existsByEmail(String email);
+
+    boolean existsByNickname(String nickname);
 }
