@@ -1,0 +1,64 @@
+== 피드 (Feed)
+
+무드 기반 추천 피드 API입니다.
+
+`GET /api/v1/feed`는 로그인 여부와 무관하게 같은 엔드포인트를 사용합니다.
+`Authorization: Bearer {accessToken}` 헤더가 있으면 선호 무드 기반 개인화 피드를,
+없으면 개인화 없는 전체 스팟 피드를 응답합니다.
+
+=== 정렬과 커서
+
+한 번 스크롤하는 동안에는 순서가 고정되고, 당겨서 새로고침하면 새로운 스팟이 앞에 오도록 구성됩니다.
+
+* `cursor` 없이 요청하면 **새로고침**으로 보고 셔플 시드를 새로 발급합니다.
+* `cursor`를 넘기면 그 안의 시드와 세션 시각을 이어 써서 스크롤 중 순서를 고정합니다.
+* 회원은 최근 본 스팟이 뒤로 밀립니다. 제외가 아니라 후순위라서 피드가 바닥나지 않습니다.
+* 비회원은 노출 이력이 없어 북마크 수와 셔플로만 정렬됩니다.
+
+커서는 정렬 키를 담은 불투명한 base64 문자열입니다. 클라이언트는 파싱하지 말고 그대로 되돌려주면 됩니다.
+
+=== 피드 조회 (회원)
+
+선호 무드와 겹치는 스팟을 무드 일치 수 순으로 응답합니다. 한 번에 20개입니다.
+
+.HTTP Request
+include::{snippets}/feed/list/http-request.adoc[]
+
+.Query Parameters
+include::{snippets}/feed/list/query-parameters.adoc[]
+
+.HTTP Response
+include::{snippets}/feed/list/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/feed/list/response-fields.adoc[]
+
+=== 피드 조회 (비회원)
+
+개인화 없이 전체 스팟을 북마크 수와 셔플 순으로 응답합니다. `bookmarked`는 항상 `false`입니다.
+
+.HTTP Request
+include::{snippets}/feed/list-guest/http-request.adoc[]
+
+.Query Parameters
+include::{snippets}/feed/list-guest/query-parameters.adoc[]
+
+.HTTP Response
+include::{snippets}/feed/list-guest/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/feed/list-guest/response-fields.adoc[]
+
+=== 인기 스팟 Top 5
+
+무드를 설정하지 않은 회원에게 보여줄 인기 스팟입니다. 북마크 수 기준 상위 5개로 고정이며 페이징이 없습니다.
+`Authorization: Bearer {accessToken}` 헤더가 필요합니다.
+
+.HTTP Request
+include::{snippets}/feed/popular-spots/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/feed/popular-spots/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/feed/popular-spots/response-fields.adoc[]
