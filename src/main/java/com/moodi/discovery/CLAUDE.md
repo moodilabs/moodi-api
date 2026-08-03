@@ -84,10 +84,13 @@ route/infrastructure/spot/SpotSnapshotReaderAdapter.java  ← 어댑터. 여기�
 분기 판단은 **클라이언트가 `GET /members/me`의 `hasPreferredMood`로** 한다 (`ONB-F01`).
 서버는 A와 B를 별도 엔드포인트로 제공하고, 어느 쪽을 부를지는 클라이언트가 정한다.
 
-| 상태 | 화면 | 엔드포인트 |
-|---|---|---|
-| 선호 무드 설정됨 | Feed 메인 A | `GET /api/v1/feed` |
-| 미설정 · 사전조사 미참여 | Feed 메인 B | `GET /api/v1/feed/popular-spots` |
+| 상태 | 화면 | 엔드포인트 | 인증 |
+|---|---|---|---|
+| 선호 무드 설정됨 | Feed 메인 A | `GET /api/v1/feed` | `@LoginRequired` |
+| 미설정 · 사전조사 미참여 | Feed 메인 B | `GET /api/v1/feed/popular-spots` | `@LoginRequired` |
+
+**둘 다 회원 전용이다.** 명세서 행위자 칸이 `FED-F01` = "무드 설정 완료 **회원**",
+`FED-F02` = "무드 미설정 **회원**" 이다. 비회원은 여기 해당하지 않는다.
 
 ### FED-F01 개인화 피드
 
@@ -121,22 +124,67 @@ route/infrastructure/spot/SpotSnapshotReaderAdapter.java  ← 어댑터. 여기�
 
 핵심은 랜덤이냐 아니냐가 아니라 **"랭킹을 언제 고정하느냐"** 다.
 
-##### 선택지
+##### 검토한 선택지
 
 | 안 | 방법 | 스크롤 중 | 새로고침 시 | 비용 |
 |---|---|---|---|---|
-| **A 결정적 정렬** | `무드 일치 수 DESC → 북마크 수 DESC → spot_id DESC`. 커서에 `(일치수, 북마크수, id)` | 고정 | **그대로** | 가장 낮음 |
-| **B 시드 셔플** | 새로고침 때 seed 발급 → 커서에 실어 전달. `ORDER BY hash(spot_id, seed)` | 고정 | 새 조합 | 낮음. 인프라 추가 없음 |
-| **C 세션 스냅샷** | 새로고침 때 랭킹 결과를 Redis/테이블에 저장하고 인덱스로 페이징 | 고정 | 새 조합 | 중간. 저장소 필요 |
-| **D C + 노출 이력** | 본 스팟을 기록해 다음 세션에서 제외 | 고정 | 새 항목 위주 | 높음. 테이블·정책 필요 |
+| A 결정적 정렬 | `무드 일치 수 DESC → 북마크 수 DESC → spot_id DESC` | 고정 | **그대로** | 가장 낮음 |
+| B 시드 셔플 | 새로고침 때 seed 발급 → 커서에 실어 전달 | 고정 | **같은 스팟이 순서만 바뀜** | 낮음 |
+| **B+ 시드 셔플 + 노출 이력** | B에 노출 이력을 더해 안 본 스팟을 앞에 둠 | 고정 | **안 본 것 우선** | 낮음. 테이블 1개 |
+| C 세션 스냅샷 | 랭킹 결과를 Redis에 저장하고 인덱스로 페이징 | 고정 | 새 조합 | 중간. Redis 필요 |
+| D C + 노출 이력 | C에 노출 이력 추가 | 고정 | 새 항목 위주 | 높음 |
 
-**권장은 B다.** 인스타그램의 체감(스크롤 중 고정 / 새로고침 시 갱신)을 인프라 추가 없이 낼 수 있고,
-seed를 커서에 넣기만 하면 되므로 서버가 세션 상태를 들고 있지 않아도 된다.
+##### 결정 — **B+ 채택** (2026-08-03)
 
-C·D는 스팟 카탈로그가 충분히 커지고 "새로고침해도 같은 게 또 뜬다"는 불만이 실제로 나온 뒤에 가도 늦지 않다.
-B에는 노출 이력이 없으므로 새로고침 시 같은 스팟이 다시 뜰 수 있는데, 카탈로그가 커지면 자연히 완화된다.
+기획 요구는 "인스타그램처럼"이다. 그 체감의 핵심은 두 가지인데,
 
-**미확정 — 기획 결정 필요.** A로 갈지 B로 갈지에 따라 커서 형식과 응답 계약이 달라진다.
+1. 스크롤 중 순서 고정
+2. **새로고침하면 새로운 것이 뜸**
+
+**B는 1만 만족하고 2를 만족하지 못한다.** 새로고침해도 같은 스팟이 순서만 바뀌기 때문이다.
+인스타그램에서 새 게 보이는 것은 셔플이 아니라 **본 것을 기억해 뒤로 미루기 때문**이고,
+카탈로그가 작을수록 이 차이가 크게 드러난다.
+
+C는 Redis 도입이 필요해 현 규모에 과하다. 그래서 **B+** 로 간다.
+
+##### B+ 설계
+
+**신규 테이블**
+
+```sql
+feed_impression
+  id · member_id · spot_id · shown_at
+  unique (member_id, spot_id)
+  index (member_id, shown_at)
+```
+
+**정렬 키** (앞에서부터 우선)
+
+1. `노출 안 함` 우선 — 단, **최근 N일 내 노출된 것만 "본 것"으로 친다**
+2. `무드 일치 수` DESC
+3. `hash(spot_id, seed)` — 같은 일치 수 안에서의 셔플
+4. `spot_id` — 동점 tiebreak, 커서 안정성 보장
+
+**커서** — keyset 방식. 마지막 행의 정렬 키 전부를 담는다.
+
+```
+cursor = base64(seed : seen : matchCount : hash : spotId)
+```
+
+- 커서 없이 요청 = 새로고침 → 서버가 **새 seed 발급**
+- 커서 있으면 그 안의 seed를 그대로 이어 씀 → 스크롤 중 순서 고정
+
+**노출 기록** — 응답에 나간 spotId를 `ON CONFLICT (member_id, spot_id) DO UPDATE SET shown_at = now()`로 upsert.
+조회 API지만 쓰기가 일어나므로 `@Transactional(readOnly = false)` 이어야 한다.
+
+**소진 처리 — 별도 리셋 로직을 두지 않는다.** "제외"가 아니라 "후순위"이므로 다 본 뒤에도 피드가 비지 않는다.
+게다가 판정 기준이 `shown_at > now() - N일` 이라 시간이 지나면 자동으로 "안 본 것"으로 되돌아온다.
+새로고침 때 seed가 바뀌므로 본 것들끼리의 순서도 매번 달라진다.
+
+> **왜 "제외"가 아니라 "후순위"인가** — 완전히 빼면 카탈로그가 작을 때 피드가 금방 바닥난다.
+> 후순위면 안 본 것을 우선 보여주되 목록이 끊기지 않는다.
+
+**미확정 세부** — `N일`(노출 이력 유효 기간) 값. 7일/14일/30일 중 기획 결정 필요. 기본값 14일을 제안한다.
 
 ### FED-F02 인기 스팟
 
@@ -179,6 +227,8 @@ Feed는 자체 엔티티가 없다. Pick만 상태를 가진다.
 - **PickRequestImage**(신설): 업로드 이미지. `pick_request_id · image_url · sort_order`.
 - **PickRequestArea**(신설): 선택 지역. `pick_request_id · area · district`.
 - **PickResultSpot**(신설): 추천 결과. `pick_request_id · spot_id · rank`.
+- **FeedImpression**(FED-F01, 신설): 피드 노출 이력. `member_id · spot_id · shown_at`, unique `(member_id, spot_id)`.
+  B+ 정렬의 "안 본 것 우선"을 위한 것이다. 위 "정렬" 절 참고.
 
 > 결과를 저장하는 이유는 명세 `PCK-F02` 사전조건이 "추천받기 완료(**결과 생성됨**)"이고,
 > `PCK-F03`에서 "모달 종료 시 기존 결과/카드/지도 위치 유지"를 요구하기 때문이다.
@@ -199,8 +249,8 @@ Feed는 자체 엔티티가 없다. Pick만 상태를 가진다.
 
 | Method | Path | 인증 | 요청 → 응답 | 기능 |
 |---|---|---|---|---|
-| GET | `/api/v1/feed?cursor=&size=20` | `@OptionalAuthMember` | → `CursorResponse<FeedSpotResponse>` | FED-F01 |
-| GET | `/api/v1/feed/popular-spots` | `@OptionalAuthMember` | → `List<PopularSpotResponse>` (5개) | FED-F02 |
+| GET | `/api/v1/feed?cursor=&size=20` | `@LoginRequired` | → `CursorResponse<FeedSpotResponse>` | FED-F01 |
+| GET | `/api/v1/feed/popular-spots` | `@LoginRequired` | → `List<PopularSpotResponse>` (5개) | FED-F02 |
 | POST | `/api/v1/picks` | `@LoginRequired` | `{ areas: [...], imageUrls: [...] }` → `{ pickId, spots: [...최대 5] }` | PCK-F01·F02 |
 | GET | `/api/v1/picks/{pickId}` | `@LoginRequired` | → `{ pickId, spots: [...] }` | PCK-F02 재조회 |
 
@@ -268,9 +318,10 @@ Feed는 자체 엔티티가 없다. Pick만 상태를 가진다.
     **보관 기간** — 개인 사진이라 개인정보 정책과 직결된다.
 - **추천 결과 저장 여부** — 서버에 저장(재조회·이력 분석 가능, 테이블 3개 추가) vs 응답만 하고 클라이언트 보관(단순, 새로고침 시 소실).
   명세 `PCK-F03`의 "모달 종료 시 결과 유지"는 클라이언트 상태로도 충족 가능하다.
-- **FED-F01 정렬 기준** — 추천 대상이 "선호 무드 교집합"이라는 것까지는 정해졌다.
-  남은 결정은 **새로고침 시 순서가 바뀌어야 하는지**이고, 이에 따라 A~D안 중 하나를 고른다
-  (위 "정렬" 절 참고). 커서 형식과 응답 계약이 여기서 갈린다. **권장은 B(시드 셔플).**
+- **비회원 Feed 화면의 기능 명세가 없다.** `AUT-F02` 출력이 "비회원 상태로 **Feed 비회원 메인** 진입"인데,
+  그 화면이 무엇을 보여주는지 정의한 행이 명세서에 없다. `FED-F01`·`FED-F02`는 행위자가 둘 다 **회원**이라
+  비회원용이 아니다. 비회원에게 무엇을 보여줄지(인기 스팟? 별도 큐레이션?) 기획 확인 필요.
+- **노출 이력 유효 기간(`N일`)** — B+ 정렬에서 "본 것"으로 판정하는 기간. 기본값 14일 제안, 기획 결정 필요.
 - **선호 무드 다중 매칭 규칙** — 회원 선호 무드가 3개 이상일 때 OR(하나라도 겹침) vs 가중 점수. 후자면 정렬 기준과 함께 정의 필요.
 - **PCK 지역 파라미터 형식** — `COM-P03` 자동완성이 시/도·구/군·동 단위다. `spot.area`/`district`/`neighborhood`와
   매핑 규칙 필요. `spot.application.RegionParser` 참고.
