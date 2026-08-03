@@ -43,6 +43,9 @@ moodi:
     model: gpt-4o-mini
   kakao:
     rest-api-key: ${KAKAO_REST_API_KEY:}
+  feed:
+    # 스팟 카탈로그가 커서 재순환보다 재등장 방지가 목적이라 길게 잡는다.
+    impression-window-days: ${FEED_IMPRESSION_WINDOW_DAYS:30}
 
 logging:
   pattern:
