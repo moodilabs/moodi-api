@@ -152,7 +152,10 @@ com.moodi.member/
 | `moods` (B) | not null · 원소는 유효 `MoodTag` | `INVALID_REQUEST` | `PreferredMoodRequest` |
 | `moods` (B) | 중복 제거 후 크기 `0 또는 ≥3` | `INSUFFICIENT_MOOD_SELECTION` | `PreferredMoods` |
 
-- 닉네임 중복 확인 API(`GET /nickname-availability`)는 UX용 사전 체크일 뿐, `POST /onboarding`에서 **한 번 더 검증**한다(TOCTOU 방지).
+- 닉네임 중복 확인 API(`GET /nickname-availability`)는 UX용 사전 체크일 뿐, `POST /members/profile`에서 **한 번 더 검증**한다.
+  조회와 저장 사이의 선점은 `uk_member_nickname` 위반을 잡아 `DUPLICATE_NICKNAME`으로 변환해 막는다(TOCTOU 방지).
+- 중복 조회는 **자기 자신을 제외**한다(`existsByNicknameAndIdNot`). 프로필 단계는 뒤로가기 후 재제출이 가능하기 때문이다.
+  사전 체크 API와 저장 API가 같은 기준을 써야 "사용 불가"로 보였다가 저장은 되는 불일치가 없다.
 - 사용자 노출 문구(예: "이미 사용 중인 닉네임이에요")는 `ErrorCode.message`로 매핑한다.
 
 ### API 계약 (전부 `@LoginRequired` — `PENDING`도 통과. 컨트롤러 `MemberController` 신설)

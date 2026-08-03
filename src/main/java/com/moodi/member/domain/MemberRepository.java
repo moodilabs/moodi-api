@@ -13,7 +13,9 @@ public interface MemberRepository {
 
     boolean existsByEmail(String email);
 
-    boolean existsByNickname(String nickname);
+    boolean existsByNicknameAndIdNot(String nickname, UUID id);
 
     boolean existsById(UUID id);
+
+    void flush();
 }

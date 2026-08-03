@@ -24,6 +24,7 @@ import org.mockito.Captor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -36,7 +37,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -75,17 +76,17 @@ class MemberOnboardingServiceTest {
     @Test
     @DisplayName("사용 중이지 않은 닉네임은 사용 가능하다")
     void nickname_availability_returns_true_when_unused() {
-        when(memberRepository.existsByNickname(NICKNAME)).thenReturn(false);
+        when(memberRepository.existsByNicknameAndIdNot(NICKNAME, MEMBER_ID)).thenReturn(false);
 
-        assertThat(memberOnboardingService.isNicknameAvailable(NICKNAME)).isTrue();
+        assertThat(memberOnboardingService.isNicknameAvailable(MEMBER_ID, NICKNAME)).isTrue();
     }
 
     @Test
     @DisplayName("이미 사용 중인 닉네임은 사용 불가능하다")
     void nickname_availability_returns_false_when_used() {
-        when(memberRepository.existsByNickname(NICKNAME)).thenReturn(true);
+        when(memberRepository.existsByNicknameAndIdNot(NICKNAME, MEMBER_ID)).thenReturn(true);
 
-        assertThat(memberOnboardingService.isNicknameAvailable(NICKNAME)).isFalse();
+        assertThat(memberOnboardingService.isNicknameAvailable(MEMBER_ID, NICKNAME)).isFalse();
     }
 
     @Test
@@ -93,7 +94,7 @@ class MemberOnboardingServiceTest {
     void update_profile_success() {
         Member member = MemberFixture.create();
         when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(member));
-        when(memberRepository.existsByNickname(NICKNAME)).thenReturn(false);
+        when(memberRepository.existsByNicknameAndIdNot(NICKNAME, MEMBER_ID)).thenReturn(false);
 
         memberOnboardingService.updateProfile(MEMBER_ID, PROFILE);
 
@@ -106,7 +107,7 @@ class MemberOnboardingServiceTest {
     @DisplayName("닉네임이 중복이면 프로필 설정에 실패한다")
     void update_profile_with_duplicate_nickname_throws() {
         when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(MemberFixture.create()));
-        when(memberRepository.existsByNickname(NICKNAME)).thenReturn(true);
+        when(memberRepository.existsByNicknameAndIdNot(NICKNAME, MEMBER_ID)).thenReturn(true);
 
         assertThatThrownBy(() -> memberOnboardingService.updateProfile(MEMBER_ID, PROFILE))
                 .isInstanceOf(BusinessException.class)
@@ -117,15 +118,31 @@ class MemberOnboardingServiceTest {
     }
 
     @Test
-    @DisplayName("직전에 저장한 자신의 닉네임으로 재제출하면 중복으로 보지 않는다")
-    void update_profile_with_own_nickname_skips_duplicate_check() {
+    @DisplayName("중복 검사는 자기 자신을 제외하고 조회한다")
+    void update_profile_excludes_self_from_duplicate_check() {
         Member member = MemberFixture.withProfile();
         when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(member));
+        when(memberRepository.existsByNicknameAndIdNot(member.getNickname(), MEMBER_ID)).thenReturn(false);
 
-        memberOnboardingService.updateProfile(MEMBER_ID, PROFILE);
+        memberOnboardingService.updateProfile(
+                MEMBER_ID, new ProfileCommand(member.getNickname(), "KR", 1996, Gender.FEMALE));
 
-        verify(memberRepository, never()).existsByNickname(anyString());
+        verify(memberRepository).existsByNicknameAndIdNot(member.getNickname(), MEMBER_ID);
         verify(memberRepository).save(member);
+    }
+
+    @Test
+    @DisplayName("저장 시점에 닉네임이 선점되면 중복 예외로 변환한다")
+    void update_profile_translates_constraint_violation_to_duplicate_nickname() {
+        when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(MemberFixture.create()));
+        when(memberRepository.existsByNicknameAndIdNot(NICKNAME, MEMBER_ID)).thenReturn(false);
+        doThrow(new DataIntegrityViolationException("uk_member_nickname"))
+                .when(memberRepository).flush();
+
+        assertThatThrownBy(() -> memberOnboardingService.updateProfile(MEMBER_ID, PROFILE))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.DUPLICATE_NICKNAME);
     }
 
     @Test
@@ -168,6 +185,7 @@ class MemberOnboardingServiceTest {
                 });
         assertThat(saved).filteredOn(MemberAgreement::isAgreed)
                 .allSatisfy(agreement -> assertThat(agreement.getAgreedAt()).isNotNull());
+        assertThat(saved).allSatisfy(agreement -> assertThat(agreement.getMemberId()).isEqualTo(MEMBER_ID));
     }
 
     @Test
