@@ -22,5 +22,9 @@ public interface RouteJpaRepository extends RouteRepository, Repository<Route, L
     Optional<Route> findByPublicId(@Param("publicId") UUID publicId);
 
     @Override
+    @Query("SELECT r FROM Route r WHERE r.publicId = :publicId AND r.shared = true AND r.deletedAt IS NULL")
+    Optional<Route> findSharedByPublicId(@Param("publicId") UUID publicId);
+
+    @Override
     void delete(Route route);
 }

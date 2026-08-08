@@ -160,4 +160,41 @@ class RouteQueryServiceTest {
         assertThat(result.items()).isEmpty();
         assertThat(result.hasNext()).isFalse();
     }
+
+    @Test
+    @DisplayName("공유된 루트 상세 조회 성공")
+    void get_shared_detail_success() {
+        // given
+        UUID publicId = UUID.randomUUID();
+        Route route = RouteFixture.createRoute(
+                MEMBER_ID, "Shared route", START, END,
+                List.of(RouteFixture.createDay(1, START, 2))
+        );
+        route.share();
+
+        given(routeRepository.findSharedByPublicId(publicId))
+                .willReturn(Optional.of(route));
+
+        // when
+        Route result = routeQueryService.getSharedDetail(publicId);
+
+        // then
+        assertThat(result.getTitle()).isEqualTo("Shared route");
+        assertThat(result.isShared()).isTrue();
+    }
+
+    @Test
+    @DisplayName("공유되지 않았거나 존재하지 않는 루트 조회 시 실패")
+    void get_shared_detail_not_found() {
+        // given
+        UUID publicId = UUID.randomUUID();
+        given(routeRepository.findSharedByPublicId(publicId))
+                .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> routeQueryService.getSharedDetail(publicId))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.ROUTE_NOT_FOUND);
+    }
 }

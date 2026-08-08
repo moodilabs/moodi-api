@@ -58,4 +58,9 @@ public class RouteQueryService {
 
         return route;
     }
+
+    public Route getSharedDetail(UUID publicId) {
+        return routeRepository.findSharedByPublicId(publicId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROUTE_NOT_FOUND));
+    }
 }
