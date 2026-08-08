@@ -1,0 +1,122 @@
+== 온보딩 (Onboarding)
+
+로그인으로 생성된 `PENDING` 회원을 프로필 설정과 약관 동의를 거쳐 `ACTIVE`로 승격시킵니다.
+모든 요청에 `Authorization: Bearer {accessToken}` 헤더가 필요하며, `PENDING` 회원도 호출할 수 있습니다.
+
+=== 닉네임 중복 확인
+
+프로필 설정 화면에서 `[다음]` 클릭 시 호출하는 사전 체크입니다.
+실제 중복 검증은 프로필 설정 API에서 한 번 더 수행합니다.
+
+.HTTP Request
+include::{snippets}/member/nickname-availability/http-request.adoc[]
+
+.Query Parameters
+include::{snippets}/member/nickname-availability/query-parameters.adoc[]
+
+.HTTP Response
+include::{snippets}/member/nickname-availability/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/member/nickname-availability/response-fields.adoc[]
+
+=== 프로필 설정
+
+닉네임·국가·출생연도·성별을 저장합니다. 저장 후에도 상태는 `PENDING`을 유지하며, 약관 동의 단계로 이동합니다.
+
+.HTTP Request
+include::{snippets}/member/profile/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/member/profile/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/member/profile/http-response.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `DUPLICATE_NICKNAME` | 409 | 이미 사용 중인 닉네임
+| `INVALID_NICKNAME` | 400 | 닉네임 형식 위반 (2~20자, 영문·숫자·`_`·`.`)
+| `INVALID_BIRTH_YEAR` | 400 | 출생연도가 1900 미만이거나 미래
+| `UNDERAGE` | 400 | 만 14세 미만
+| `INVALID_COUNTRY` | 400 | ISO 3166-1 alpha-2 코드가 아님
+| `ALREADY_ONBOARDED` | 409 | 이미 가입이 완료된 회원
+| `MEMBER_NOT_FOUND` | 404 | 회원 없음
+|===
+
+=== 약관 동의 및 가입 완료
+
+필수 약관 3종에 모두 동의하면 회원 상태가 `ACTIVE`로 바뀝니다.
+선택 약관(마케팅 수신)은 동의 여부와 무관하게 저장됩니다.
+
+.HTTP Request
+include::{snippets}/member/agreements/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/member/agreements/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/member/agreements/http-response.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `REQUIRED_AGREEMENT_MISSING` | 400 | 필수 약관 미동의
+| `PROFILE_REQUIRED` | 400 | 프로필 설정을 하지 않고 호출
+| `ALREADY_ONBOARDED` | 409 | 이미 가입이 완료된 회원
+| `MEMBER_NOT_FOUND` | 404 | 회원 없음
+|===
+
+=== 선호 무드 설정 (사전조사)
+
+사전조사에서 선택한 선호 무드를 저장합니다. 기존 선택은 전체 교체됩니다.
+
+건너뛰기를 허용하므로 **0개 또는 3개 이상**만 유효합니다. 중복 무드는 서버에서 제거한 뒤 개수를 셉니다.
+
+.HTTP Request
+include::{snippets}/member/preferred-moods/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/member/preferred-moods/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/member/preferred-moods/http-response.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `INSUFFICIENT_MOOD_SELECTION` | 400 | 무드를 1~2개만 선택
+| `MEMBER_NOT_FOUND` | 404 | 회원 없음
+|===
+
+=== 내 정보 조회
+
+스플래시(`ONB-F01`)에서 진입 화면을 분기할 때 사용합니다.
+
+* `status` 가 `PENDING` 이면 온보딩 미완료 → 프로필 설정으로
+* `ACTIVE` 이면서 `hasPreferredMood` 가 `false` 이면 Feed 메인 B로
+* `ACTIVE` 이면서 `true` 이면 Feed 메인 A로
+
+.HTTP Request
+include::{snippets}/member/me/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/member/me/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/member/me/response-fields.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `MEMBER_NOT_FOUND` | 404 | 회원 없음
+|===

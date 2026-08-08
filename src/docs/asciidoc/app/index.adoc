@@ -13,9 +13,13 @@ include::../shared/overview.adoc[]
 
 include::../member/auth.adoc[]
 
+include::../member/onboarding.adoc[]
+
 include::../spot/detail.adoc[]
 
 include::../spot/bookmark.adoc[]
+
+include::../discovery/feed.adoc[]
 
 include::../route/generate.adoc[]
 
