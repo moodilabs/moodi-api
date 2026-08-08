@@ -40,6 +40,12 @@ public class RouteSpot {
         this.spotDescription = spotDescription;
     }
 
+    public RouteSpot copy() {
+        return new RouteSpot(spotId, sequence, estimatedMinutes,
+                spotTitle, spotImageUrl, spotArea, spotDistrict,
+                spotLatitude, spotLongitude, spotContentType, spotDescription);
+    }
+
     public static RouteSpot create(Long spotId, int sequence, int estimatedMinutes,
                                     String spotTitle, String spotImageUrl,
                                     String spotArea, String spotDistrict,

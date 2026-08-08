@@ -35,6 +35,16 @@ public class RouteDay {
         return new RouteDay(dayNumber, date, spots, legs);
     }
 
+    public RouteDay copy() {
+        List<RouteSpot> copiedSpots = this.spots.stream()
+                .map(RouteSpot::copy)
+                .toList();
+        List<RouteLeg> copiedLegs = this.legs.stream()
+                .map(RouteLeg::copy)
+                .toList();
+        return new RouteDay(this.dayNumber, this.date, copiedSpots, copiedLegs);
+    }
+
     public int getSpotCount() {
         return spots.size();
     }
