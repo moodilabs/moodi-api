@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -28,6 +29,8 @@ public class Route extends BaseEntity {
     private LocalDate startDate;
     private LocalDate endDate;
     private List<RouteDay> days = new ArrayList<>();
+    private boolean shared;
+    private LocalDateTime deletedAt;
 
     private Route(UUID memberId, String title, LocalDate startDate, LocalDate endDate,
                   List<RouteDay> days) {
@@ -45,6 +48,13 @@ public class Route extends BaseEntity {
     public static Route create(UUID memberId, String title, LocalDate startDate, LocalDate endDate,
                                 List<RouteDay> days) {
         return new Route(memberId, title, startDate, endDate, days);
+    }
+
+    public Route copyFor(UUID newMemberId) {
+        List<RouteDay> copiedDays = this.days.stream()
+                .map(RouteDay::copy)
+                .toList();
+        return new Route(newMemberId, this.title, this.startDate, this.endDate, copiedDays);
     }
 
     public void validateOwner(UUID requestMemberId) {
@@ -67,6 +77,22 @@ public class Route extends BaseEntity {
     public void updateTitle(String title) {
         validateTitle(title);
         this.title = title;
+    }
+
+    public void share() {
+        this.shared = true;
+    }
+
+    public boolean isShared() {
+        return shared;
+    }
+
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
     }
 
     public int getTotalDays() {

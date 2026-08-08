@@ -1,0 +1,14 @@
+== 루트 복제 (Route Copy)
+
+공유된 루트를 본인의 루트 목록으로 복제합니다. 원본과 독립된 사본이 생성됩니다.
+
+=== 루트 복제
+
+.HTTP Request
+include::{snippets}/route-copy/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/route-copy/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/route-copy/response-fields.adoc[]

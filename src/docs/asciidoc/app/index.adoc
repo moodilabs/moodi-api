@@ -25,3 +25,11 @@ include::../route/generate.adoc[]
 
 include::../route/save.adoc[]
 
+include::../route/query.adoc[]
+
+include::../route/share.adoc[]
+
+include::../route/copy.adoc[]
+
+include::../route/delete.adoc[]
+

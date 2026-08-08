@@ -26,6 +26,10 @@ public class RouteLeg {
         this.landingUrl = landingUrl;
     }
 
+    public RouteLeg copy() {
+        return new RouteLeg(fromSequence, toSequence, travelMode, durationSeconds, distanceMeters, landingUrl);
+    }
+
     public static RouteLeg create(int fromSequence, int toSequence, TravelMode travelMode,
                                    int durationSeconds, int distanceMeters, String landingUrl) {
         return new RouteLeg(fromSequence, toSequence, travelMode, durationSeconds, distanceMeters, landingUrl);

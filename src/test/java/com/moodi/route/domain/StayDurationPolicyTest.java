@@ -23,9 +23,8 @@ class StayDurationPolicyTest {
     }
 
     @Test
-    @DisplayName("쇼핑·여행코스는 60분")
-    void shopping_and_travel_course_60_minutes() {
+    @DisplayName("쇼핑은 60분")
+    void shopping_60_minutes() {
         assertThat(StayDurationPolicy.getEstimatedMinutes(RouteSpotType.SHOPPING)).isEqualTo(60);
-        assertThat(StayDurationPolicy.getEstimatedMinutes(RouteSpotType.TRAVEL_COURSE)).isEqualTo(60);
     }
 }

@@ -15,7 +15,6 @@ class SpotContentTypeTest {
             "관광지, TOURIST_ATTRACTION",
             "문화시설, CULTURAL_FACILITY",
             "축제공연행사, FESTIVAL",
-            "여행코스, TRAVEL_COURSE",
             "레포츠, LEISURE_SPORTS",
             "숙박, ACCOMMODATION",
             "쇼핑, SHOPPING",

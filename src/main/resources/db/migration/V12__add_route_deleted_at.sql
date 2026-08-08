@@ -1,0 +1,1 @@
+ALTER TABLE route ADD COLUMN deleted_at TIMESTAMP;

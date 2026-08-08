@@ -8,4 +8,12 @@ public record LegResult(
         int distanceMeters,
         String landingUrl
 ) {
+
+    public static LegResult unavailable() {
+        return new LegResult(TravelMode.UNAVAILABLE, 0, 0, null);
+    }
+
+    public boolean isAvailable() {
+        return travelMode != TravelMode.UNAVAILABLE;
+    }
 }

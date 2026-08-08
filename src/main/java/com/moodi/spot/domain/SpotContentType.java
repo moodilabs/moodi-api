@@ -9,7 +9,6 @@ public enum SpotContentType {
     TOURIST_ATTRACTION("관광지", false),
     CULTURAL_FACILITY("문화시설", false),
     FESTIVAL("축제공연행사", false),
-    TRAVEL_COURSE("여행코스", false),
     LEISURE_SPORTS("레포츠", false),
     ACCOMMODATION("숙박", true),
     SHOPPING("쇼핑", false),

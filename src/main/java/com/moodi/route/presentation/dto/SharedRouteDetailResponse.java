@@ -10,22 +10,24 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-public record RouteSaveResponse(
+public record SharedRouteDetailResponse(
         UUID publicId,
         String title,
         LocalDate startDate,
         LocalDate endDate,
-        List<DayPlan> days
+        int totalDays,
+        boolean isOwner,
+        List<DayDetail> days
 ) {
-    public record DayPlan(
+    public record DayDetail(
             int dayNumber,
             LocalDate date,
-            List<SpotPlan> spots,
-            List<LegPlan> legs
+            List<SpotDetail> spots,
+            List<LegDetail> legs
     ) {
     }
 
-    public record SpotPlan(
+    public record SpotDetail(
             Long spotId,
             int sequence,
             int estimatedMinutes,
@@ -40,7 +42,7 @@ public record RouteSaveResponse(
     ) {
     }
 
-    public record LegPlan(
+    public record LegDetail(
             int fromSequence,
             int toSequence,
             String travelMode,
@@ -50,34 +52,36 @@ public record RouteSaveResponse(
     ) {
     }
 
-    public static RouteSaveResponse from(Route route) {
-        List<DayPlan> dayPlans = route.getDays().stream()
-                .map(RouteSaveResponse::toDayPlan)
+    public static SharedRouteDetailResponse from(Route route, boolean isOwner) {
+        List<DayDetail> dayDetails = route.getDays().stream()
+                .map(SharedRouteDetailResponse::toDayDetail)
                 .toList();
 
-        return new RouteSaveResponse(
+        return new SharedRouteDetailResponse(
                 route.getPublicId(),
                 route.getTitle(),
                 route.getStartDate(),
                 route.getEndDate(),
-                dayPlans
+                route.getTotalDays(),
+                isOwner,
+                dayDetails
         );
     }
 
-    private static DayPlan toDayPlan(RouteDay day) {
-        List<SpotPlan> spots = day.getSpots().stream()
-                .map(RouteSaveResponse::toSpotPlan)
+    private static DayDetail toDayDetail(RouteDay day) {
+        List<SpotDetail> spots = day.getSpots().stream()
+                .map(SharedRouteDetailResponse::toSpotDetail)
                 .toList();
 
-        List<LegPlan> legs = day.getLegs().stream()
-                .map(RouteSaveResponse::toLegPlan)
+        List<LegDetail> legs = day.getLegs().stream()
+                .map(SharedRouteDetailResponse::toLegDetail)
                 .toList();
 
-        return new DayPlan(day.getDayNumber(), day.getDate(), spots, legs);
+        return new DayDetail(day.getDayNumber(), day.getDate(), spots, legs);
     }
 
-    private static SpotPlan toSpotPlan(RouteSpot spot) {
-        return new SpotPlan(
+    private static SpotDetail toSpotDetail(RouteSpot spot) {
+        return new SpotDetail(
                 spot.getSpotId(), spot.getSequence(), spot.getEstimatedMinutes(),
                 spot.getSpotTitle(), spot.getSpotImageUrl(),
                 spot.getSpotArea(), spot.getSpotDistrict(),
@@ -86,8 +90,8 @@ public record RouteSaveResponse(
         );
     }
 
-    private static LegPlan toLegPlan(RouteLeg leg) {
-        return new LegPlan(
+    private static LegDetail toLegDetail(RouteLeg leg) {
+        return new LegDetail(
                 leg.getFromSequence(), leg.getToSequence(),
                 leg.getTravelMode() != TravelMode.UNAVAILABLE ? leg.getTravelMode().name() : null,
                 leg.getDurationSeconds(), leg.getDistanceMeters(),

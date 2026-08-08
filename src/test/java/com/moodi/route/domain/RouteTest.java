@@ -148,4 +148,76 @@ class RouteTest {
                 .extracting(e -> ((BusinessException) e).getErrorCode())
                 .isEqualTo(ErrorCode.ROUTE_INVALID_TITLE);
     }
+
+    @Test
+    @DisplayName("Soft Delete 성공")
+    void soft_delete_success() {
+        Route route = RouteFixture.createRoute(1);
+
+        route.softDelete();
+
+        assertThat(route.isDeleted()).isTrue();
+        assertThat(route.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("삭제되지 않은 루트는 isDeleted가 false")
+    void is_deleted_false_when_not_deleted() {
+        Route route = RouteFixture.createRoute(1);
+
+        assertThat(route.isDeleted()).isFalse();
+    }
+
+    @Test
+    @DisplayName("루트를 다른 회원에게 복제하면 새 publicId와 memberId를 가진 독립 사본이 생성된다")
+    void copy_for_creates_independent_copy() {
+        // given
+        Route original = RouteFixture.createRoute(
+                MEMBER_ID, TITLE, START, START.plusDays(1),
+                List.of(
+                        RouteFixture.createDay(1, START, 2),
+                        RouteFixture.createDay(2, START.plusDays(1), 2)
+                )
+        );
+        original.share();
+        UUID newMemberId = UUID.randomUUID();
+
+        // when
+        Route copy = original.copyFor(newMemberId);
+
+        // then
+        assertThat(copy.getPublicId()).isNotEqualTo(original.getPublicId());
+        assertThat(copy.getMemberId()).isEqualTo(newMemberId);
+        assertThat(copy.getTitle()).isEqualTo(original.getTitle());
+        assertThat(copy.getStartDate()).isEqualTo(original.getStartDate());
+        assertThat(copy.getEndDate()).isEqualTo(original.getEndDate());
+        assertThat(copy.isShared()).isFalse();
+        assertThat(copy.getDays()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("복제된 루트의 스팟과 이동정보가 원본과 동일하지만 독립 객체이다")
+    void copy_for_deep_copies_spots_and_legs() {
+        // given
+        Route original = RouteFixture.createRoute(
+                MEMBER_ID, TITLE, START, START,
+                List.of(RouteFixture.createDay(1, START, 3))
+        );
+        UUID newMemberId = UUID.randomUUID();
+
+        // when
+        Route copy = original.copyFor(newMemberId);
+
+        // then
+        RouteDay originalDay = original.getDays().get(0);
+        RouteDay copiedDay = copy.getDays().get(0);
+
+        assertThat(copiedDay.getSpots()).hasSize(originalDay.getSpots().size());
+        assertThat(copiedDay.getLegs()).hasSize(originalDay.getLegs().size());
+
+        assertThat(copiedDay.getSpots().get(0).getSpotTitle())
+                .isEqualTo(originalDay.getSpots().get(0).getSpotTitle());
+        assertThat(copiedDay.getSpots().get(0))
+                .isNotSameAs(originalDay.getSpots().get(0));
+    }
 }

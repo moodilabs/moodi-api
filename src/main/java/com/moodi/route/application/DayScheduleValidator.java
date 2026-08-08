@@ -1,7 +1,6 @@
 package com.moodi.route.application;
 
 import com.moodi.route.domain.StayDurationPolicy;
-import com.moodi.route.domain.TravelMode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -109,9 +108,7 @@ public class DayScheduleValidator {
                     from.longitude(), from.latitude(),
                     to.longitude(), to.latitude()
             );
-            legs.add(legResult.orElse(
-                    new LegResult(TravelMode.WALK, 0, 0, null)
-            ));
+            legs.add(legResult.orElse(LegResult.unavailable()));
         }
         return legs;
     }

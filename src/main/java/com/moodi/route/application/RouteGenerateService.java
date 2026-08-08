@@ -100,9 +100,7 @@ public class RouteGenerateService {
                     from.longitude(), from.latitude(),
                     to.longitude(), to.latitude()
             );
-            legs.add(legResult.orElse(
-                    new LegResult(TravelMode.WALK, 0, 0, null)
-            ));
+            legs.add(legResult.orElse(LegResult.unavailable()));
         }
         return legs;
     }
@@ -134,7 +132,7 @@ public class RouteGenerateService {
                 LegResult leg = dayLegs.get(legIndex);
                 legItems.add(new LegResultItem(
                         legIndex + 1, legIndex + 2,
-                        leg.travelMode().name(),
+                        leg.isAvailable() ? leg.travelMode().name() : TravelMode.UNAVAILABLE.name(),
                         leg.durationSeconds(), leg.distanceMeters(),
                         leg.landingUrl()
                 ));
