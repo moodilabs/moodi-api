@@ -40,7 +40,8 @@ public enum ErrorCode {
     ROUTE_DUPLICATE_SPOT_SEQUENCE(HttpStatus.UNPROCESSABLE_ENTITY, "ROUTE_DUPLICATE_SPOT_SEQUENCE", "스팟 순서가 중복됩니다."),
     ROUTE_FORBIDDEN(HttpStatus.FORBIDDEN, "ROUTE_FORBIDDEN", "해당 루트에 대한 권한이 없습니다."),
     ROUTE_INVALID_TITLE(HttpStatus.UNPROCESSABLE_ENTITY, "ROUTE_INVALID_TITLE", "제목은 1~40자여야 합니다."),
-    ROUTE_GENERATION_FAILED(HttpStatus.UNPROCESSABLE_ENTITY, "ROUTE_GENERATION_FAILED", "루트 생성에 실패했습니다. 스팟 수를 줄이거나 기간을 늘려 주세요.");
+    ROUTE_GENERATION_FAILED(HttpStatus.UNPROCESSABLE_ENTITY, "ROUTE_GENERATION_FAILED", "루트 생성에 실패했습니다. 스팟 수를 줄이거나 기간을 늘려 주세요."),
+    INVALID_CURSOR_FORMAT(HttpStatus.BAD_REQUEST, "INVALID_CURSOR_FORMAT", "잘못된 커서 형식입니다.");
 
     private final HttpStatus status;
     private final String code;

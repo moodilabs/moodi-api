@@ -10,10 +10,10 @@ public record LegResult(
 ) {
 
     public static LegResult unavailable() {
-        return new LegResult(null, 0, 0, null);
+        return new LegResult(TravelMode.UNAVAILABLE, 0, 0, null);
     }
 
     public boolean isAvailable() {
-        return travelMode != null;
+        return travelMode != TravelMode.UNAVAILABLE;
     }
 }

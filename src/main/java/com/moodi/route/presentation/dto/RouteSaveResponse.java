@@ -4,6 +4,7 @@ import com.moodi.route.domain.Route;
 import com.moodi.route.domain.RouteDay;
 import com.moodi.route.domain.RouteLeg;
 import com.moodi.route.domain.RouteSpot;
+import com.moodi.route.domain.TravelMode;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -88,7 +89,7 @@ public record RouteSaveResponse(
     private static LegPlan toLegPlan(RouteLeg leg) {
         return new LegPlan(
                 leg.getFromSequence(), leg.getToSequence(),
-                leg.getTravelMode() != null ? leg.getTravelMode().name() : null,
+                leg.getTravelMode() != TravelMode.UNAVAILABLE ? leg.getTravelMode().name() : null,
                 leg.getDurationSeconds(), leg.getDistanceMeters(),
                 leg.getLandingUrl()
         );

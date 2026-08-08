@@ -27,8 +27,15 @@ public class RouteQueryService {
 
         if (cursor != null && !cursor.isBlank()) {
             String[] parts = cursor.split(",", 2);
-            cursorUpdatedAt = LocalDateTime.parse(parts[0]);
-            cursorId = Long.parseLong(parts[1]);
+            if (parts.length != 2) {
+                throw new BusinessException(ErrorCode.INVALID_CURSOR_FORMAT);
+            }
+            try {
+                cursorUpdatedAt = LocalDateTime.parse(parts[0]);
+                cursorId = Long.parseLong(parts[1]);
+            } catch (Exception e) {
+                throw new BusinessException(ErrorCode.INVALID_CURSOR_FORMAT);
+            }
         }
 
         List<RouteListRow> rows = routeQueryRepository.findByMemberLatest(
