@@ -11,7 +11,6 @@ public class StayDurationPolicy {
             case LEISURE_SPORTS -> 120;
             case FESTIVAL -> 90;
             case SHOPPING -> 60;
-            case TRAVEL_COURSE -> 60;
             case ACCOMMODATION, RESTAURANT -> DEFAULT_MINUTES;
         };
     }

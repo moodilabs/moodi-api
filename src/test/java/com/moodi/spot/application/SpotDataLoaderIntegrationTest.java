@@ -45,7 +45,7 @@ class SpotDataLoaderIntegrationTest {
         SpotDataLoader.LoadResult result = spotDataLoader.load(rows);
 
         // then
-        assertThat(result.saved()).isEqualTo(8);
+        assertThat(result.saved()).isEqualTo(7);
         assertThat(result.skipped()).isZero();
         assertThat(result.failed()).isZero();
     }
@@ -68,7 +68,7 @@ class SpotDataLoaderIntegrationTest {
 
         // then
         assertThat(result.saved()).isZero();
-        assertThat(result.skipped()).isEqualTo(8);
+        assertThat(result.skipped()).isEqualTo(7);
     }
 
     @Test
