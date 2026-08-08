@@ -153,6 +153,7 @@ public class RouteController {
                 row.publicId(), row.title(),
                 row.startDate(), row.endDate(),
                 (int) (row.endDate().toEpochDay() - row.startDate().toEpochDay()) + 1,
+                row.spotCount(),
                 row.updatedAt()
         );
     }

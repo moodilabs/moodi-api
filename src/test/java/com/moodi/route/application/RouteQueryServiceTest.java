@@ -106,9 +106,9 @@ class RouteQueryServiceTest {
         LocalDateTime now = LocalDateTime.now();
 
         List<RouteListRow> rows = List.of(
-                new RouteListRow(3L, UUID.randomUUID(), "Busan coastal walk", START, END, now),
-                new RouteListRow(2L, UUID.randomUUID(), "Seoul art tour", START, END, now.minusHours(1)),
-                new RouteListRow(1L, UUID.randomUUID(), "Jeju nature trip", START, END, now.minusHours(2))
+                new RouteListRow(3L, UUID.randomUUID(), "Busan coastal walk", START, END, 5, now),
+                new RouteListRow(2L, UUID.randomUUID(), "Seoul art tour", START, END, 3, now.minusHours(1)),
+                new RouteListRow(1L, UUID.randomUUID(), "Jeju nature trip", START, END, 4, now.minusHours(2))
         );
 
         given(routeQueryRepository.findByMemberLatest(MEMBER_ID, null, null, size))
@@ -131,7 +131,7 @@ class RouteQueryServiceTest {
         LocalDateTime now = LocalDateTime.now();
 
         List<RouteListRow> rows = List.of(
-                new RouteListRow(1L, UUID.randomUUID(), "My only route", START, END, now)
+                new RouteListRow(1L, UUID.randomUUID(), "My only route", START, END, 2, now)
         );
 
         given(routeQueryRepository.findByMemberLatest(MEMBER_ID, null, null, size))

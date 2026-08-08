@@ -24,7 +24,11 @@ public class RouteQueryRepositoryImpl implements RouteQueryRepository {
     public List<RouteListRow> findByMemberLatest(UUID memberId, Long cursorId,
                                                   LocalDateTime cursorUpdatedAt, int size) {
         StringBuilder sql = new StringBuilder("""
-                SELECT r.id, r.public_id, r.title, r.start_date, r.end_date, r.updated_at
+                SELECT r.id, r.public_id, r.title, r.start_date, r.end_date,
+                       (SELECT COUNT(*) FROM route_spot rs
+                            JOIN route_day rd ON rd.id = rs.route_day_id
+                        WHERE rd.route_id = r.id) AS spot_count,
+                       r.updated_at
                 FROM route r
                 WHERE r.member_id = :memberId
                   AND r.deleted_at IS NULL
@@ -70,7 +74,8 @@ public class RouteQueryRepositoryImpl implements RouteQueryRepository {
                 (String) row[2],
                 ((java.sql.Date) row[3]).toLocalDate(),
                 ((java.sql.Date) row[4]).toLocalDate(),
-                ((Timestamp) row[5]).toLocalDateTime()
+                ((Number) row[5]).intValue(),
+                ((Timestamp) row[6]).toLocalDateTime()
         );
     }
 }

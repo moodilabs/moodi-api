@@ -226,8 +226,8 @@ class RouteControllerDocsTest extends AuthenticatedRestDocsSupport {
 
         CursorResponse<RouteListRow> result = CursorResponse.of(
                 List.of(
-                        new RouteListRow(6L, UUID.randomUUID(), "Retro mood trip in Seongsu", start, end, updatedAt),
-                        new RouteListRow(5L, UUID.randomUUID(), "Busan coastal walk", start, end, updatedAt.minusHours(1))
+                        new RouteListRow(6L, UUID.randomUUID(), "Retro mood trip in Seongsu", start, end, 5, updatedAt),
+                        new RouteListRow(5L, UUID.randomUUID(), "Busan coastal walk", start, end, 3, updatedAt.minusHours(1))
                 ),
                 updatedAt.minusHours(1).toString() + ",5",
                 true
@@ -251,6 +251,7 @@ class RouteControllerDocsTest extends AuthenticatedRestDocsSupport {
                                 fieldWithPath("data.items[].startDate").description("여행 시작일"),
                                 fieldWithPath("data.items[].endDate").description("여행 종료일"),
                                 fieldWithPath("data.items[].totalDays").description("총 여행 일수"),
+                                fieldWithPath("data.items[].spotCount").description("스팟 개수"),
                                 fieldWithPath("data.items[].updatedAt").description("최종 수정일시"),
                                 fieldWithPath("data.nextCursor").description("다음 페이지 커서"),
                                 fieldWithPath("data.hasNext").description("다음 페이지 존재 여부")

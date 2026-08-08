@@ -10,6 +10,7 @@ public record RouteListRow(
         String title,
         LocalDate startDate,
         LocalDate endDate,
+        int spotCount,
         LocalDateTime updatedAt
 ) {
 }

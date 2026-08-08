@@ -10,6 +10,7 @@ public record RouteListResponse(
         LocalDate startDate,
         LocalDate endDate,
         int totalDays,
+        int spotCount,
         LocalDateTime updatedAt
 ) {
 }
