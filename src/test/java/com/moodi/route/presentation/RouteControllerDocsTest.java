@@ -10,7 +10,9 @@ import com.moodi.route.application.RouteGenerateService;
 import com.moodi.route.application.RouteListRow;
 import com.moodi.route.application.RouteQueryService;
 import com.moodi.route.application.RouteSaveCommand;
+import com.moodi.route.application.RouteCopyService;
 import com.moodi.route.application.RouteSaveService;
+import com.moodi.route.application.RouteShareService;
 import com.moodi.route.domain.Route;
 import com.moodi.route.presentation.dto.RouteGenerateRequest;
 import com.moodi.route.presentation.dto.RouteListResponse;
@@ -54,10 +56,12 @@ class RouteControllerDocsTest extends AuthenticatedRestDocsSupport {
     private final RouteSaveService routeSaveService = mock(RouteSaveService.class);
     private final RouteQueryService routeQueryService = mock(RouteQueryService.class);
     private final RouteDeleteService routeDeleteService = mock(RouteDeleteService.class);
+    private final RouteShareService routeShareService = mock(RouteShareService.class);
+    private final RouteCopyService routeCopyService = mock(RouteCopyService.class);
 
     @Override
     protected Object initController() {
-        return new RouteController(routeGenerateService, routeSaveService, routeQueryService, routeDeleteService);
+        return new RouteController(routeGenerateService, routeSaveService, routeQueryService, routeDeleteService, routeShareService, routeCopyService);
     }
 
     @Test
@@ -320,6 +324,43 @@ class RouteControllerDocsTest extends AuthenticatedRestDocsSupport {
         mockMvc.perform(delete("/api/routes/{publicId}", publicId))
                 .andExpect(status().isNoContent())
                 .andDo(document("route-delete"));
+    }
+
+    @Test
+    @DisplayName("루트 복제 API")
+    void copy_route() throws Exception {
+        // given
+        UUID publicId = UUID.randomUUID();
+        Route copied = RouteFixture.createRoute(
+                memberId, "Retro mood trip in Seongsu",
+                LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 11),
+                List.of(RouteFixture.createDay(1, LocalDate.of(2026, 8, 10), 2))
+        );
+
+        given(routeCopyService.copy(any(UUID.class), any(UUID.class)))
+                .willReturn(copied);
+
+        // when & then
+        mockMvc.perform(post("/api/routes/{publicId}/copy", publicId))
+                .andExpect(status().isCreated())
+                .andDo(document("route-copy",
+                        responseFields(
+                                fieldWithPath("data.publicId").description("복제된 루트의 공개 식별자")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("루트 공유 활성화 API")
+    void share_route() throws Exception {
+        // given
+        UUID publicId = UUID.randomUUID();
+        doNothing().when(routeShareService).share(any(UUID.class), any(UUID.class));
+
+        // when & then
+        mockMvc.perform(post("/api/routes/{publicId}/share", publicId))
+                .andExpect(status().isNoContent())
+                .andDo(document("route-share"));
     }
 
     private org.springframework.restdocs.snippet.Snippet saveResponseFields() {

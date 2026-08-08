@@ -9,7 +9,10 @@ import com.moodi.route.application.RouteQueryService;
 import com.moodi.route.application.RouteSaveCommand;
 import com.moodi.route.application.RouteSaveCommand.DayCommand;
 import com.moodi.route.application.RouteSaveService;
+import com.moodi.route.application.RouteCopyService;
+import com.moodi.route.application.RouteShareService;
 import com.moodi.route.domain.Route;
+import com.moodi.route.presentation.dto.RouteCopyResponse;
 import com.moodi.route.presentation.dto.RouteGenerateRequest;
 import com.moodi.route.presentation.dto.RouteGenerateResponse;
 import com.moodi.route.presentation.dto.RouteGenerateResponse.DayPlan;
@@ -48,15 +51,21 @@ public class RouteController {
     private final RouteSaveService routeSaveService;
     private final RouteQueryService routeQueryService;
     private final RouteDeleteService routeDeleteService;
+    private final RouteShareService routeShareService;
+    private final RouteCopyService routeCopyService;
 
     public RouteController(RouteGenerateService routeGenerateService,
                            RouteSaveService routeSaveService,
                            RouteQueryService routeQueryService,
-                           RouteDeleteService routeDeleteService) {
+                           RouteDeleteService routeDeleteService,
+                           RouteShareService routeShareService,
+                           RouteCopyService routeCopyService) {
         this.routeGenerateService = routeGenerateService;
         this.routeSaveService = routeSaveService;
         this.routeQueryService = routeQueryService;
         this.routeDeleteService = routeDeleteService;
+        this.routeShareService = routeShareService;
+        this.routeCopyService = routeCopyService;
     }
 
     @GetMapping
@@ -104,6 +113,23 @@ public class RouteController {
             @PathVariable UUID publicId) {
         Route route = routeQueryService.getDetail(publicId, memberId);
         return SuccessResponse.of(RouteDetailResponse.from(route));
+    }
+
+    @PostMapping("/{publicId}/copy")
+    @ResponseStatus(HttpStatus.CREATED)
+    public SuccessResponse<RouteCopyResponse> copy(
+            @AuthMember UUID memberId,
+            @PathVariable UUID publicId) {
+        Route copied = routeCopyService.copy(publicId, memberId);
+        return SuccessResponse.of(new RouteCopyResponse(copied.getPublicId()));
+    }
+
+    @PostMapping("/{publicId}/share")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void share(
+            @AuthMember UUID memberId,
+            @PathVariable UUID publicId) {
+        routeShareService.share(publicId, memberId);
     }
 
     @DeleteMapping("/{publicId}")
