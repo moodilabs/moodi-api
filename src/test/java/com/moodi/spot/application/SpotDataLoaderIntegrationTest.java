@@ -4,6 +4,7 @@ import com.moodi.spot.domain.SpotContentType;
 import com.moodi.spot.domain.SpotRepository;
 import com.moodi.spot.domain.SpotStatus;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -45,14 +46,15 @@ class SpotDataLoaderIntegrationTest {
         SpotDataLoader.LoadResult result = spotDataLoader.load(rows);
 
         // then
-        assertThat(result.saved()).isEqualTo(7);
-        assertThat(result.skipped()).isZero();
+        assertThat(result.inserted()).isEqualTo(7);
+        assertThat(result.updated()).isZero();
         assertThat(result.failed()).isZero();
     }
 
     @Test
-    @DisplayName("동일 CSV를 두 번 적재하면 두 번째는 모두 스킵된다")
-    void load_twice_skips_all_on_second_run() throws Exception {
+    @Tag("postgresql")
+    @DisplayName("동일 CSV를 두 번 적재하면 두 번째는 모두 갱신된다")
+    void load_twice_updates_all_on_second_run() throws Exception {
         // given
         Reader reader1 = new InputStreamReader(
                 getClass().getResourceAsStream("/pilot-spots-test.csv"), StandardCharsets.UTF_8);
@@ -67,8 +69,9 @@ class SpotDataLoaderIntegrationTest {
         SpotDataLoader.LoadResult result = spotDataLoader.load(rowsAgain);
 
         // then
-        assertThat(result.saved()).isZero();
-        assertThat(result.skipped()).isEqualTo(7);
+        assertThat(result.inserted()).isZero();
+        assertThat(result.updated()).isEqualTo(7);
+        assertThat(result.failed()).isZero();
     }
 
     @Test

@@ -1,6 +1,5 @@
 package com.moodi.spot.application;
 
-import com.moodi.spot.domain.SpotRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,7 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.never;
@@ -21,7 +20,7 @@ import static org.mockito.Mockito.verify;
 class SpotDataLoaderTest {
 
     @Mock
-    private SpotRepository spotRepository;
+    private SpotBatchWriter spotBatchWriter;
 
     @Mock
     private SpotRowSaver spotRowSaver;
@@ -30,57 +29,91 @@ class SpotDataLoaderTest {
     private SpotDataLoader spotDataLoader;
 
     @Test
-    @DisplayName("CSV 행을 SpotRowSaver를 통해 저장한다")
-    void load_saves_via_row_saver() {
+    @DisplayName("CSV 행을 batch writer로 upsert한다")
+    void load_upserts_via_batch_writer() {
         // given
         SpotCsvRow row = createRow("2733967", "관광지", "서울");
-        given(spotRepository.existsBySourceAndContentId("kor_service", "2733967")).willReturn(false);
+        given(spotBatchWriter.upsertAll(anyList()))
+                .willReturn(new SpotBatchWriter.UpsertResult(1, 0));
 
         // when
         SpotDataLoader.LoadResult result = spotDataLoader.load(List.of(row));
 
         // then
-        assertThat(result.saved()).isEqualTo(1);
-        assertThat(result.skipped()).isZero();
+        assertThat(result.inserted()).isEqualTo(1);
+        assertThat(result.updated()).isZero();
         assertThat(result.failed()).isZero();
-        verify(spotRowSaver).save(row);
+        verify(spotBatchWriter).upsertAll(anyList());
     }
 
     @Test
-    @DisplayName("이미 존재하는 source+contentId는 건너뛴다")
-    void load_skips_existing_spot() {
+    @DisplayName("재적재 시 기존 데이터를 갱신한다")
+    void load_updates_existing_spots() {
         // given
         SpotCsvRow row = createRow("2733967", "관광지", "서울");
-        given(spotRepository.existsBySourceAndContentId("kor_service", "2733967")).willReturn(true);
+        given(spotBatchWriter.upsertAll(anyList()))
+                .willReturn(new SpotBatchWriter.UpsertResult(0, 1));
 
         // when
         SpotDataLoader.LoadResult result = spotDataLoader.load(List.of(row));
 
         // then
-        assertThat(result.saved()).isZero();
-        assertThat(result.skipped()).isEqualTo(1);
-        verify(spotRowSaver, never()).save(any());
+        assertThat(result.inserted()).isZero();
+        assertThat(result.updated()).isEqualTo(1);
     }
 
     @Test
-    @DisplayName("저장 실패 행은 건너뛰고 나머지는 계속 저장한다")
-    void load_skips_failed_row_and_continues() {
+    @DisplayName("파싱 실패 행은 batch에 포함되지 않는다")
+    void load_excludes_parse_failed_rows() {
         // given
         SpotCsvRow failRow = createRow("111", "존재하지않는유형", "서울");
         SpotCsvRow successRow = createRow("222", "관광지", "서울");
 
-        given(spotRepository.existsBySourceAndContentId("kor_service", "111")).willReturn(false);
-        given(spotRepository.existsBySourceAndContentId("kor_service", "222")).willReturn(false);
-        willThrow(new IllegalArgumentException("Unknown content type label: 존재하지않는유형"))
-                .given(spotRowSaver).save(failRow);
+        given(spotBatchWriter.upsertAll(anyList()))
+                .willReturn(new SpotBatchWriter.UpsertResult(1, 0));
 
         // when
         SpotDataLoader.LoadResult result = spotDataLoader.load(List.of(failRow, successRow));
 
         // then
-        assertThat(result.saved()).isEqualTo(1);
+        assertThat(result.inserted()).isEqualTo(1);
         assertThat(result.failed()).isEqualTo(1);
-        verify(spotRowSaver).save(successRow);
+    }
+
+    @Test
+    @DisplayName("batch 실패 시 개별 저장으로 전환하여 실패 행만 격리한다")
+    void load_falls_back_to_individual_save_on_batch_failure() {
+        // given
+        SpotCsvRow row1 = createRow("111", "관광지", "서울");
+        SpotCsvRow row2 = createRow("222", "관광지", "서울");
+
+        willThrow(new RuntimeException("DB error"))
+                .given(spotBatchWriter).upsertAll(anyList());
+        willThrow(new RuntimeException("constraint violation"))
+                .given(spotRowSaver).saveRow(row1);
+
+        // when
+        SpotDataLoader.LoadResult result = spotDataLoader.load(List.of(row1, row2));
+
+        // then
+        assertThat(result.inserted()).isEqualTo(1);
+        assertThat(result.failed()).isEqualTo(1);
+        verify(spotRowSaver).saveRow(row1);
+        verify(spotRowSaver).saveRow(row2);
+    }
+
+    @Test
+    @DisplayName("전체 파싱 실패 시 batch writer를 호출하지 않는다")
+    void load_skips_batch_when_all_parse_failed() {
+        // given
+        SpotCsvRow failRow = createRow("111", "존재하지않는유형", "서울");
+
+        // when
+        SpotDataLoader.LoadResult result = spotDataLoader.load(List.of(failRow));
+
+        // then
+        assertThat(result.failed()).isEqualTo(1);
+        verify(spotBatchWriter, never()).upsertAll(anyList());
     }
 
     private SpotCsvRow createRow(String contentId, String contentType, String area) {
@@ -94,7 +127,7 @@ class SpotDataLoaderTest {
                 .spotImage("")
                 .longitude("126.98")
                 .latitude("37.58")
-                .addr1("주소")
+                .addr1("서울특별시 종로구 세종대로 175")
                 .addr2("")
                 .tel("")
                 .lclsSystm1("")

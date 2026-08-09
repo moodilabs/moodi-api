@@ -13,6 +13,8 @@ public interface SpotRepository {
 
     boolean existsBySourceAndContentId(String source, String contentId);
 
+    List<Spot> findBySourceAndContentIdIn(String source, List<String> contentIds);
+
     List<Spot> findByStatus(SpotStatus status);
 
     List<Spot> findByDistrictIsNull();
