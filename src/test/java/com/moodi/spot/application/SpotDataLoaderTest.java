@@ -22,9 +22,6 @@ class SpotDataLoaderTest {
     @Mock
     private SpotBatchWriter spotBatchWriter;
 
-    @Mock
-    private SpotRowSaver spotRowSaver;
-
     @InjectMocks
     private SpotDataLoader spotDataLoader;
 
@@ -81,16 +78,16 @@ class SpotDataLoaderTest {
     }
 
     @Test
-    @DisplayName("batch 실패 시 개별 저장으로 전환하여 실패 행만 격리한다")
-    void load_falls_back_to_individual_save_on_batch_failure() {
+    @DisplayName("batch 실패 시 개별 upsert로 전환하여 실패 행만 격리한다")
+    void load_falls_back_to_individual_upsert_on_batch_failure() {
         // given
         SpotCsvRow row1 = createRow("111", "관광지", "서울");
         SpotCsvRow row2 = createRow("222", "관광지", "서울");
 
-        willThrow(new RuntimeException("DB error"))
-                .given(spotBatchWriter).upsertAll(anyList());
-        willThrow(new RuntimeException("constraint violation"))
-                .given(spotRowSaver).saveRow(row1);
+        given(spotBatchWriter.upsertAll(anyList()))
+                .willThrow(new RuntimeException("DB error"))
+                .willThrow(new RuntimeException("constraint violation"))
+                .willReturn(new SpotBatchWriter.UpsertResult(1, 0));
 
         // when
         SpotDataLoader.LoadResult result = spotDataLoader.load(List.of(row1, row2));
@@ -98,8 +95,6 @@ class SpotDataLoaderTest {
         // then
         assertThat(result.inserted()).isEqualTo(1);
         assertThat(result.failed()).isEqualTo(1);
-        verify(spotRowSaver).saveRow(row1);
-        verify(spotRowSaver).saveRow(row2);
     }
 
     @Test

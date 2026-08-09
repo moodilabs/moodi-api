@@ -78,14 +78,14 @@ public class SpotBatchJdbcWriter implements SpotBatchWriter {
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
 
         SpotUpsertDetail detail = upsertSpots(rows, now);
-        upsertTranslations(rows, detail.contentIdToSpotId, now);
-        replaceImages(rows, detail.contentIdToSpotId, now);
+        upsertTranslations(rows, detail.spotKeyToId, now);
+        replaceImages(rows, detail.spotKeyToId, now);
 
         return new UpsertResult(detail.inserted, detail.updated);
     }
 
     private SpotUpsertDetail upsertSpots(List<SpotImportRow> rows, Timestamp now) {
-        Map<String, Long> contentIdToSpotId = new HashMap<>();
+        Map<SpotKey, Long> spotKeyToId = new HashMap<>();
         int inserted = 0;
         int updated = 0;
 
@@ -108,7 +108,10 @@ public class SpotBatchJdbcWriter implements SpotBatchWriter {
                     .addValue("now", now);
 
             Map<String, Object> returned = jdbcTemplate.queryForMap(UPSERT_SPOT, params);
-            contentIdToSpotId.put((String) returned.get("content_id"), (Long) returned.get("id"));
+            spotKeyToId.put(
+                    new SpotKey(row.source(), row.contentId()),
+                    (Long) returned.get("id")
+            );
 
             if ((Boolean) returned.get("inserted")) {
                 inserted++;
@@ -117,13 +120,13 @@ public class SpotBatchJdbcWriter implements SpotBatchWriter {
             }
         }
 
-        return new SpotUpsertDetail(contentIdToSpotId, inserted, updated);
+        return new SpotUpsertDetail(spotKeyToId, inserted, updated);
     }
 
-    private void upsertTranslations(List<SpotImportRow> rows, Map<String, Long> contentIdToSpotId, Timestamp now) {
+    private void upsertTranslations(List<SpotImportRow> rows, Map<SpotKey, Long> spotKeyToId, Timestamp now) {
         SqlParameterSource[] batchParams = rows.stream()
                 .map(row -> new MapSqlParameterSource()
-                        .addValue("spotId", contentIdToSpotId.get(row.contentId()))
+                        .addValue("spotId", spotKeyToId.get(new SpotKey(row.source(), row.contentId())))
                         .addValue("title", row.title())
                         .addValue("overview", row.overview())
                         .addValue("addr1", row.addr1())
@@ -134,15 +137,15 @@ public class SpotBatchJdbcWriter implements SpotBatchWriter {
         jdbcTemplate.batchUpdate(UPSERT_TRANSLATION, batchParams);
     }
 
-    private void replaceImages(List<SpotImportRow> rows, Map<String, Long> contentIdToSpotId, Timestamp now) {
-        List<Long> allSpotIds = new ArrayList<>(contentIdToSpotId.values());
+    private void replaceImages(List<SpotImportRow> rows, Map<SpotKey, Long> spotKeyToId, Timestamp now) {
+        List<Long> allSpotIds = new ArrayList<>(spotKeyToId.values());
         jdbcTemplate.update(DELETE_PRIMARY_IMAGES, new MapSqlParameterSource("spotIds", allSpotIds));
 
         List<SqlParameterSource> imageParams = new ArrayList<>();
         for (SpotImportRow row : rows) {
             if (row.imageUrl() != null) {
                 imageParams.add(new MapSqlParameterSource()
-                        .addValue("spotId", contentIdToSpotId.get(row.contentId()))
+                        .addValue("spotId", spotKeyToId.get(new SpotKey(row.source(), row.contentId())))
                         .addValue("imageUrl", row.imageUrl())
                         .addValue("now", now));
             }
@@ -153,6 +156,9 @@ public class SpotBatchJdbcWriter implements SpotBatchWriter {
         }
     }
 
-    private record SpotUpsertDetail(Map<String, Long> contentIdToSpotId, int inserted, int updated) {
+    private record SpotKey(String source, String contentId) {
+    }
+
+    private record SpotUpsertDetail(Map<SpotKey, Long> spotKeyToId, int inserted, int updated) {
     }
 }

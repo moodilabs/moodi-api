@@ -16,7 +16,6 @@ public class SpotDataLoader {
     private static final int CHUNK_SIZE = 1000;
 
     private final SpotBatchWriter spotBatchWriter;
-    private final SpotRowSaver spotRowSaver;
 
     public LoadResult load(List<SpotCsvRow> rows) {
         int inserted = 0;
@@ -56,15 +55,17 @@ public class SpotDataLoader {
                         chunkStart + 2, chunkEnd + 1, e.getMessage());
                 fallbackCount++;
 
-                for (SpotCsvRow row : chunk) {
+                for (SpotImportRow parsedRow : parsedRows) {
                     try {
                         long t2 = System.currentTimeMillis();
-                        spotRowSaver.saveRow(row);
+                        SpotBatchWriter.UpsertResult fallbackResult =
+                                spotBatchWriter.upsertAll(List.of(parsedRow));
                         saveTime += System.currentTimeMillis() - t2;
-                        inserted++;
+                        inserted += fallbackResult.inserted();
+                        updated += fallbackResult.updated();
                     } catch (Exception ex) {
                         failed++;
-                        log.warn("스팟 적재 실패 contentId={}: {}", row.getContentId(), ex.getMessage());
+                        log.warn("스팟 적재 실패 contentId={}: {}", parsedRow.contentId(), ex.getMessage());
                     }
                 }
             }
