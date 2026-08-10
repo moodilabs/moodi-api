@@ -60,7 +60,9 @@ dependencies {
 
 tasks.named("test") {
 	outputs.dir(snippetsDir)
-	(this as Test).useJUnitPlatform()
+	(this as Test).useJUnitPlatform {
+		excludeTags("postgresql")
+	}
 }
 
 tasks.register("asciidoctorApp", org.asciidoctor.gradle.jvm.AsciidoctorTask::class) {

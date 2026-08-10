@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Component
 @RequiredArgsConstructor
 public class SpotRowSaver {
@@ -22,8 +24,19 @@ public class SpotRowSaver {
     private final SpotTranslationRepository spotTranslationRepository;
     private final SpotImageRepository spotImageRepository;
 
+    @Transactional
+    public void saveChunk(List<SpotCsvRow> rows) {
+        for (SpotCsvRow row : rows) {
+            saveInternal(row);
+        }
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void save(SpotCsvRow row) {
+    public void saveRow(SpotCsvRow row) {
+        saveInternal(row);
+    }
+
+    private void saveInternal(SpotCsvRow row) {
         SpotContentType contentType = SpotContentType.fromLabel(row.getContentType());
         ParsedRegion region = RegionParser.parse(row.getAddr1());
 
