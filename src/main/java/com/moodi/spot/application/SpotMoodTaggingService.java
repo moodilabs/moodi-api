@@ -60,34 +60,39 @@ public class SpotMoodTaggingService {
         AtomicInteger rateLimited = new AtomicInteger(0);
         ConcurrentLinkedQueue<Long> llmLatencies = new ConcurrentLinkedQueue<>();
 
-        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            List<Future<?>> futures = new ArrayList<>();
+        int chunkSize = 50;
+        for (int i = 0; i < targets.size(); i += chunkSize) {
+            List<Spot> chunk = targets.subList(i, Math.min(i + chunkSize, targets.size()));
 
-            for (Spot spot : targets) {
-                futures.add(executor.submit(() -> {
-                    try {
-                        long latencyMs = spotMoodTagger.tagSpot(spot);
-                        llmLatencies.add(latencyMs);
-                        int count = tagged.incrementAndGet();
-                        if (count % 10 == 0 || count == targets.size()) {
-                            log.info("태깅 진행 {}/{}", count, targets.size());
+            try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+                List<Future<?>> futures = new ArrayList<>();
+
+                for (Spot spot : chunk) {
+                    futures.add(executor.submit(() -> {
+                        try {
+                            long latencyMs = spotMoodTagger.tagSpot(spot);
+                            llmLatencies.add(latencyMs);
+                            int count = tagged.incrementAndGet();
+                            if (count % 50 == 0 || count == targets.size()) {
+                                log.info("태깅 진행 {}/{}", count, targets.size());
+                            }
+                        } catch (RateLimitException e) {
+                            rateLimited.incrementAndGet();
+                            failed.incrementAndGet();
+                            log.warn("태깅 실패 (429 Rate Limit) spotId={}", spot.getId());
+                        } catch (Exception e) {
+                            failed.incrementAndGet();
+                            log.warn("태깅 실패 spotId={}: {}", spot.getId(), e.getMessage());
                         }
-                    } catch (RateLimitException e) {
-                        rateLimited.incrementAndGet();
-                        failed.incrementAndGet();
-                        log.warn("태깅 실패 (429 Rate Limit) spotId={}", spot.getId());
-                    } catch (Exception e) {
-                        failed.incrementAndGet();
-                        log.warn("태깅 실패 spotId={}: {}", spot.getId(), e.getMessage());
-                    }
-                }));
-            }
+                    }));
+                }
 
-            for (Future<?> future : futures) {
-                try {
-                    future.get();
-                } catch (Exception e) {
-                    log.error("태깅 작업 대기 중 예외: {}", e.getMessage());
+                for (Future<?> future : futures) {
+                    try {
+                        future.get();
+                    } catch (Exception e) {
+                        log.error("태깅 작업 대기 중 예외: {}", e.getMessage());
+                    }
                 }
             }
         }
