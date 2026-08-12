@@ -10,3 +10,4 @@ jwt:
 
 spot-tagging:
   enabled: true
+  concurrency: 1

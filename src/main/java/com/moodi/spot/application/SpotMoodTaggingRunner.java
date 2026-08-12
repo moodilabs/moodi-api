@@ -22,16 +22,19 @@ public class SpotMoodTaggingRunner implements ApplicationRunner {
     @Value("${spot-tagging.limit:0}")
     private int limit;
 
+    @Value("${spot-tagging.concurrency:1}")
+    private int concurrency;
+
     @Override
     public void run(ApplicationArguments args) {
-        log.info("스팟 무드 태깅 시작 (limit={})", limit);
+        log.info("스팟 무드 태깅 시작 (limit={}, concurrency={})", limit, concurrency);
 
         int[] exitCode = {0};
         try {
             SpotMoodTaggingService.TaggingResult result = taggingService.tagAll(limit);
-            log.info("스팟 무드 태깅 결과: 성공 {}건, 스킵 {}건, 실패 {}건 (invalid 응답 {}건 / 전체 요청 {}건)",
+            log.info("스팟 무드 태깅 결과: 성공 {}건, 스킵 {}건, 실패 {}건 (retry {}건, 429 {}건, 소요 {}ms)",
                     result.tagged(), result.skipped(), result.failed(),
-                    result.invalidResponses(), result.tagged() + result.failed());
+                    result.retryCount(), result.rateLimitCount(), result.elapsedMs());
 
             if (result.failed() > 0) {
                 exitCode[0] = 1;

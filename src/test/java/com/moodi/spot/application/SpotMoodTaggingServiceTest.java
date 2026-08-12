@@ -1,12 +1,5 @@
 package com.moodi.spot.application;
 
-import com.moodi.shared.mood.Atmosphere;
-import com.moodi.shared.mood.Color;
-import com.moodi.shared.mood.Era;
-import com.moodi.shared.mood.Lighting;
-import com.moodi.shared.mood.MoodVector;
-import com.moodi.shared.mood.Space;
-import com.moodi.shared.mood.Structure;
 import com.moodi.spot.domain.Spot;
 import com.moodi.spot.domain.SpotContentType;
 import com.moodi.spot.domain.SpotMoodRepository;
@@ -21,11 +14,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -43,6 +35,9 @@ class SpotMoodTaggingServiceTest {
     @Mock
     private SpotMoodTagger spotMoodTagger;
 
+    @Mock
+    private MoodAnalysisClient moodAnalysisClient;
+
     @InjectMocks
     private SpotMoodTaggingService taggingService;
 
@@ -51,9 +46,10 @@ class SpotMoodTaggingServiceTest {
     void tag_all_tags_pending_spots_and_publishes() {
         // given
         Spot spot = createSpot(1L);
-        when(spotRepository.findByStatus(SpotStatus.TAGGING_PENDING)).thenReturn(List.of(spot));
+        when(spotRepository.findByStatusAndRouteExcluded(SpotStatus.TAGGING_PENDING, false))
+                .thenReturn(List.of(spot));
         when(spotMoodRepository.existsBySpotId(1L)).thenReturn(false);
-        doNothing().when(spotMoodTagger).tagSpot(spot);
+        when(spotMoodTagger.tagSpot(spot)).thenReturn(100L);
 
         // when
         SpotMoodTaggingService.TaggingResult result = taggingService.tagAll(0);
@@ -62,7 +58,6 @@ class SpotMoodTaggingServiceTest {
         assertThat(result.tagged()).isEqualTo(1);
         assertThat(result.skipped()).isZero();
         assertThat(result.failed()).isZero();
-        assertThat(result.invalidResponses()).isZero();
         verify(spotMoodTagger).tagSpot(spot);
     }
 
@@ -71,7 +66,8 @@ class SpotMoodTaggingServiceTest {
     void tag_all_skips_already_tagged_spot() {
         // given
         Spot spot = createSpot(1L);
-        when(spotRepository.findByStatus(SpotStatus.TAGGING_PENDING)).thenReturn(List.of(spot));
+        when(spotRepository.findByStatusAndRouteExcluded(SpotStatus.TAGGING_PENDING, false))
+                .thenReturn(List.of(spot));
         when(spotMoodRepository.existsBySpotId(1L)).thenReturn(true);
 
         // when
@@ -89,10 +85,11 @@ class SpotMoodTaggingServiceTest {
         // given
         Spot spot1 = createSpot(1L);
         Spot spot2 = createSpot(2L);
-        when(spotRepository.findByStatus(SpotStatus.TAGGING_PENDING)).thenReturn(List.of(spot1, spot2));
+        when(spotRepository.findByStatusAndRouteExcluded(SpotStatus.TAGGING_PENDING, false))
+                .thenReturn(List.of(spot1, spot2));
         when(spotMoodRepository.existsBySpotId(any())).thenReturn(false);
-        doThrow(new RuntimeException("DB 오류")).when(spotMoodTagger).tagSpot(spot1);
-        doNothing().when(spotMoodTagger).tagSpot(spot2);
+        when(spotMoodTagger.tagSpot(spot1)).thenThrow(new RuntimeException("DB 오류"));
+        when(spotMoodTagger.tagSpot(spot2)).thenReturn(100L);
 
         // when
         SpotMoodTaggingService.TaggingResult result = taggingService.tagAll(0);
