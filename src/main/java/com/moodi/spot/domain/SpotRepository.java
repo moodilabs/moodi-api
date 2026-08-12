@@ -17,6 +17,8 @@ public interface SpotRepository {
 
     List<Spot> findByStatus(SpotStatus status);
 
+    List<Spot> findByStatusAndRouteExcluded(SpotStatus status, boolean routeExcluded);
+
     List<Spot> findByDistrictIsNull();
 
     List<Spot> findByIdIn(List<Long> ids);

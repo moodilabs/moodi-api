@@ -77,7 +77,7 @@ public class MoodVector {
                         axisName + "의 " + entry.getKey() + " 가중치가 유효하지 않습니다: " + value
                 );
             }
-            if (value < 0.0 || value > 1.0) {
+            if (value < -TOLERANCE || value > 1.0 + TOLERANCE) {
                 throw new IllegalArgumentException(
                         axisName + "의 " + entry.getKey() + " 가중치가 범위를 벗어났습니다: " + value
                 );

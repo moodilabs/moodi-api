@@ -21,7 +21,7 @@ public class SpotMoodTaggingService {
     private final SpotMoodTagger spotMoodTagger;
 
     public TaggingResult tagAll(int limit) {
-        List<Spot> pendingSpots = spotRepository.findByStatus(SpotStatus.TAGGING_PENDING);
+        List<Spot> pendingSpots = spotRepository.findByStatusAndRouteExcluded(SpotStatus.TAGGING_PENDING, false);
         if (limit > 0) {
             pendingSpots = pendingSpots.subList(0, Math.min(limit, pendingSpots.size()));
         }
