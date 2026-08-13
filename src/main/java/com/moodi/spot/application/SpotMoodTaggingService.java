@@ -13,7 +13,6 @@ import com.moodi.spot.domain.Spot;
 import com.moodi.spot.domain.SpotMoodRepository;
 import com.moodi.spot.domain.SpotRepository;
 import com.moodi.spot.domain.SpotStatus;
-import com.moodi.spot.infrastructure.mood.RateLimitException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -45,6 +45,9 @@ public class SpotMoodTagger {
             PlatformTransactionManager transactionManager,
             @Value("${spot-tagging.concurrency:1}") int concurrency
     ) {
+        if (concurrency < 1) {
+            throw new IllegalArgumentException("spot-tagging.concurrency must be >= 1, but was " + concurrency);
+        }
         this.spotRepository = spotRepository;
         this.spotImageRepository = spotImageRepository;
         this.spotTranslationRepository = spotTranslationRepository;

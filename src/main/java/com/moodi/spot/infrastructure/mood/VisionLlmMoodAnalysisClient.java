@@ -14,6 +14,7 @@ import com.moodi.shared.mood.MoodVector;
 import com.moodi.shared.mood.Space;
 import com.moodi.shared.mood.Structure;
 import com.moodi.spot.application.MoodAnalysisClient;
+import com.moodi.spot.application.RateLimitException;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

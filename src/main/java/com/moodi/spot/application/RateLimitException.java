@@ -1,4 +1,4 @@
-package com.moodi.spot.infrastructure.mood;
+package com.moodi.spot.application;
 
 public class RateLimitException extends RuntimeException {
 
