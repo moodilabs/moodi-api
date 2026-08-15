@@ -136,16 +136,13 @@ public class LlmSpotDescriptionClient implements SpotDescriptionClient {
     private String buildEnPrompt(String spotName, String contentType, String area,
                                  String overview) {
         return """
-                You are a travel curator. Based on the Korean place information below, write a natural English description of the atmosphere and experience a visitor can expect.
+                You are a travel curator. Based on the Korean place information below, write a concise English description of the atmosphere and experience a visitor can expect.
 
                 Writing guide:
-                - Briefly introduce what kind of space it is
-                - Describe the atmosphere and characteristics
-                - Suggest who would enjoy visiting or when to visit
-                - Describe the experience a traveler can expect
+                - Capture the essence of the place in 1-2 sentences
+                - Focus on atmosphere and mood
                 - Exclude operational details like hours or addresses
-                - Write in natural sentences, not bullet points
-                - 3-5 sentences, max 300 characters
+                - STRICTLY keep within 100 characters (English letters, spaces, punctuation all count)
 
                 Place info:
                 - Name: %s

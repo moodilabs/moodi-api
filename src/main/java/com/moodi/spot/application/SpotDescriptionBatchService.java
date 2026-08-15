@@ -114,7 +114,7 @@ public class SpotDescriptionBatchService {
 
     private long generateOne(Spot spot, String locale) {
         SpotTranslation translation = translationRepository
-                .findBySpotIdAndLocale(spot.getId(), "ko")
+                .findBySpotIdAndLocale(spot.getId(), "ko-KR")
                 .orElse(null);
 
         String title = translation != null ? translation.getTitle() : "";
