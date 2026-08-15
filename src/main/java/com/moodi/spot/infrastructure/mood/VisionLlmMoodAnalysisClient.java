@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.moodi.shared.mood.Atmosphere;
 import com.moodi.shared.mood.Color;
@@ -13,10 +14,12 @@ import com.moodi.shared.mood.MoodVector;
 import com.moodi.shared.mood.Space;
 import com.moodi.shared.mood.Structure;
 import com.moodi.spot.application.MoodAnalysisClient;
+import com.moodi.spot.application.RateLimitException;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -34,6 +37,8 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
 
     private final RestClient restClient;
     private final String model;
+    private final AtomicInteger retryCounter = new AtomicInteger(0);
+    private final AtomicInteger rateLimitCounter = new AtomicInteger(0);
 
     public VisionLlmMoodAnalysisClient(
             @Value("${moodi.llm.api-key}") String apiKey,
@@ -43,6 +48,14 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
                 .baseUrl(OPENAI_API_URL)
                 .defaultHeader("Authorization", "Bearer " + apiKey)
                 .requestFactory(createRequestFactory())
+                .defaultStatusHandler(
+                        status -> status.isSameCodeAs(HttpStatusCode.valueOf(429)),
+                        (request, response) -> {
+                            rateLimitCounter.incrementAndGet();
+                            throw new RateLimitException(
+                                    "OpenAI API rate limit (429): " + response.getStatusCode());
+                        }
+                )
                 .build();
         this.model = model;
     }
@@ -70,6 +83,7 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
                 return new MoodAnalysisResult(vector, confidence, seasonalScore);
             } catch (InvalidMoodResponseException e) {
                 if (attempt < MAX_RETRIES) {
+                    retryCounter.incrementAndGet();
                     log.warn("LLM 응답 invalid (시도 {}): {} — 재요청합니다", attempt + 1, e.getMessage());
                     messages.add(Map.of("role", "assistant", "content", content));
                     messages.add(Map.of("role", "user", "content",
@@ -83,6 +97,22 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
         }
 
         throw new IllegalStateException("LLM 분석 실패: 최대 재시도 초과");
+    }
+
+    @Override
+    public int getRetryCount() {
+        return retryCounter.get();
+    }
+
+    @Override
+    public int getRateLimitCount() {
+        return rateLimitCounter.get();
+    }
+
+    @Override
+    public void resetCounters() {
+        retryCounter.set(0);
+        rateLimitCounter.set(0);
     }
 
     private List<Map<String, Object>> buildContentParts(List<String> imageUrls, String overview) {

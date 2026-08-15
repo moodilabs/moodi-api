@@ -1,8 +1,6 @@
 spring:
   main:
     web-application-type: none
-  profiles:
-    include: llm
   docker:
     compose:
       enabled: false
@@ -12,3 +10,4 @@ jwt:
 
 spot-tagging:
   enabled: true
+  concurrency: 1
