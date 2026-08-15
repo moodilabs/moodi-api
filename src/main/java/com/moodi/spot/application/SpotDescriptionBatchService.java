@@ -117,8 +117,12 @@ public class SpotDescriptionBatchService {
                 .findBySpotIdAndLocale(spot.getId(), "ko-KR")
                 .orElse(null);
 
-        String title = translation != null ? translation.getTitle() : "";
-        String overview = translation != null ? translation.getOverview() : "";
+        if (translation == null || translation.getOverview() == null || translation.getOverview().isBlank()) {
+            throw new IllegalStateException("KO overview 없음 — 다음 배치에서 재시도 (spotId=" + spot.getId() + ")");
+        }
+
+        String title = translation.getTitle();
+        String overview = translation.getOverview();
 
         llmSemaphore.acquireUninterruptibly();
         long startNanos = System.nanoTime();

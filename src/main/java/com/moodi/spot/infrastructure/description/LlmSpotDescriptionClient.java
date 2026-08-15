@@ -71,12 +71,12 @@ public class LlmSpotDescriptionClient implements SpotDescriptionClient {
                 long delay = BASE_DELAY_MS * (1L << attempt);
                 log.warn("429 Rate Limit (시도 {}/{}), {}ms 후 재시도", attempt + 1, MAX_RETRIES, delay);
                 sleep(delay);
-            } catch (Exception e) {
+            } catch (org.springframework.web.client.ResourceAccessException e) {
                 if (attempt == MAX_RETRIES) {
                     throw e;
                 }
                 long delay = BASE_DELAY_MS * (1L << attempt);
-                log.warn("LLM 호출 실패 (시도 {}/{}): {} — {}ms 후 재시도",
+                log.warn("LLM 연결/타임아웃 실패 (시도 {}/{}): {} — {}ms 후 재시도",
                         attempt + 1, MAX_RETRIES, e.getMessage(), delay);
                 sleep(delay);
             }

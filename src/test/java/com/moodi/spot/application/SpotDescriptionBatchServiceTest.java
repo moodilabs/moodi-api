@@ -63,7 +63,7 @@ class SpotDescriptionBatchServiceTest {
         when(descriptionRepository.findSpotIdsWithoutDescription("en-US"))
                 .thenReturn(List.of(1L));
         when(spotRepository.findByIdIn(List.of(1L))).thenReturn(List.of(spot));
-        when(translationRepository.findBySpotIdAndLocale(1L, "ko"))
+        when(translationRepository.findBySpotIdAndLocale(1L, "ko-KR"))
                 .thenReturn(Optional.of(translation));
         when(descriptionClient.generate(
                 eq("가회동성당"), eq("TOURIST_ATTRACTION"), eq("서울"),
@@ -107,9 +107,9 @@ class SpotDescriptionBatchServiceTest {
         when(descriptionRepository.findSpotIdsWithoutDescription("en-US"))
                 .thenReturn(List.of(1L, 2L));
         when(spotRepository.findByIdIn(List.of(1L, 2L))).thenReturn(List.of(spot1, spot2));
-        when(translationRepository.findBySpotIdAndLocale(1L, "ko"))
+        when(translationRepository.findBySpotIdAndLocale(1L, "ko-KR"))
                 .thenReturn(Optional.of(translation1));
-        when(translationRepository.findBySpotIdAndLocale(2L, "ko"))
+        when(translationRepository.findBySpotIdAndLocale(2L, "ko-KR"))
                 .thenReturn(Optional.of(translation2));
         when(descriptionClient.generate(eq("스팟1"), any(), any(), any(), any(), any()))
                 .thenThrow(new RuntimeException("LLM 호출 실패"));
@@ -134,7 +134,7 @@ class SpotDescriptionBatchServiceTest {
         when(descriptionRepository.findSpotIdsWithoutDescription("en-US"))
                 .thenReturn(List.of(1L, 2L, 3L));
         when(spotRepository.findByIdIn(List.of(1L))).thenReturn(List.of(spot));
-        when(translationRepository.findBySpotIdAndLocale(1L, "ko"))
+        when(translationRepository.findBySpotIdAndLocale(1L, "ko-KR"))
                 .thenReturn(Optional.of(translation));
         when(descriptionClient.generate(any(), any(), any(), any(), any(), any()))
                 .thenReturn("Generated description");
@@ -144,6 +144,34 @@ class SpotDescriptionBatchServiceTest {
 
         // then
         assertThat(result.generated()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("KO overview가 없는 스팟은 실패 처리하고 저장하지 않는다")
+    void generate_all_skips_spot_without_overview() {
+        // given
+        Spot spot1 = createSpot(1L);
+        Spot spot2 = createSpot(2L);
+        SpotTranslation translationWithOverview = SpotTranslation.create(2L, "ko-KR", "스팟2", "설명2", "주소2", null);
+
+        when(descriptionRepository.findSpotIdsWithoutDescription("en-US"))
+                .thenReturn(List.of(1L, 2L));
+        when(spotRepository.findByIdIn(List.of(1L, 2L))).thenReturn(List.of(spot1, spot2));
+        when(translationRepository.findBySpotIdAndLocale(1L, "ko-KR"))
+                .thenReturn(Optional.empty());
+        when(translationRepository.findBySpotIdAndLocale(2L, "ko-KR"))
+                .thenReturn(Optional.of(translationWithOverview));
+        when(descriptionClient.generate(eq("스팟2"), any(), any(), any(), any(), any()))
+                .thenReturn("Description for spot 2");
+
+        // when
+        SpotDescriptionBatchService.BatchResult result = batchService.generateAll("en-US", 0);
+
+        // then
+        assertThat(result.generated()).isEqualTo(1);
+        assertThat(result.failed()).isEqualTo(1);
+        verify(descriptionWriter, never()).saveIfAbsent(eq(1L), any(), any());
+        verify(descriptionWriter).saveIfAbsent(2L, "en-US", "Description for spot 2");
     }
 
     private Spot createSpot(Long id) {
