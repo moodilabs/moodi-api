@@ -3,6 +3,8 @@ package com.moodi.spot.infrastructure.persistence;
 import com.moodi.spot.domain.SpotDescription;
 import jakarta.persistence.EntityManager;
 
+import java.util.List;
+
 public class SpotDescriptionJpaRepositoryImpl {
 
     private final EntityManager entityManager;
@@ -27,5 +29,18 @@ public class SpotDescriptionJpaRepositoryImpl {
                 .setParameter("spotId", description.getSpotId())
                 .setParameter("locale", description.getLocale())
                 .getSingleResult();
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Long> findSpotIdsWithoutDescription(String locale) {
+        return entityManager.createNativeQuery(
+                        "SELECT s.id FROM spot s " +
+                                "WHERE s.status = 'PUBLISHED' " +
+                                "AND s.route_excluded = false " +
+                                "AND s.id NOT IN (" +
+                                "  SELECT sd.spot_id FROM spot_description sd WHERE sd.locale = :locale" +
+                                ")")
+                .setParameter("locale", locale)
+                .getResultList();
     }
 }
