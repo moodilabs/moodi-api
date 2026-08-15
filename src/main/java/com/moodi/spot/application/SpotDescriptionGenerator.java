@@ -42,7 +42,8 @@ public class SpotDescriptionGenerator {
                     context.contentType(),
                     context.area(),
                     moodTags,
-                    context.overview()
+                    context.overview(),
+                    DEFAULT_LOCALE
             );
 
             SpotDescription saved = descriptionWriter.saveIfAbsent(

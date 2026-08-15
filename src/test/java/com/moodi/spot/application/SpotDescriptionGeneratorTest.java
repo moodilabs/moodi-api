@@ -52,7 +52,7 @@ class SpotDescriptionGeneratorTest {
 
         // then
         assertThat(result).isEqualTo("기존 설명입니다.");
-        verify(descriptionClient, never()).generate(any(), any(), any(), any(), any());
+        verify(descriptionClient, never()).generate(any(), any(), any(), any(), any(), any());
         verify(descriptionWriter, never()).saveIfAbsent(any(), any(), any());
     }
 
@@ -67,7 +67,7 @@ class SpotDescriptionGeneratorTest {
                 .thenReturn(Optional.empty());
         when(descriptionClient.generate(
                 eq("가회동성당"), eq("TOURIST_ATTRACTION"), eq("서울"),
-                eq("#Cozy, #Serene"), any()))
+                eq("#Cozy, #Serene"), any(), eq("ko-KR")))
                 .thenReturn("AI가 생성한 설명입니다.");
         when(descriptionWriter.saveIfAbsent(1L, "ko-KR", "AI가 생성한 설명입니다."))
                 .thenReturn(saved);
@@ -77,7 +77,7 @@ class SpotDescriptionGeneratorTest {
 
         // then
         assertThat(result).isEqualTo("AI가 생성한 설명입니다.");
-        verify(descriptionClient).generate(any(), any(), any(), any(), any());
+        verify(descriptionClient).generate(any(), any(), any(), any(), any(), any());
         verify(descriptionWriter).saveIfAbsent(1L, "ko-KR", "AI가 생성한 설명입니다.");
     }
 
@@ -89,7 +89,7 @@ class SpotDescriptionGeneratorTest {
 
         when(descriptionRepository.findBySpotIdAndLocale(1L, "ko-KR"))
                 .thenReturn(Optional.empty());
-        when(descriptionClient.generate(any(), any(), any(), any(), any()))
+        when(descriptionClient.generate(any(), any(), any(), any(), any(), any()))
                 .thenThrow(new RuntimeException("LLM API 호출 실패"));
 
         // when
@@ -108,7 +108,7 @@ class SpotDescriptionGeneratorTest {
 
         when(descriptionRepository.findBySpotIdAndLocale(1L, "ko-KR"))
                 .thenReturn(Optional.empty());
-        when(descriptionClient.generate(any(), any(), any(), any(), any()))
+        when(descriptionClient.generate(any(), any(), any(), any(), any(), any()))
                 .thenReturn("생성된 설명");
         when(descriptionWriter.saveIfAbsent(any(), any(), any()))
                 .thenThrow(new RuntimeException("DB 저장 실패"));
