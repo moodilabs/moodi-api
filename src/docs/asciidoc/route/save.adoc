@@ -29,3 +29,19 @@ include::{snippets}/route-update/http-response.adoc[]
 
 .Response Fields
 include::{snippets}/route-update/response-fields.adoc[]
+
+=== 루트에 스팟 추가
+
+기존 루트의 마지막 일정에 스팟 1개를 추가합니다.
+
+.HTTP Request
+include::{snippets}/route-add-spot/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/route-add-spot/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/route-add-spot/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/route-add-spot/response-fields.adoc[]
