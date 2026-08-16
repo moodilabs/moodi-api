@@ -67,7 +67,7 @@ public class SpotMoodTagger {
                 .map(SpotImage::getImageUrl)
                 .toList();
 
-        String overview = spotTranslationRepository.findBySpotIdAndLocale(spot.getId(), "ko")
+        String overview = spotTranslationRepository.findBySpotIdAndLocale(spot.getId(), "ko-KR")
                 .map(SpotTranslation::getOverview)
                 .orElse("");
 

@@ -1,7 +1,8 @@
 package com.moodi.spot.application;
 
-import com.moodi.spot.application.dto.SpotDescriptionContext;
 import com.moodi.spot.application.dto.SpotDetailSnapshot;
+import com.moodi.spot.domain.SpotDescription;
+import com.moodi.spot.domain.SpotDescriptionRepository;
 import jakarta.annotation.Nullable;
 import org.springframework.stereotype.Service;
 
@@ -10,20 +11,24 @@ import java.util.UUID;
 @Service
 public class SpotDetailService {
 
+    private static final String DESCRIPTION_LOCALE = "en-US";
+
     private final SpotDetailReader spotDetailReader;
-    private final SpotDescriptionGenerator descriptionGenerator;
+    private final SpotDescriptionRepository descriptionRepository;
 
     public SpotDetailService(SpotDetailReader spotDetailReader,
-                             SpotDescriptionGenerator descriptionGenerator) {
+                             SpotDescriptionRepository descriptionRepository) {
         this.spotDetailReader = spotDetailReader;
-        this.descriptionGenerator = descriptionGenerator;
+        this.descriptionRepository = descriptionRepository;
     }
 
     public SpotDetailSnapshot getDetail(Long spotId, @Nullable UUID memberId) {
         SpotDetailSnapshot snapshot = spotDetailReader.read(spotId, memberId);
 
-        SpotDescriptionContext context = SpotDescriptionContext.from(snapshot);
-        String aiDescription = descriptionGenerator.getOrGenerate(context);
+        String aiDescription = descriptionRepository
+                .findBySpotIdAndLocale(spotId, DESCRIPTION_LOCALE)
+                .map(SpotDescription::getContent)
+                .orElse(null);
 
         return new SpotDetailSnapshot(
                 snapshot.spotId(),
