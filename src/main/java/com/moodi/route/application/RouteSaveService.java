@@ -63,6 +63,52 @@ public class RouteSaveService {
         return route;
     }
 
+    @Transactional
+    public Route addSpotToLastDay(UUID publicId, UUID memberId, Long spotId) {
+        Route route = routeRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROUTE_NOT_FOUND));
+
+        route.validateOwner(memberId);
+
+        RouteDay lastDay = route.getLastDay();
+        List<RouteSpot> existingSpots = lastDay.getSpots();
+
+        SpotSnapshot snapshot = loadSnapshots(List.of(spotId)).get(spotId);
+        int newSequence = existingSpots.size() + 1;
+        RouteSpot newSpot = RouteSpot.create(
+                snapshot.spotId(), newSequence,
+                StayDurationPolicy.getEstimatedMinutes(snapshot.contentType()),
+                snapshot.title(), snapshot.imageUrl(),
+                snapshot.area(), snapshot.district(),
+                snapshot.latitude(), snapshot.longitude(),
+                snapshot.contentType().getLabel(),
+                snapshot.description()
+        );
+
+        List<RouteSpot> spots = new ArrayList<>(existingSpots);
+        spots.add(newSpot);
+
+        List<RouteLeg> legs = new ArrayList<>(lastDay.getLegs());
+        if (!existingSpots.isEmpty()) {
+            RouteSpot lastSpot = existingSpots.get(existingSpots.size() - 1);
+            Optional<LegResult> result = legCalculator.calculate(
+                    lastSpot.getSpotLongitude(), lastSpot.getSpotLatitude(),
+                    snapshot.longitude(), snapshot.latitude()
+            );
+            LegResult leg = result.orElse(LegResult.unavailable());
+            legs.add(RouteLeg.create(
+                    lastSpot.getSequence(), newSequence,
+                    leg.travelMode(), leg.durationSeconds(),
+                    leg.distanceMeters(), leg.landingUrl()
+            ));
+        }
+
+        RouteDay newLastDay = RouteDay.create(lastDay.getDayNumber(), lastDay.getDate(), spots, legs);
+        route.replaceLastDay(newLastDay);
+
+        return route;
+    }
+
     private Map<Integer, RouteDay> buildExistingDayMap(Route route) {
         Map<Integer, RouteDay> map = new LinkedHashMap<>();
         for (RouteDay day : route.getDays()) {

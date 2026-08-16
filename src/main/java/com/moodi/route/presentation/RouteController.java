@@ -12,6 +12,7 @@ import com.moodi.route.application.RouteSaveService;
 import com.moodi.route.application.RouteCopyService;
 import com.moodi.route.application.RouteShareService;
 import com.moodi.route.domain.Route;
+import com.moodi.route.presentation.dto.RouteAddSpotRequest;
 import com.moodi.route.presentation.dto.RouteCopyResponse;
 import com.moodi.route.presentation.dto.RouteGenerateRequest;
 import com.moodi.route.presentation.dto.RouteGenerateResponse;
@@ -122,6 +123,15 @@ public class RouteController {
             @PathVariable UUID publicId) {
         Route copied = routeCopyService.copy(publicId, memberId);
         return SuccessResponse.of(new RouteCopyResponse(copied.getPublicId()));
+    }
+
+    @PostMapping("/{publicId}/spots")
+    public SuccessResponse<RouteSaveResponse> addSpot(
+            @AuthMember UUID memberId,
+            @PathVariable UUID publicId,
+            @Valid @RequestBody RouteAddSpotRequest request) {
+        Route route = routeSaveService.addSpotToLastDay(publicId, memberId, request.spotId());
+        return SuccessResponse.of(RouteSaveResponse.from(route));
     }
 
     @PostMapping("/{publicId}/share")
