@@ -71,14 +71,37 @@ public class RouteSaveService {
         route.validateOwner(memberId);
 
         RouteDay lastDay = route.getLastDay();
-        List<Long> spotIds = new ArrayList<>(lastDay.getSpots().stream()
-                .map(RouteSpot::getSpotId)
-                .toList());
-        spotIds.add(spotId);
+        List<RouteSpot> existingSpots = lastDay.getSpots();
 
-        Map<Long, SpotSnapshot> snapshotMap = loadSnapshots(spotIds);
-        List<RouteSpot> spots = buildSpots(spotIds, snapshotMap);
-        List<RouteLeg> legs = calculateLegs(spotIds, snapshotMap);
+        SpotSnapshot snapshot = loadSnapshots(List.of(spotId)).get(spotId);
+        int newSequence = existingSpots.size() + 1;
+        RouteSpot newSpot = RouteSpot.create(
+                snapshot.spotId(), newSequence,
+                StayDurationPolicy.getEstimatedMinutes(snapshot.contentType()),
+                snapshot.title(), snapshot.imageUrl(),
+                snapshot.area(), snapshot.district(),
+                snapshot.latitude(), snapshot.longitude(),
+                snapshot.contentType().getLabel(),
+                snapshot.description()
+        );
+
+        List<RouteSpot> spots = new ArrayList<>(existingSpots);
+        spots.add(newSpot);
+
+        List<RouteLeg> legs = new ArrayList<>(lastDay.getLegs());
+        if (!existingSpots.isEmpty()) {
+            RouteSpot lastSpot = existingSpots.get(existingSpots.size() - 1);
+            Optional<LegResult> result = legCalculator.calculate(
+                    lastSpot.getSpotLongitude(), lastSpot.getSpotLatitude(),
+                    snapshot.longitude(), snapshot.latitude()
+            );
+            LegResult leg = result.orElse(LegResult.unavailable());
+            legs.add(RouteLeg.create(
+                    lastSpot.getSequence(), newSequence,
+                    leg.travelMode(), leg.durationSeconds(),
+                    leg.distanceMeters(), leg.landingUrl()
+            ));
+        }
 
         RouteDay newLastDay = RouteDay.create(lastDay.getDayNumber(), lastDay.getDate(), spots, legs);
         route.replaceLastDay(newLastDay);

@@ -258,9 +258,8 @@ class RouteSaveServiceTest {
         Long existingSpotId = existingRoute.getDays().get(1).getSpots().get(0).getSpotId();
         Long newSpotId = 99L;
 
-        given(spotSnapshotReader.readBySpotIds(List.of(existingSpotId, newSpotId)))
+        given(spotSnapshotReader.readBySpotIds(List.of(newSpotId)))
                 .willReturn(List.of(
-                        createSnapshot(existingSpotId, 37.55, 127.05),
                         createSnapshot(newSpotId, 37.58, 127.08)
                 ));
         given(legCalculator.calculate(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
