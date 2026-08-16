@@ -351,6 +351,36 @@ class RouteControllerDocsTest extends AuthenticatedRestDocsSupport {
     }
 
     @Test
+    @DisplayName("루트에 스팟 추가 API")
+    void add_spot_to_route() throws Exception {
+        // given
+        UUID publicId = UUID.randomUUID();
+        Route route = RouteFixture.createRoute(
+                memberId, "Retro mood trip in Seongsu",
+                LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 11),
+                List.of(
+                        RouteFixture.createDay(1, LocalDate.of(2026, 8, 10), 2),
+                        RouteFixture.createDay(2, LocalDate.of(2026, 8, 11), 2)
+                )
+        );
+
+        given(routeSaveService.addSpotToLastDay(any(UUID.class), any(UUID.class), eq(5L)))
+                .willReturn(route);
+
+        // when & then
+        mockMvc.perform(post("/api/routes/{publicId}/spots", publicId)
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"spotId\": 5}"))
+                .andExpect(status().isOk())
+                .andDo(document("route-add-spot",
+                        requestFields(
+                                fieldWithPath("spotId").description("추가할 스팟 ID")
+                        ),
+                        saveResponseFields()
+                ));
+    }
+
+    @Test
     @DisplayName("루트 공유 활성화 API")
     void share_route() throws Exception {
         // given
