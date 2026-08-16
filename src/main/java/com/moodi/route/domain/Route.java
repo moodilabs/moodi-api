@@ -87,6 +87,17 @@ public class Route extends BaseEntity {
         return shared;
     }
 
+    public RouteDay getLastDay() {
+        if (days.isEmpty()) {
+            throw new BusinessException(ErrorCode.ROUTE_NOT_FOUND);
+        }
+        return days.get(days.size() - 1);
+    }
+
+    public void replaceLastDay(RouteDay newLastDay) {
+        this.days.set(this.days.size() - 1, newLastDay);
+    }
+
     public void softDelete() {
         this.deletedAt = LocalDateTime.now();
     }

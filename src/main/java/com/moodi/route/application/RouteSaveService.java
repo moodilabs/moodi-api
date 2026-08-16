@@ -63,6 +63,29 @@ public class RouteSaveService {
         return route;
     }
 
+    @Transactional
+    public Route addSpotToLastDay(UUID publicId, UUID memberId, Long spotId) {
+        Route route = routeRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROUTE_NOT_FOUND));
+
+        route.validateOwner(memberId);
+
+        RouteDay lastDay = route.getLastDay();
+        List<Long> spotIds = new ArrayList<>(lastDay.getSpots().stream()
+                .map(RouteSpot::getSpotId)
+                .toList());
+        spotIds.add(spotId);
+
+        Map<Long, SpotSnapshot> snapshotMap = loadSnapshots(spotIds);
+        List<RouteSpot> spots = buildSpots(spotIds, snapshotMap);
+        List<RouteLeg> legs = calculateLegs(spotIds, snapshotMap);
+
+        RouteDay newLastDay = RouteDay.create(lastDay.getDayNumber(), lastDay.getDate(), spots, legs);
+        route.replaceLastDay(newLastDay);
+
+        return route;
+    }
+
     private Map<Integer, RouteDay> buildExistingDayMap(Route route) {
         Map<Integer, RouteDay> map = new LinkedHashMap<>();
         for (RouteDay day : route.getDays()) {
