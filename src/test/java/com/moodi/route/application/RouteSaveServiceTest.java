@@ -239,6 +239,80 @@ class RouteSaveServiceTest {
                 .isEqualTo(ErrorCode.ROUTE_FORBIDDEN);
     }
 
+    @Test
+    @DisplayName("마지막 Day에 스팟 추가 성공")
+    void add_spot_to_last_day_success() {
+        // given
+        UUID publicId = UUID.randomUUID();
+        Route existingRoute = RouteFixture.createRoute(
+                MEMBER_ID, "서울 여행", START, END,
+                List.of(
+                        RouteFixture.createDay(1, START, 2),
+                        RouteFixture.createDay(2, END, 1)
+                )
+        );
+
+        given(routeRepository.findByPublicId(publicId))
+                .willReturn(Optional.of(existingRoute));
+
+        Long existingSpotId = existingRoute.getDays().get(1).getSpots().get(0).getSpotId();
+        Long newSpotId = 99L;
+
+        given(spotSnapshotReader.readBySpotIds(List.of(existingSpotId, newSpotId)))
+                .willReturn(List.of(
+                        createSnapshot(existingSpotId, 37.55, 127.05),
+                        createSnapshot(newSpotId, 37.58, 127.08)
+                ));
+        given(legCalculator.calculate(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
+                .willReturn(Optional.of(new LegResult(TravelMode.WALK, 900, 1200, null)));
+
+        // when
+        Route result = routeSaveService.addSpotToLastDay(publicId, MEMBER_ID, newSpotId);
+
+        // then
+        assertThat(result.getDays().get(1).getSpots()).hasSize(2);
+        assertThat(result.getDays().get(1).getSpots().get(1).getSpotId()).isEqualTo(newSpotId);
+        assertThat(result.getDays().get(1).getLegs()).hasSize(1);
+        // Day 1은 변경 없음
+        assertThat(result.getDays().get(0).getSpots()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("마지막 Day에 스팟 추가 — 존재하지 않는 루트")
+    void add_spot_to_last_day_route_not_found() {
+        // given
+        UUID publicId = UUID.randomUUID();
+        given(routeRepository.findByPublicId(publicId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> routeSaveService.addSpotToLastDay(publicId, MEMBER_ID, 1L))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.ROUTE_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("마지막 Day에 스팟 추가 — 소유자가 아니면 실패")
+    void add_spot_to_last_day_forbidden() {
+        // given
+        UUID publicId = UUID.randomUUID();
+        Route existingRoute = RouteFixture.createRoute(
+                MEMBER_ID, "여행", START, START,
+                List.of(RouteFixture.createDay(1, START, 1))
+        );
+
+        given(routeRepository.findByPublicId(publicId))
+                .willReturn(Optional.of(existingRoute));
+
+        UUID otherMemberId = UUID.randomUUID();
+
+        // when & then
+        assertThatThrownBy(() -> routeSaveService.addSpotToLastDay(publicId, otherMemberId, 1L))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.ROUTE_FORBIDDEN);
+    }
+
     private SpotSnapshot createSnapshot(Long spotId, double lat, double lng) {
         return new SpotSnapshot(
                 spotId, "스팟 " + spotId, "https://img.example.com/" + spotId + ".jpg",
