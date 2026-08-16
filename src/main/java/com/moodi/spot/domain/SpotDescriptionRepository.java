@@ -9,5 +9,7 @@ public interface SpotDescriptionRepository {
 
     SpotDescription saveIfAbsent(SpotDescription description);
 
+    List<SpotDescription> findBySpotIdInAndLocale(List<Long> spotIds, String locale);
+
     List<Long> findSpotIdsWithoutDescription(String locale);
 }
