@@ -33,6 +33,17 @@ spot-import:
   enabled: false
   path: ./data/pilot/spots.csv
 
+spot-image-migration:
+  enabled: false
+
+spot-pipeline:
+  enabled: false
+
+gcs:
+  spot-image:
+    enabled: false
+    bucket: moodi-spot-images
+
 spot-tagging:
   enabled: false
   limit: 0

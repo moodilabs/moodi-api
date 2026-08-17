@@ -21,4 +21,13 @@ public record SpotImportRow(
         String addr2,
         String imageUrl
 ) {
+
+    public SpotImportRow withImageUrl(String newImageUrl) {
+        return new SpotImportRow(
+                contentId, contentType, area, district, neighborhood, source,
+                longitude, latitude, tel, routeExcluded,
+                lclsSystm1, lclsSystm2, lclsSystm3, homepage,
+                title, overview, addr1, addr2, newImageUrl
+        );
+    }
 }

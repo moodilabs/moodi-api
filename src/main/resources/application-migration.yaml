@@ -6,9 +6,9 @@ spring:
       lifecycle-management: start-only
 
 jwt:
-  secret: import-only-dummy-secret-key-not-used-but-must-be-long-enough-256bit
+  secret: migration-only-dummy-secret-key-not-used-but-must-be-long-enough-256bit
 
-spot-import:
+spot-image-migration:
   enabled: true
 
 gcs:

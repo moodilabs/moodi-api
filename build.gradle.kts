@@ -38,6 +38,7 @@ dependencies {
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
 	implementation("com.nimbusds:nimbus-jose-jwt:10.3")
 	implementation("org.apache.commons:commons-csv:1.12.0")
+	implementation("com.google.cloud:google-cloud-storage:2.49.0")
 
 	developmentOnly("org.springframework.boot:spring-boot-docker-compose")
 
