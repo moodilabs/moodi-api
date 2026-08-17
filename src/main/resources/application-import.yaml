@@ -10,3 +10,7 @@ jwt:
 
 spot-import:
   enabled: true
+
+gcs:
+  spot-image:
+    enabled: true

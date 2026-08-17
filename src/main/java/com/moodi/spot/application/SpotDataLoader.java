@@ -1,21 +1,29 @@
 package com.moodi.spot.application;
 
 import com.moodi.spot.domain.SpotContentType;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class SpotDataLoader {
 
     private static final int CHUNK_SIZE = 1000;
 
     private final SpotBatchWriter spotBatchWriter;
+    private final SpotImageUploader imageUploader;
+
+    public SpotDataLoader(SpotBatchWriter spotBatchWriter, @Nullable SpotImageUploader imageUploader) {
+        this.spotBatchWriter = spotBatchWriter;
+        this.imageUploader = imageUploader;
+    }
 
     public LoadResult load(List<SpotCsvRow> rows) {
         int inserted = 0;
@@ -42,6 +50,8 @@ public class SpotDataLoader {
             if (parsedRows.isEmpty()) {
                 continue;
             }
+
+            parsedRows = uploadImages(parsedRows);
 
             try {
                 long t1 = System.currentTimeMillis();
@@ -76,6 +86,56 @@ public class SpotDataLoader {
         log.info("스팟 적재 완료: 신규 {}건, 갱신 {}건, 실패 {}건, 전체 {}건",
                 inserted, updated, failed, rows.size());
         return new LoadResult(inserted, updated, failed);
+    }
+
+    private List<SpotImportRow> uploadImages(List<SpotImportRow> rows) {
+        if (imageUploader == null) {
+            return rows;
+        }
+
+        long start = System.currentTimeMillis();
+        int uploaded = 0;
+        int skipped = 0;
+        int uploadFailed = 0;
+
+        List<SpotImportRow> result = new ArrayList<>(rows.size());
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            List<Future<SpotImportRow>> futures = new ArrayList<>(rows.size());
+            for (SpotImportRow row : rows) {
+                futures.add(executor.submit(() -> uploadSingleImage(row)));
+            }
+
+            for (Future<SpotImportRow> future : futures) {
+                try {
+                    result.add(future.get());
+                } catch (Exception e) {
+                    uploadFailed++;
+                }
+            }
+        }
+
+        for (int i = 0; i < result.size(); i++) {
+            SpotImportRow row = result.get(i);
+            if (row.imageUrl() != null && row.imageUrl().startsWith("https://storage.googleapis.com/")) {
+                uploaded++;
+            } else if (row.imageUrl() == null) {
+                skipped++;
+            }
+        }
+
+        log.info("[측정] 이미지 업로드: {}건 성공, {}건 스킵, {}건 실패, 소요시간 {}ms",
+                uploaded, skipped, uploadFailed, System.currentTimeMillis() - start);
+        return result;
+    }
+
+    private SpotImportRow uploadSingleImage(SpotImportRow row) {
+        if (row.imageUrl() == null || row.imageUrl().startsWith("https://storage.googleapis.com/")) {
+            return row;
+        }
+
+        String fileName = row.source() + "/" + row.contentId();
+        String gcsUrl = imageUploader.upload(row.imageUrl(), fileName);
+        return row.withImageUrl(gcsUrl);
     }
 
     private SpotImportRow parseRow(SpotCsvRow row) {
