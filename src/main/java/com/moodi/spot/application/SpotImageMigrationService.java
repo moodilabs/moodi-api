@@ -1,9 +1,9 @@
 package com.moodi.spot.application;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class SpotImageMigrationService {
 
     private static final int BATCH_SIZE = 200;
@@ -36,7 +35,18 @@ public class SpotImageMigrationService {
     private final SpotImageUploader imageUploader;
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
+    public SpotImageMigrationService(@Nullable SpotImageUploader imageUploader,
+                                     NamedParameterJdbcTemplate jdbcTemplate) {
+        this.imageUploader = imageUploader;
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
     public MigrationResult run() {
+        if (imageUploader == null) {
+            log.warn("SpotImageUploader가 등록되지 않아 마이그레이션을 건너뜁니다.");
+            return new MigrationResult(true, 0, 0);
+        }
+
         List<ImageMigrationRow> rows = findNonGcsImages();
         log.info("마이그레이션 대상: {}건", rows.size());
 
