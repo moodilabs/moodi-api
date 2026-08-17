@@ -26,6 +26,6 @@ public class SpotDataImportRunner implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         SpotImportService.ImportResult result = spotImportService.run(csvPath);
         int exitCode = result.success() ? 0 : 1;
-        SpringApplication.exit(applicationContext, () -> exitCode);
+        System.exit(SpringApplication.exit(applicationContext, () -> exitCode));
     }
 }

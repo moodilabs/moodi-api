@@ -20,9 +20,18 @@ public class SpotImageMigrationRunner implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        log.info("스팟 이미지 GCS 마이그레이션 시작");
-        SpotImageMigrationService.MigrationResult result = migrationService.run();
-        int exitCode = result.success() ? 0 : 1;
-        SpringApplication.exit(applicationContext, () -> exitCode);
+        final int exitCode = determineExitCode();
+        System.exit(SpringApplication.exit(applicationContext, () -> exitCode));
+    }
+
+    private int determineExitCode() {
+        try {
+            log.info("스팟 이미지 GCS 마이그레이션 시작");
+            SpotImageMigrationService.MigrationResult result = migrationService.run();
+            return result.success() ? 0 : 1;
+        } catch (Exception e) {
+            log.error("스팟 이미지 GCS 마이그레이션 실패", e);
+            return 1;
+        }
     }
 }

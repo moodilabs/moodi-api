@@ -10,12 +10,15 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 
 @Slf4j
 @Service
 public class SpotDataLoader {
 
     private static final int CHUNK_SIZE = 1000;
+    private static final int MAX_CONCURRENT_UPLOADS = 10;
+    private final Semaphore uploadSemaphore = new Semaphore(MAX_CONCURRENT_UPLOADS);
 
     private final SpotBatchWriter spotBatchWriter;
     private final SpotImageUploader imageUploader;
@@ -51,7 +54,9 @@ public class SpotDataLoader {
                 continue;
             }
 
-            parsedRows = uploadImages(parsedRows);
+            UploadResult uploadResult = uploadImages(parsedRows);
+            parsedRows = uploadResult.rows();
+            failed += uploadResult.failedCount();
 
             try {
                 long t1 = System.currentTimeMillis();
@@ -88,9 +93,9 @@ public class SpotDataLoader {
         return new LoadResult(inserted, updated, failed);
     }
 
-    private List<SpotImportRow> uploadImages(List<SpotImportRow> rows) {
+    private UploadResult uploadImages(List<SpotImportRow> rows) {
         if (imageUploader == null) {
-            return rows;
+            return new UploadResult(rows, 0);
         }
 
         long start = System.currentTimeMillis();
@@ -102,14 +107,23 @@ public class SpotDataLoader {
         try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
             List<Future<SpotImportRow>> futures = new ArrayList<>(rows.size());
             for (SpotImportRow row : rows) {
-                futures.add(executor.submit(() -> uploadSingleImage(row)));
+                futures.add(executor.submit(() -> {
+                    uploadSemaphore.acquire();
+                    try {
+                        return uploadSingleImage(row);
+                    } finally {
+                        uploadSemaphore.release();
+                    }
+                }));
             }
 
-            for (Future<SpotImportRow> future : futures) {
+            for (int i = 0; i < futures.size(); i++) {
                 try {
-                    result.add(future.get());
+                    result.add(futures.get(i).get());
                 } catch (Exception e) {
                     uploadFailed++;
+                    result.add(rows.get(i));
+                    log.warn("이미지 업로드 실패 contentId={}: {}", rows.get(i).contentId(), e.getMessage());
                 }
             }
         }
@@ -125,7 +139,10 @@ public class SpotDataLoader {
 
         log.info("[측정] 이미지 업로드: {}건 성공, {}건 스킵, {}건 실패, 소요시간 {}ms",
                 uploaded, skipped, uploadFailed, System.currentTimeMillis() - start);
-        return result;
+        return new UploadResult(result, uploadFailed);
+    }
+
+    private record UploadResult(List<SpotImportRow> rows, int failedCount) {
     }
 
     private SpotImportRow uploadSingleImage(SpotImportRow row) {

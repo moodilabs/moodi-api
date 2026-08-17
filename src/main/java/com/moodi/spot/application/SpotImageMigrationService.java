@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
@@ -18,6 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SpotImageMigrationService {
 
     private static final int BATCH_SIZE = 200;
+    private static final int MAX_CONCURRENT_UPLOADS = 10;
+    private final Semaphore uploadSemaphore = new Semaphore(MAX_CONCURRENT_UPLOADS);
 
     private static final String SELECT_NON_GCS_IMAGES = """
             SELECT si.id, si.image_url, s.source, s.content_id
@@ -94,9 +97,14 @@ public class SpotImageMigrationService {
             List<Future<UploadedImage>> futures = new ArrayList<>(batch.size());
             for (ImageMigrationRow row : batch) {
                 futures.add(executor.submit(() -> {
-                    String fileName = row.source() + "/" + row.contentId();
-                    String gcsUrl = imageUploader.upload(row.imageUrl(), fileName);
-                    return new UploadedImage(row.id(), gcsUrl);
+                    uploadSemaphore.acquire();
+                    try {
+                        String fileName = row.source() + "/" + row.contentId() + "_" + row.id();
+                        String gcsUrl = imageUploader.upload(row.imageUrl(), fileName);
+                        return new UploadedImage(row.id(), gcsUrl);
+                    } finally {
+                        uploadSemaphore.release();
+                    }
                 }));
             }
 

@@ -32,25 +32,40 @@ public class SpotPipelineRunner implements ApplicationRunner {
 
         // 1단계: CSV 적재
         log.info("[1/3] CSV 적재");
-        SpotImportService.ImportResult importResult = importService.run(csvPath);
-        if (!importResult.success()) {
-            log.warn("[1/3] CSV 적재 일부 실패 — 다음 단계 계속 진행");
+        try {
+            SpotImportService.ImportResult importResult = importService.run(csvPath);
+            if (!importResult.success()) {
+                log.warn("[1/3] CSV 적재 일부 실패 — 다음 단계 계속 진행");
+                allSuccess = false;
+            }
+        } catch (Exception e) {
+            log.error("[1/3] CSV 적재 예외 발생 — 다음 단계 계속 진행", e);
             allSuccess = false;
         }
 
         // 2단계: 이미지 GCS 업로드
         log.info("[2/3] 이미지 GCS 마이그레이션");
-        SpotImageMigrationService.MigrationResult migrationResult = imageMigrationService.run();
-        if (!migrationResult.success()) {
-            log.warn("[2/3] 이미지 마이그레이션 일부 실패 — 다음 단계 계속 진행");
+        try {
+            SpotImageMigrationService.MigrationResult migrationResult = imageMigrationService.run();
+            if (!migrationResult.success()) {
+                log.warn("[2/3] 이미지 마이그레이션 일부 실패 — 다음 단계 계속 진행");
+                allSuccess = false;
+            }
+        } catch (Exception e) {
+            log.error("[2/3] 이미지 마이그레이션 예외 발생 — 다음 단계 계속 진행", e);
             allSuccess = false;
         }
 
         // 3단계: 무드 태깅
         log.info("[3/3] 무드 태깅");
-        SpotMoodTaggingService.TaggingResult taggingResult = taggingService.tagAll(0);
-        if (taggingResult.failed() > 0) {
-            log.warn("[3/3] 무드 태깅 일부 실패");
+        try {
+            SpotMoodTaggingService.TaggingResult taggingResult = taggingService.tagAll(0);
+            if (taggingResult.failed() > 0) {
+                log.warn("[3/3] 무드 태깅 일부 실패");
+                allSuccess = false;
+            }
+        } catch (Exception e) {
+            log.error("[3/3] 무드 태깅 예외 발생", e);
             allSuccess = false;
         }
 

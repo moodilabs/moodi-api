@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -24,6 +25,7 @@ import java.time.Duration;
 public class GcsSpotImageUploader implements SpotImageUploader {
 
     private static final String PUBLIC_URL_FORMAT = "https://storage.googleapis.com/%s/%s";
+    private static final long MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
 
     private final Storage storage;
     private final String bucketName;
@@ -67,8 +69,15 @@ public class GcsSpotImageUploader implements SpotImageUploader {
                 throw new IOException("이미지 다운로드 실패: HTTP " + response.statusCode());
             }
 
+            response.headers().firstValueAsLong("Content-Length").ifPresent(contentLength -> {
+                if (contentLength > MAX_IMAGE_BYTES) {
+                    throw new RuntimeException(new IOException(
+                            "이미지 크기 초과: Content-Length " + contentLength + " > " + MAX_IMAGE_BYTES));
+                }
+            });
+
             try (InputStream is = response.body()) {
-                return is.readAllBytes();
+                return readBounded(is, MAX_IMAGE_BYTES);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -76,6 +85,21 @@ public class GcsSpotImageUploader implements SpotImageUploader {
         } catch (IOException e) {
             throw new RuntimeException("이미지 다운로드 실패: " + sourceUrl, e);
         }
+    }
+
+    private byte[] readBounded(InputStream is, long maxBytes) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        byte[] chunk = new byte[8192];
+        long totalRead = 0;
+        int bytesRead;
+        while ((bytesRead = is.read(chunk)) != -1) {
+            totalRead += bytesRead;
+            if (totalRead > maxBytes) {
+                throw new IOException("이미지 크기 초과: " + totalRead + " bytes > " + maxBytes);
+            }
+            buffer.write(chunk, 0, bytesRead);
+        }
+        return buffer.toByteArray();
     }
 
     private String detectContentType(String url) {
