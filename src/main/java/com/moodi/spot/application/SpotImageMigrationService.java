@@ -67,8 +67,13 @@ public class SpotImageMigrationService {
             List<ImageMigrationRow> batch = rows.subList(batchStart, batchEnd);
 
             List<UploadedImage> uploaded = uploadBatch(batch, failed);
-            updateUrls(uploaded);
-            success.addAndGet(uploaded.size());
+            try {
+                updateUrls(uploaded);
+                success.addAndGet(uploaded.size());
+            } catch (Exception e) {
+                failed.addAndGet(uploaded.size());
+                log.error("배치 URL 업데이트 실패 (행 {}~{}): {}", batchStart, batchEnd, e.getMessage());
+            }
 
             log.info("진행: {}/{} (성공 {}, 실패 {})",
                     batchEnd, rows.size(), success.get(), failed.get());
