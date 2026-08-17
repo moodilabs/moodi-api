@@ -1,0 +1,20 @@
+spring:
+  main:
+    web-application-type: none
+  docker:
+    compose:
+      enabled: false
+
+jwt:
+  secret: pipeline-only-dummy-secret-key-not-used-but-must-be-long-enough-256bit
+
+spot-pipeline:
+  enabled: true
+  path: ${SPOT_CSV_PATH}
+
+gcs:
+  spot-image:
+    enabled: true
+
+spot-tagging:
+  concurrency: 1

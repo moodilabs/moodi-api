@@ -36,6 +36,9 @@ spot-import:
 spot-image-migration:
   enabled: false
 
+spot-pipeline:
+  enabled: false
+
 gcs:
   spot-image:
     enabled: false
