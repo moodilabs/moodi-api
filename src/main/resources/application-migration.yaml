@@ -1,0 +1,16 @@
+spring:
+  main:
+    web-application-type: none
+  docker:
+    compose:
+      lifecycle-management: start-only
+
+jwt:
+  secret: migration-only-dummy-secret-key-not-used-but-must-be-long-enough-256bit
+
+spot-image-migration:
+  enabled: true
+
+gcs:
+  spot-image:
+    enabled: true
