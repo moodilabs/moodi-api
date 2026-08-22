@@ -54,7 +54,8 @@ public class KakaoLegClient implements LegClient {
                     .retrieve()
                     .body(String.class);
 
-            return parseTransitResponse(response);
+            String landingUrl = buildLandingUrl(startLatitude, startLongitude, endLatitude, endLongitude);
+            return parseTransitResponse(response, landingUrl);
         } catch (Exception e) {
             log.warn("카카오 대중교통 경로 조회 실패: start=({}, {}), end=({}, {}), error={}",
                     startLongitude, startLatitude, endLongitude, endLatitude, e.getMessage());
@@ -78,7 +79,8 @@ public class KakaoLegClient implements LegClient {
                     .retrieve()
                     .body(String.class);
 
-            return parseWalkResponse(response);
+            String landingUrl = buildLandingUrl(startLatitude, startLongitude, endLatitude, endLongitude);
+            return parseWalkResponse(response, landingUrl);
         } catch (Exception e) {
             log.warn("카카오 도보 경로 조회 실패: start=({}, {}), end=({}, {}), error={}",
                     startLongitude, startLatitude, endLongitude, endLatitude, e.getMessage());
@@ -92,7 +94,7 @@ public class KakaoLegClient implements LegClient {
      * routes가 여러 개 → totalTime 가장 짧은 경로 선택
      */
     @SuppressWarnings("unchecked")
-    private Optional<LegResult> parseTransitResponse(String responseJson) {
+    private Optional<LegResult> parseTransitResponse(String responseJson, String landingUrl) {
         try {
             Map<String, Object> response = MAPPER.readValue(responseJson, new TypeReference<>() {});
             List<Map<String, Object>> routes = (List<Map<String, Object>>) response.get("routes");
@@ -121,7 +123,7 @@ public class KakaoLegClient implements LegClient {
                     TravelMode.PUBLIC_TRANSIT,
                     totalTime,
                     totalDistance,
-                    null
+                    landingUrl
             ));
         } catch (Exception e) {
             log.warn("카카오 대중교통 응답 파싱 실패: {}", e.getMessage());
@@ -134,7 +136,7 @@ public class KakaoLegClient implements LegClient {
      * { "route": { "legs": [ { "properties": { "distance": m, "time": sec }, "steps": [...] } ] } }
      */
     @SuppressWarnings("unchecked")
-    private Optional<LegResult> parseWalkResponse(String responseJson) {
+    private Optional<LegResult> parseWalkResponse(String responseJson, String landingUrl) {
         try {
             Map<String, Object> response = MAPPER.readValue(responseJson, new TypeReference<>() {});
             Map<String, Object> route = (Map<String, Object>) response.get("route");
@@ -156,12 +158,18 @@ public class KakaoLegClient implements LegClient {
                     TravelMode.WALK,
                     totalTime,
                     totalDistance,
-                    null
+                    landingUrl
             ));
         } catch (Exception e) {
             log.warn("카카오 도보 응답 파싱 실패: {}", e.getMessage());
             return Optional.empty();
         }
+    }
+
+    private String buildLandingUrl(double startLatitude, double startLongitude,
+                                    double endLatitude, double endLongitude) {
+        return "https://map.kakao.com/link/from/출발," + startLatitude + "," + startLongitude
+                + "/to/도착," + endLatitude + "," + endLongitude;
     }
 
     @SuppressWarnings("unchecked")
