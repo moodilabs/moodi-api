@@ -8,5 +8,5 @@ public interface SpotImageRepository {
 
     List<SpotImage> findBySpotId(Long spotId);
 
-    List<SpotImage> findBySpotIdInAndPrimaryTrue(List<Long> spotIds);
+    List<SpotImage> findBySpotIdInAndIsPrimaryTrue(List<Long> spotIds);
 }

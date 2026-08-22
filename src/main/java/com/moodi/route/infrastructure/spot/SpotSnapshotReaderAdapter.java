@@ -55,7 +55,7 @@ public class SpotSnapshotReaderAdapter implements SpotSnapshotReader {
                 .filter(t -> TRANSLATION_LOCALE.equals(t.getLocale()))
                 .collect(Collectors.toMap(SpotTranslation::getSpotId, Function.identity(), (a, b) -> a));
 
-        Map<Long, SpotImage> primaryImageMap = imageRepository.findBySpotIdInAndPrimaryTrue(filteredIds).stream()
+        Map<Long, SpotImage> primaryImageMap = imageRepository.findBySpotIdInAndIsPrimaryTrue(filteredIds).stream()
                 .collect(Collectors.toMap(SpotImage::getSpotId, Function.identity(), (a, b) -> a));
 
         Map<Long, String> descriptionMap = descriptionRepository

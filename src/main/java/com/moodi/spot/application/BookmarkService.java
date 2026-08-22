@@ -117,7 +117,7 @@ public class BookmarkService {
                 .stream()
                 .collect(Collectors.toMap(SpotTranslation::getSpotId, Function.identity(), (a, b) -> a));
 
-        Map<Long, String> imageMap = spotImageRepository.findBySpotIdInAndPrimaryTrue(spotIds)
+        Map<Long, String> imageMap = spotImageRepository.findBySpotIdInAndIsPrimaryTrue(spotIds)
                 .stream()
                 .collect(Collectors.toMap(SpotImage::getSpotId, SpotImage::getImageUrl, (a, b) -> a));
 
