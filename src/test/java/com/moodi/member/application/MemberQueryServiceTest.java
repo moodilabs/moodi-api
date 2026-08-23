@@ -45,6 +45,7 @@ class MemberQueryServiceTest {
 
         assertThat(info.status()).isEqualTo(MemberStatus.ACTIVE);
         assertThat(info.nickname()).isEqualTo("moodi_user");
+        assertThat(info.hasProfile()).isTrue();
         assertThat(info.hasPreferredMood()).isTrue();
     }
 
@@ -69,6 +70,19 @@ class MemberQueryServiceTest {
 
         assertThat(info.status()).isEqualTo(MemberStatus.PENDING);
         assertThat(info.nickname()).isNull();
+        assertThat(info.hasProfile()).isFalse();
+    }
+
+    @Test
+    @DisplayName("프로필만 저장하고 약관 동의 전인 회원은 PENDING이면서 hasProfile이 true다")
+    void get_me_returns_pending_member_with_profile() {
+        when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(MemberFixture.withProfile()));
+        when(memberPreferredMoodRepository.existsByMemberId(MEMBER_ID)).thenReturn(false);
+
+        MemberInfo info = memberQueryService.getMe(MEMBER_ID);
+
+        assertThat(info.status()).isEqualTo(MemberStatus.PENDING);
+        assertThat(info.hasProfile()).isTrue();
     }
 
     @Test
