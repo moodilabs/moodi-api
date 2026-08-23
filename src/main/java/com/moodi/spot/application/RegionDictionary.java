@@ -148,7 +148,7 @@ public class RegionDictionary {
             Map.entry("김해시", "Gimhae-si"), Map.entry("밀양시", "Miryang-si"),
             Map.entry("거제시", "Geoje-si"), Map.entry("양산시", "Yangsan-si"),
             Map.entry("의령군", "Uiryeong-gun"), Map.entry("함안군", "Haman-gun"),
-            Map.entry("창녕군", "Changnyeong-gun"), Map.entry("고성군", "Goseong-gun"),
+            Map.entry("창녕군", "Changnyeong-gun"),
             Map.entry("남해군", "Namhae-gun"), Map.entry("하동군", "Hadong-gun"),
             Map.entry("산청군", "Sancheong-gun"), Map.entry("함양군", "Hamyang-gun"),
             Map.entry("거창군", "Geochang-gun"), Map.entry("합천군", "Hapcheon-gun"),
