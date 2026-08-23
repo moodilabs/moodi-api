@@ -49,7 +49,7 @@ class MemberControllerDocsTest extends AuthenticatedRestDocsSupport {
     @DisplayName("내 정보 조회 성공")
     void get_me_success() throws Exception {
         when(memberQueryService.getMe(any()))
-                .thenReturn(new MemberInfo(MemberStatus.ACTIVE, "moodi_user", true));
+                .thenReturn(new MemberInfo(MemberStatus.ACTIVE, "moodi_user", true, true));
 
         mockMvc.perform(get("/api/v1/members/me"))
                 .andExpect(status().isOk())
@@ -58,6 +58,7 @@ class MemberControllerDocsTest extends AuthenticatedRestDocsSupport {
                                 fieldWithPath("data").type(JsonFieldType.OBJECT).description("회원 상태 정보"),
                                 fieldWithPath("data.status").type(JsonFieldType.STRING).description("회원 상태 (PENDING: 온보딩 전, ACTIVE: 가입 완료)"),
                                 fieldWithPath("data.nickname").type(JsonFieldType.STRING).optional().description("닉네임 (온보딩 전이면 null)"),
+                                fieldWithPath("data.hasProfile").type(JsonFieldType.BOOLEAN).description("프로필 설정 완료 여부 (PENDING 중 false면 프로필 설정, true면 약관 동의로 분기)"),
                                 fieldWithPath("data.hasPreferredMood").type(JsonFieldType.BOOLEAN).description("선호 무드 설정 여부 (false면 Feed 메인 B로 분기)")
                         )
                 ));
@@ -75,7 +76,10 @@ class MemberControllerDocsTest extends AuthenticatedRestDocsSupport {
                 .andExpect(status().isNoContent())
                 .andDo(document("member/preferred-moods",
                         requestFields(
-                                fieldWithPath("moods").type(JsonFieldType.ARRAY).description("선호 무드 목록 (0개 또는 3개 이상, 무드 20종 중 선택)")
+                                fieldWithPath("moods").type(JsonFieldType.ARRAY)
+                                        .description("선호 무드 목록 (0개 또는 3개 이상). 값은 MoodTag 이름 20종 중 선택 — "
+                                                + "NATURE, OCEAN, CITYSCAPE, RIVERSIDE, COUNTRYSIDE, EXPANSIVE, TRADITIONAL, LOCAL, RETRO, INDUSTRIAL, "
+                                                + "MODERN, COZY, SERENE, LIVELY, ROMANTIC, MOODY, GOLDEN_HOUR, NEON, ARTSY, SEASONAL")
                         )
                 ));
 

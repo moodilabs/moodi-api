@@ -78,6 +78,31 @@ include::{snippets}/member/agreements/http-response.adoc[]
 
 건너뛰기를 허용하므로 **0개 또는 3개 이상**만 유효합니다. 중복 무드는 서버에서 제거한 뒤 개수를 셉니다.
 
+사전조사 화면(`AUT-05`)의 무드 이미지 20종은 클라이언트가 보유하며, **이미지 1장 = 무드 1개**로 1:1 대응합니다.
+따라서 아래 20종 외의 값을 보내면 `INVALID_REQUEST`(400)입니다.
+
+[CAUTION]
+====
+요청에 담는 값은 아래 표의 **무드 값** 열(대문자)입니다.
+`key` 열(소문자)은 스팟 무드 태그의 내부 표기라 이 API에서는 받지 않습니다 — `nature`를 보내면 400입니다.
+====
+
+.무드 20종 (`com.moodi.shared.mood.MoodTag`)
+|===
+| 무드 값 | key | 라벨 | 무드 값 | key | 라벨
+
+| `NATURE` | nature | 자연 | `MODERN` | modern | 모던
+| `OCEAN` | ocean | 바다 | `COZY` | cozy | 아늑
+| `CITYSCAPE` | cityscape | 도심·야경 | `SERENE` | serene | 힐링
+| `RIVERSIDE` | riverside | 강변·호수 | `LIVELY` | lively | 활기
+| `COUNTRYSIDE` | countryside | 전원·시골 | `ROMANTIC` | romantic | 낭만
+| `EXPANSIVE` | expansive | 광활·탁 트인 | `MOODY` | moody | 무드
+| `TRADITIONAL` | traditional | 전통·한옥 | `GOLDEN_HOUR` | golden_hour | 노을
+| `LOCAL` | local | 동네·생활감 | `NEON` | neon | 네온·야경
+| `RETRO` | retro | 레트로·뉴트로 | `ARTSY` | artsy | 예술
+| `INDUSTRIAL` | industrial | 인더스트리얼 | `SEASONAL` | seasonal | 계절감
+|===
+
 .HTTP Request
 include::{snippets}/member/preferred-moods/http-request.adoc[]
 
@@ -98,11 +123,19 @@ include::{snippets}/member/preferred-moods/http-response.adoc[]
 
 === 내 정보 조회
 
-스플래시(`ONB-F01`)에서 진입 화면을 분기할 때 사용합니다.
+스플래시(`ONB-01`)에서 진입 화면을 분기할 때 사용합니다.
 
-* `status` 가 `PENDING` 이면 온보딩 미완료 → 프로필 설정으로
-* `ACTIVE` 이면서 `hasPreferredMood` 가 `false` 이면 Feed 메인 B로
-* `ACTIVE` 이면서 `true` 이면 Feed 메인 A로
+프로필(`AUT-02`)과 약관 동의(`AUT-03`)가 2단계로 나뉘어 있어, 그 사이에 이탈한 회원은
+`PENDING` 이면서 프로필만 채워진 상태가 됩니다. `hasProfile` 로 되돌아갈 화면을 가릅니다.
+
+|===
+| `status` | `hasProfile` | `hasPreferredMood` | 진입 화면
+
+| `PENDING` | `false` | - | `AUT-02` 프로필 설정
+| `PENDING` | `true` | - | `AUT-03` 약관 동의
+| `ACTIVE` | `true` | `false` | `DSC-02` 메인 B
+| `ACTIVE` | `true` | `true` | `DSC-01` 메인 A
+|===
 
 .HTTP Request
 include::{snippets}/member/me/http-request.adoc[]

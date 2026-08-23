@@ -27,7 +27,12 @@ com.moodi.member/
 - **계정 식별 키는 `(provider, provider_id)`** — OIDC `sub` 기준. 로그인 조회는 항상 이걸로 한다.
 - **`email`은 nullable + unique(있을 때만)** 인 보조 속성. 애플 이메일 가리기/미제공 케이스를 흡수하기 위함.
   - 명세 AUT-F01 "동일 이메일 차단"은 **email이 있을 때만** 적용하는 best-effort 규칙.
+  - 화면정의서 `AUT-01`은 "수집된 이메일을 **계정 고유키**로 사용"이라고 적었지만, 같은 문서가
+    Apple 이메일 가리기로 릴레이 주소가 오는 예외를 인정하고 있어 email은 고유키가 될 수 없다.
+    **동작(동일 이메일·다른 provider 차단)은 정의서와 동일**하므로 구현은 그대로 두고 정의서 문구 정정을 요청한다.
 - `status`: `PENDING`(온보딩 전) / `ACTIVE`. 최초 로그인 시 `PENDING`으로 자동 생성.
+  - 프로필(`AUT-02`)과 약관(`AUT-03`)이 2단계라 `PENDING` 안에서도 진행도가 갈린다.
+    `GET /members/me`의 `hasProfile`로 클라이언트가 되돌아갈 화면을 정한다.
 - `nickname` 등 프로필 항목은 온보딩(AUT-F03~)에서 채운다. 인증 슬라이스에서는 null 허용.
 
 ## OAuth 검증 (Google · Apple)
@@ -165,7 +170,7 @@ com.moodi.member/
 | GET | `/api/v1/members/nickname-availability?nickname=` | → `{ available }` | A | ✅ |
 | POST | `/api/v1/members/profile` | `{ nickname, country, birthYear, gender }` → `204` (PENDING 유지) | A | ✅ |
 | POST | `/api/v1/members/agreements` | `{ termsOfService, privacyPolicy, ageOver14, marketing }` → `204` (PENDING→ACTIVE) | A | ✅ |
-| GET | `/api/v1/members/me` | → `{ status, nickname, hasPreferredMood }` | C | ✅ |
+| GET | `/api/v1/members/me` | → `{ status, nickname, hasProfile, hasPreferredMood }` | C | ✅ |
 | POST | `/api/v1/members/me/preferred-moods` | `{ moods: [ …0개 또는 ≥3 ] }` → `204` | B | ✅ |
 
 ### 에러 코드 (`ErrorCode` 추가)
@@ -192,16 +197,51 @@ com.moodi.member/
 - orm.xml에 `Member` 속성 3개 + `MemberAgreement` `<entity>` 추가 완료. orm ↔ 마이그레이션 일치 유지.
 - 도메인 Repository 포트는 **단건 `save`만 선언**한다. `Repository<T, ID>`는 `saveAll`을 CRUD 메서드로 인식하지 못해 쿼리 파생을 시도하다 컨텍스트 로딩에 실패한다.
 
+### 화면정의서 반영으로 확정된 것 (2026-08-23)
+
+화면정의서 `ONB-01`~`ONB-04` · `AUT-01`~`AUT-05` 대조 결과 기존 미결 항목이 해소됐다.
+
+- **사전조사 입력 형태**(B) — `AUT-05`가 "무드 이미지 **20종**을 2열 Grid로 제공, **20개 무드 태그 1:1 대응**"으로
+  명시했다. 기존 가정이 맞았으므로 `{ moods: [...] }`(무드 값 직접 전달) 계약을 그대로 유지한다.
+- **약관 저장 방식** — `AUT-03`이 요구하는 저장 항목은 "**항목별 동의 여부 + 동의 일시**"뿐이다.
+  현 구현(종류별 1행, `member_agreement(member_id, type, agreed, agreed_at)`)으로 충족한다.
+- **약관 전문 · 무드 이미지 · 국가 목록은 전부 클라이언트 담당**으로 확정(2026-08-23).
+  서버는 약관의 **동의 여부만** 저장하고 전문은 갖지 않는다. `AUT-02`의 국가 `Popular`/`All Countries` 섹션과
+  `AUT-05`의 이미지 20종도 클라이언트가 보유한다. → 관련 조회 API를 만들지 않는다.
+
+무드 20종은 `com.moodi.shared.mood.MoodTag`로 확정 완료.
+
 ### 미결 (구현 전 확정 필요)
 
-- **사전조사 입력 형태**(B) — 명세 `AUT-F06` 출력이 "선택 **이미지**에서 추출한 무드 태그를 저장"이다.
-  큐레이션 이미지 20종 ↔ `MoodTag` 20종이 **1:1이라 가정**하고 `{ moods: [...] }`(무드 키 직접 전달)로 구현했다.
-  이미지 1장이 무드 여러 개로 풀리는 구조라면 `PreferredMoodRequest`가 이미지 ID를 받고
-  서버가 매핑 테이블로 변환하도록 바꿔야 한다. **기획 확인 필요.**
-- **약관 저장 방식** — 종류별 1행(현 구현) vs append-only 이력. 법적 요건 확정 필요.
 - **회원 탈퇴** — 명세서에 행 자체가 없다(마이페이지 영역 명세 부재).
+- **`DUPLICATE_EMAIL` 응답에 provider 포함** — `AUT-01` 에러 모달 문구가
+  "This email is linked to **{provider}**. Log in with {provider} to continue." 라 클라이언트가 provider 값을 받아야 한다.
+  현재 `AuthService.register()`는 `existsByEmail`(boolean)이라 provider를 알 수 없고,
+  `BusinessException`에도 추가 데이터를 실을 슬롯이 없다.
+  `findByEmail` 전환 + `BusinessException` 확장이 필요한데 **`shared/error` 변경이라 개발자 B와 합의 후 착수**한다.
+- **무드 값 표기 통일** — 이 API는 `MoodTag` **enum 이름**(`NATURE`)을 받는다.
+  `MoodTag.key`(`nature`)와 `fromKey()`가 있으나 `@JsonValue`/`@JsonCreator`가 없어 Jackson에 연결돼 있지 않다.
+  spot 쪽 DTO는 `SpotDetailResponse.moodTags`가 `List<String>`, `BookmarkSpotResponse.moodTags`가 `List<MoodTag>`로
+  갈려 있어 같은 무드가 엔드포인트마다 다른 표기로 나갈 소지가 있다.
+  `MoodTag`는 공유 커널이므로 **개발자 B와 표기를 맞춘 뒤** 통일 여부를 결정한다.
 
-> 무드 20종은 `com.moodi.shared.mood.MoodTag`로 확정 완료 — B단계 선결 조건 해소됨.
+### 화면ID 매핑 (화면정의서 기준)
+
+기능ID(`ONB-F01` 등)와 화면ID(`ONB-01` 등)가 번호대가 다르므로 혼용하지 않는다.
+
+| 화면ID | 화면 | 관련 API |
+|---|---|---|
+| `ONB-01` | 스플래시 | `GET /members/me` · `POST /auth/reissue` |
+| `ONB-02`~`ONB-04` | 서비스 소개 슬라이드 3장 | 없음 (클라이언트 전용) |
+| `AUT-01` | 로그인/회원가입 | `POST /auth/login` |
+| `AUT-02` | 프로필 설정 | `GET /members/nickname-availability` · `POST /members/profile` |
+| `AUT-03` | 약관 동의 | `POST /members/agreements` |
+| `AUT-04` | 가입 완료 및 사전조사 안내 | 없음 |
+| `AUT-05` | 사전조사 | `POST /members/me/preferred-moods` |
+| `DSC-01`/`DSC-02`/`DSC-03` | Feed 메인 A / 메인 B / 비회원 | `GET /feed` · `GET /feed/popular-spots` |
+
+> **주의** — 화면정의서가 Feed 화면을 `DSC`로 부르지만 기능명세서·엔드포인트는 `FED`(`/api/v1/feed`)를 쓴다.
+> 정의서 내부에서도 `ONB-01`은 "[Feed] 탭", `AUT-01`은 "[DSC-01]"로 섞여 있다. 엔드포인트는 그대로 두고 매핑으로만 흡수한다.
 
 ## 주의
 
