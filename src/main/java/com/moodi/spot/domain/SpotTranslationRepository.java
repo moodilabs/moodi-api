@@ -10,4 +10,6 @@ public interface SpotTranslationRepository {
     Optional<SpotTranslation> findBySpotIdAndLocale(Long spotId, String locale);
 
     List<SpotTranslation> findBySpotIdIn(List<Long> spotIds);
+
+    List<Long> findSpotIdsWithoutTranslation(String locale);
 }
