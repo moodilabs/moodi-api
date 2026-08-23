@@ -1,0 +1,14 @@
+spring:
+  main:
+    web-application-type: none
+  docker:
+    compose:
+      enabled: false
+
+jwt:
+  secret: translation-only-dummy-secret-key-not-used-but-must-be-long-enough-256bit
+
+spot-translation:
+  enabled: true
+  target-locale: en-US
+  concurrency: 3
