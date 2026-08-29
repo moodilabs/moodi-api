@@ -13,7 +13,7 @@ public interface SpotSearchQueryRepository {
                                            Integer cursorMatchRank, Long cursorBookmarkCount,
                                            Long cursorSpotId, int size);
 
-    List<SpotSearchRow> searchByMostSaved(String area, List<String> moodTagKeys,
+    List<SpotSearchRow> searchByMostSaved(String keyword, String area, List<String> moodTagKeys,
                                            boolean saved, UUID memberId,
                                            Long cursorSpotId, Long cursorBookmarkCount, int size);
 

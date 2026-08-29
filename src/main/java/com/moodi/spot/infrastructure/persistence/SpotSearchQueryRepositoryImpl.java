@@ -67,18 +67,24 @@ public class SpotSearchQueryRepositoryImpl implements SpotSearchQueryRepository 
     }
 
     @Override
-    public List<SpotSearchRow> searchByMostSaved(String area, List<String> moodTagKeys,
+    public List<SpotSearchRow> searchByMostSaved(String keyword, String area, List<String> moodTagKeys,
                                                   boolean saved, UUID memberId,
                                                   Long cursorSpotId, Long cursorBookmarkCount, int size) {
         StringBuilder sql = new StringBuilder("""
                 SELECT s.id, s.area, s.district,
                        (SELECT COUNT(*) FROM bookmark bc WHERE bc.spot_id = s.id) AS bookmark_count
                 FROM spot s
-                WHERE s.status = 'PUBLISHED'
                 """);
 
         Map<String, Object> params = new HashMap<>();
 
+        if (keyword != null && !keyword.isBlank()) {
+            sql.append("JOIN spot_translation st ON st.spot_id = s.id AND st.locale = 'ko-KR'");
+        }
+
+        sql.append(" WHERE s.status = 'PUBLISHED'");
+
+        appendKeywordFilter(sql, params, keyword);
         appendAreaFilter(sql, params, area);
         appendMoodTagFilter(sql, params, moodTagKeys);
         appendSavedFilter(sql, params, saved, memberId);
@@ -135,6 +141,13 @@ public class SpotSearchQueryRepositoryImpl implements SpotSearchQueryRepository 
                         hasMatchRank ? ((Number) row[4]).intValue() : 0
                 ))
                 .toList();
+    }
+
+    private void appendKeywordFilter(StringBuilder sql, Map<String, Object> params, String keyword) {
+        if (keyword != null && !keyword.isBlank()) {
+            sql.append(" AND (st.title ILIKE :containKeyword OR s.area ILIKE :containKeyword OR s.district ILIKE :containKeyword)");
+            params.put("containKeyword", "%" + keyword + "%");
+        }
     }
 
     private void appendAreaFilter(StringBuilder sql, Map<String, Object> params, String area) {

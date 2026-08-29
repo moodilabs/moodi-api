@@ -74,7 +74,7 @@ class SpotSearchServiceTest {
         );
 
         when(spotSearchQueryRepository.searchByMostSaved(
-                any(), any(), anyBoolean(), any(), any(), any(), anyInt()
+                any(), any(), any(), anyBoolean(), any(), any(), any(), anyInt()
         )).thenReturn(rows);
         stubEnrichment();
 
@@ -84,7 +84,7 @@ class SpotSearchServiceTest {
         // then
         assertThat(result.items()).hasSize(2);
         verify(spotSearchQueryRepository).searchByMostSaved(
-                any(), any(), anyBoolean(), any(), any(), any(), anyInt());
+                any(), any(), any(), anyBoolean(), any(), any(), any(), anyInt());
         verify(spotSearchQueryRepository, never()).searchByBestMatch(
                 any(), any(), any(), anyBoolean(), any(), any(), any(), any(), anyInt());
     }
@@ -132,7 +132,7 @@ class SpotSearchServiceTest {
         );
 
         when(spotSearchQueryRepository.searchByMostSaved(
-                any(), any(), anyBoolean(), eq(memberId), any(), any(), anyInt()
+                any(), any(), any(), anyBoolean(), eq(memberId), any(), any(), anyInt()
         )).thenReturn(rows);
         stubEnrichment();
         when(bookmarkQueryRepository.findBookmarkedSpotIds(eq(memberId), anyList()))
@@ -159,7 +159,7 @@ class SpotSearchServiceTest {
         );
 
         when(spotSearchQueryRepository.searchByMostSaved(
-                any(), any(), anyBoolean(), isNull(), any(), any(), anyInt()
+                any(), any(), any(), anyBoolean(), isNull(), any(), any(), anyInt()
         )).thenReturn(rows);
         stubEnrichment();
 
@@ -185,7 +185,7 @@ class SpotSearchServiceTest {
         );
 
         when(spotSearchQueryRepository.searchByMostSaved(
-                any(), any(), anyBoolean(), any(), any(), any(), anyInt()
+                any(), any(), any(), anyBoolean(), any(), any(), any(), anyInt()
         )).thenReturn(rows);
         stubEnrichment();
         when(spotSearchQueryRepository.findSpotIdsInRoute(eq(routePublicId), anyList()))
@@ -211,7 +211,7 @@ class SpotSearchServiceTest {
         );
 
         when(spotSearchQueryRepository.searchByMostSaved(
-                any(), any(), anyBoolean(), any(), any(), any(), anyInt()
+                any(), any(), any(), anyBoolean(), any(), any(), any(), anyInt()
         )).thenReturn(rows);
         stubEnrichment();
 
@@ -260,7 +260,7 @@ class SpotSearchServiceTest {
         );
 
         when(spotSearchQueryRepository.searchByMostSaved(
-                any(), any(), anyBoolean(), any(), any(), any(), anyInt()
+                any(), any(), any(), anyBoolean(), any(), any(), any(), anyInt()
         )).thenReturn(rows);
         stubEnrichment();
 

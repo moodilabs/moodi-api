@@ -125,7 +125,7 @@ public class SpotSearchService {
         }
 
         return spotSearchQueryRepository.searchByMostSaved(
-                request.area(), request.moodTagKeys(),
+                request.keyword(), request.area(), request.moodTagKeys(),
                 request.saved(), memberId,
                 request.cursorSpotId(), request.cursorBookmarkCount(), request.size());
     }
