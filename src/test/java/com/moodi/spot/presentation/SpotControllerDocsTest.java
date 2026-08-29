@@ -154,7 +154,7 @@ class SpotControllerDocsTest extends RestDocsSupport {
         List<SpotSearchItem> items = List.of(
                 new SpotSearchItem(
                         8317L, "부산참앤참",
-                        "https://storage.googleapis.com/moodi-spot-images/spots/kor_service/4008043",
+                        "https://img.moodi.kr/spot1.jpg",
                         "부산", "남구",
                         "Experience the vibrant energy of Busan as you explore unique shops and local treasures.",
                         List.of(MoodTag.RIVERSIDE, MoodTag.MODERN),
@@ -162,7 +162,7 @@ class SpotControllerDocsTest extends RestDocsSupport {
                 ),
                 new SpotSearchItem(
                         8326L, "분홍이네",
-                        "https://storage.googleapis.com/moodi-spot-images/spots/kor_service/2782747",
+                        "https://img.moodi.kr/spot2.jpg",
                         "부산", "수영구",
                         "Experience a vibrant shopping haven in Busan, filled with colorful finds and a lively atmosphere.",
                         List.of(MoodTag.ARTSY, MoodTag.COZY, MoodTag.RETRO),
