@@ -1,11 +1,15 @@
 package com.moodi.spot.presentation;
 
 import com.moodi.shared.auth.OptionalAuthMember;
+import com.moodi.shared.mood.MoodTag;
+import com.moodi.shared.response.CursorResponse;
 import com.moodi.spot.application.SpotDetailService;
+import com.moodi.spot.application.SpotSearchService;
 import com.moodi.spot.application.dto.PopularAreaSpotItem;
 import com.moodi.spot.application.dto.SimilarMoodSpotItem;
 import com.moodi.spot.application.dto.SpotDetailSnapshot;
 import com.moodi.spot.application.dto.SpotImageItem;
+import com.moodi.spot.application.dto.SpotSearchItem;
 import com.moodi.spot.domain.SpotContentType;
 import com.moodi.shared.support.RestDocsSupport;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +24,7 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 import java.util.List;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -30,15 +35,17 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWit
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class SpotControllerDocsTest extends RestDocsSupport {
 
     private final SpotDetailService spotDetailService = mock(SpotDetailService.class);
+    private final SpotSearchService spotSearchService = mock(SpotSearchService.class);
 
     @Override
     protected Object initController() {
-        return new SpotController(spotDetailService);
+        return new SpotController(spotDetailService, spotSearchService);
     }
 
     @Override
@@ -136,6 +143,70 @@ class SpotControllerDocsTest extends RestDocsSupport {
                                 fieldWithPath("data.popularAreaSpots[].title").type(JsonFieldType.STRING).description("스팟 이름"),
                                 fieldWithPath("data.popularAreaSpots[].imageUrl").type(JsonFieldType.STRING).description("대표 이미지"),
                                 fieldWithPath("data.popularAreaSpots[].moodTags[]").type(JsonFieldType.ARRAY).description("무드 태그 목록")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("스팟 검색")
+    void search_spots() throws Exception {
+        // given
+        List<SpotSearchItem> items = List.of(
+                new SpotSearchItem(
+                        8317L, "부산참앤참",
+                        "https://storage.googleapis.com/moodi-spot-images/spots/kor_service/4008043",
+                        "부산", "남구",
+                        "Experience the vibrant energy of Busan as you explore unique shops and local treasures.",
+                        List.of(MoodTag.RIVERSIDE, MoodTag.MODERN),
+                        5L, false, false
+                ),
+                new SpotSearchItem(
+                        8326L, "분홍이네",
+                        "https://storage.googleapis.com/moodi-spot-images/spots/kor_service/2782747",
+                        "부산", "수영구",
+                        "Experience a vibrant shopping haven in Busan, filled with colorful finds and a lively atmosphere.",
+                        List.of(MoodTag.ARTSY, MoodTag.COZY, MoodTag.RETRO),
+                        3L, false, false
+                )
+        );
+
+        CursorResponse<SpotSearchItem> cursorResponse = CursorResponse.of(items, "3,8326", true);
+        when(spotSearchService.search(isNull(), any())).thenReturn(cursorResponse);
+
+        // when & then
+        mockMvc.perform(get("/api/spots/search")
+                        .param("keyword", "부산")
+                        .param("area", "부산")
+                        .param("moodTags", "riverside", "modern")
+                        .param("sort", "BEST_MATCH")
+                        .param("size", "20"))
+                .andExpect(status().isOk())
+                .andDo(document("spot/search",
+                        queryParameters(
+                                parameterWithName("keyword").description("검색어").optional(),
+                                parameterWithName("area").description("지역 필터 (시·도)").optional(),
+                                parameterWithName("moodTags").description("무드 태그 키 목록 (예: riverside, modern)").optional(),
+                                parameterWithName("saved").description("북마크한 스팟만 조회 (기본: false)").optional(),
+                                parameterWithName("sort").description("정렬 기준 (BEST_MATCH, MOST_SAVED / 기본: BEST_MATCH)").optional(),
+                                parameterWithName("routePublicId").description("루트 공개 ID — 전달 시 해당 루트에 포함된 스팟 여부(inRoute) 표시").optional(),
+                                parameterWithName("cursor").description("커서 (이전 응답의 nextCursor)").optional(),
+                                parameterWithName("size").description("페이지 크기 (기본: 20)").optional()
+                        ),
+                        responseFields(
+                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("검색 결과"),
+                                fieldWithPath("data.items[]").type(JsonFieldType.ARRAY).description("스팟 목록"),
+                                fieldWithPath("data.items[].spotId").type(JsonFieldType.NUMBER).description("스팟 ID"),
+                                fieldWithPath("data.items[].title").type(JsonFieldType.STRING).description("스팟 이름"),
+                                fieldWithPath("data.items[].imageUrl").type(JsonFieldType.STRING).description("대표 이미지 URL"),
+                                fieldWithPath("data.items[].area").type(JsonFieldType.STRING).description("지역 (시·도)"),
+                                fieldWithPath("data.items[].district").type(JsonFieldType.STRING).description("구·군"),
+                                fieldWithPath("data.items[].description").type(JsonFieldType.STRING).description("AI 생성 설명"),
+                                fieldWithPath("data.items[].moodTags[]").type(JsonFieldType.ARRAY).description("무드 태그 목록"),
+                                fieldWithPath("data.items[].bookmarkCount").type(JsonFieldType.NUMBER).description("북마크 수"),
+                                fieldWithPath("data.items[].bookmarked").type(JsonFieldType.BOOLEAN).description("현재 사용자 북마크 여부 (비회원: false)"),
+                                fieldWithPath("data.items[].inRoute").type(JsonFieldType.BOOLEAN).description("루트 포함 여부 (routePublicId 미전달 시 false)"),
+                                fieldWithPath("data.nextCursor").type(JsonFieldType.STRING).description("다음 페이지 커서 (마지막 페이지면 null)").optional(),
+                                fieldWithPath("data.hasNext").type(JsonFieldType.BOOLEAN).description("다음 페이지 존재 여부")
                         )
                 ));
     }

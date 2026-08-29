@@ -6,6 +6,7 @@ import com.moodi.spot.application.dto.BookmarkToggleResult;
 import com.moodi.spot.domain.Bookmark;
 import com.moodi.spot.domain.BookmarkRepository;
 import com.moodi.spot.domain.Spot;
+import com.moodi.spot.domain.SpotDescriptionRepository;
 import com.moodi.spot.domain.SpotImageRepository;
 import com.moodi.spot.domain.SpotMoodRepository;
 import com.moodi.spot.domain.SpotRepository;
@@ -46,6 +47,9 @@ class BookmarkServiceTest {
 
     @Mock
     private SpotTranslationRepository spotTranslationRepository;
+
+    @Mock
+    private SpotDescriptionRepository spotDescriptionRepository;
 
     @Mock
     private SpotImageRepository spotImageRepository;
