@@ -499,15 +499,31 @@ Feed는 노출 이력만, Pick은 요청·이미지·지역·결과를 가진다
 
 ### 🟠 인프라 결정이 필요한 것
 
-- **이미지 업로드 인프라가 아예 없다. Pick 착수의 선결 조건.**
-  - 현재 상태(2026-08-30 재확인): `build.gradle.kts`에 스토리지 의존성 0건, `application*.yaml`에 버킷 설정 0건,
-    업로드·presigned 코드 0건. **GCS도 S3도 연결돼 있지 않다**
-  - `docs/infrastructure.md`의 "이미지"는 전부 **Docker 이미지**(Artifact Registry)이고 파일 스토리지가 아니다.
-    `spot_image.image_url`은 TourAPI 외부 URL을 그대로 저장하는 것이라 우리가 파일을 보관하는 구조가 아니다
-  - 인프라가 GCP에 몰려 있으므로 **GCS 권장.** Cloud Run 서비스 계정에 버킷 권한만 부여하면 키를 들고 다니지 않아도 된다
-  - **Cloud Run은 요청 크기·타임아웃 제약이 있어 presigned URL 방식 권장**
+- **GCS는 이미 연결돼 있다. 없는 것은 "사용자 업로드" 경로다.**
+
+  **있는 것** (2026-08-30 확인)
+  - `build.gradle.kts:41` — `com.google.cloud:google-cloud-storage:2.49.0`
+  - `application.yaml` — `gcs.spot-image.bucket: moodi-spot-images` (`enabled: false`로 기본 비활성)
+  - `spot/infrastructure/storage/GcsSpotImageUploader` — `@ConditionalOnProperty`로 켜지는 업로더
+
+  **없는 것 — Pick에 필요한 부분**
+  - 기존 업로더는 **서버가 TourAPI 외부 URL을 다운로드해 GCS에 올리는 배치용**이다(`upload(sourceUrl, fileName)`).
+    Pick은 **사용자 기기의 사진**을 올려야 하므로 방향이 반대고 재사용할 수 없다
+  - **presigned(V4 signed URL) 발급 코드가 없다.** `storage.signUrl(...)`을 쓰는 곳이 한 군데도 없다
+  - **Cloud Run은 요청 크기·타임아웃 제약이 있어 presigned URL 방식 권장** (클라이언트가 GCS에 직접 PUT)
+
+  **결정·작업이 남은 것**
+  - **버킷 분리** — 기존 `moodi-spot-images`는 `PUBLIC_URL_FORMAT`(`storage.googleapis.com/{bucket}/{obj}`)으로
+    **공개 URL**을 만든다. 스팟 사진은 공개해도 되지만 **사용자 개인 사진은 안 된다.**
+    별도 비공개 버킷(예: `moodi-pick-uploads`) + 읽기도 signed URL로 가는 것을 권장한다
+  - **서명 권한** — Cloud Run 기본 서비스 계정으로 signUrl을 하려면 `iam.serviceAccounts.signBlob`
+    (Service Account Token Creator) 권한이 필요하다. 키 파일 없이 가려면 이 IAM 설정이 선결이다
+  - **HEIC** — 기존 `detectContentType`은 jpeg/png/webp만 안다. 화면정의서는 **JPG·PNG·HEIC**를 요구하므로
+    허용 목록을 Pick 쪽에서 새로 정의한다(서버 검증 필수, 클라이언트 검증을 신뢰하지 않는다)
+  - **보관 기간** — 개인 사진이라 개인정보 정책과 직결된다. 버킷 lifecycle rule로 자동 삭제를 거는 것을 권장
   - 파일 정책은 화면정의서에서 확정됐다: **1장 · JPG/PNG/HEIC · 10MB**
-  - 남은 결정: 버킷 생성·IAM(콘솔 작업) / **보관 기간** — 개인 사진이라 개인정보 정책과 직결된다
+  - `docs/infrastructure.md`의 "이미지"는 전부 **Docker 이미지**(Artifact Registry)라 파일 스토리지와 무관하다.
+    GCS 관련 기재가 없으므로 **인프라 문서에도 버킷을 추가해야 한다**
 
 ### 🟡 개발자 B와 합의가 필요한 것
 
