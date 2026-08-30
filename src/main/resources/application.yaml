@@ -43,6 +43,12 @@ gcs:
   spot-image:
     enabled: false
     bucket: moodi-spot-images
+  # Pick 사용자 사진. 개인 사진이라 spot-image(공개)와 버킷을 분리한다.
+  # 버킷 생성과 signBlob(Service Account Token Creator) IAM이 붙기 전까지 비활성이다.
+  pick-image:
+    enabled: false
+    bucket: moodi-pick-uploads
+    upload-url-ttl-seconds: 300
 
 spot-tagging:
   enabled: false

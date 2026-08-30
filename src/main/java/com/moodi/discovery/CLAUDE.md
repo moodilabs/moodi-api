@@ -65,7 +65,7 @@ route/infrastructure/spot/SpotSnapshotReaderAdapter.java  ← 어댑터. 여기�
 | Pick 후보 스팟 (지역+무드) | `PickCandidateReader` (신설) | `infrastructure/persistence/` |
 | 지역 자동완성 | `AreaSuggestReader` (신설) | `infrastructure/spot/` — `spot`의 검색 자산 재사용 |
 | 이미지 → 무드 분석 | `MoodAnalysisClient` (신설, 자체 선언) | `infrastructure/mood/` — `spot`과 같은 API를 써도 무방 |
-| 이미지 업로드 URL 발급 | `ImageStorageClient` (신설) | `infrastructure/storage/` |
+| 이미지 업로드 URL 발급 | `ImageStorageClient` ✅ | `infrastructure/storage/GcsImageStorageClient` |
 | 선호 벡터 갱신 | `PreferredVectorWriter` (신설) | `infrastructure/member/` — ⚠️ **`member` 상태를 쓴다.** 아래 참고 |
 
 **핵심은 `application`·`domain`이 다른 컨텍스트를 모르는 것이다.** 반환 타입도 `discovery` 자신의 record로 정의한다
@@ -423,7 +423,7 @@ Feed는 노출 이력만, Pick은 요청·이미지·지역·결과를 가진다
 |---|---|---|---|---|---|
 | GET | `/api/v1/feed?cursor=` | `@OptionalAuthMember` | → `CursorResponse<FeedSpotResponse>` | `DSC-01` | ✅ |
 | GET | `/api/v1/feed/popular-spots` | `@LoginRequired` | → `List<PopularSpotResponse>` (5) | `DSC-02` | ✅ |
-| GET | `/api/v1/picks/upload-url` | `@LoginRequired` | `?contentType=&size=` → `{ uploadUrl, imageUrl }` | `DSC-04` | ❌ |
+| GET | `/api/v1/picks/upload-url` | `@LoginRequired` | `?contentType=&contentLength=` → `{ uploadUrl, imageKey, expiresInSeconds }` | `DSC-04` | ✅ |
 | GET | `/api/v1/picks/popular-areas` | `@OptionalAuthMember` | → `List<AreaResponse>` (5) | `DSC-04` | ❌ |
 | POST | `/api/v1/picks` | `@LoginRequired` | `{ imageUrl, areas: [...] }` → `{ pickId, spots: [...5], fallbackSpots: [...5] }` | `DSC-04`→`DSC-05` | ❌ |
 | GET | `/api/v1/picks/{pickId}` | `@LoginRequired` | → 위와 동일 | `DSC-05` 재조회 | ❌ |
@@ -442,8 +442,9 @@ Feed는 노출 이력만, Pick은 요청·이미지·지역·결과를 가진다
 | `PICK_FORBIDDEN` | 403 | 타인의 추천 결과 접근 |
 | `PICK_INVALID_AREA_SELECTION` | 400 | 지역 미선택 · 5개 초과 · 상하위 중복 |
 | `PICK_IMAGE_REQUIRED` | 400 | 사진 미등록 |
-| `PICK_UNSUPPORTED_IMAGE_TYPE` | 400 | JPG·PNG·HEIC 외 형식 |
-| `PICK_IMAGE_TOO_LARGE` | 400 | 10MB 초과 |
+| `PICK_UNSUPPORTED_IMAGE_TYPE` | 400 | JPG·PNG·HEIC 외 형식 ✅ |
+| `PICK_IMAGE_TOO_LARGE` | 400 | 10MB 초과 · 0바이트 이하 ✅ |
+| `IMAGE_UPLOAD_UNAVAILABLE` | 503 | 버킷·IAM 미구성 환경에서 업로드 URL 발급 시도 ✅ |
 | `PICK_ANALYSIS_FAILED` | 422 | 이미지 무드 분석 실패 (`COM-00` 서버 오류 모달 대상) |
 
 추천 결과가 0건인 것은 **에러가 아니다.** 빈 배열 + 200으로 응답한다 (`DSC-05-02` Empty State).
@@ -507,11 +508,17 @@ Feed는 노출 이력만, Pick은 요청·이미지·지역·결과를 가진다
   - `application.yaml` — `gcs.spot-image.bucket: moodi-spot-images` (`enabled: false`로 기본 비활성)
   - `spot/infrastructure/storage/GcsSpotImageUploader` — `@ConditionalOnProperty`로 켜지는 업로더
 
-  **없는 것 — Pick에 필요한 부분**
-  - 기존 업로더는 **서버가 TourAPI 외부 URL을 다운로드해 GCS에 올리는 배치용**이다(`upload(sourceUrl, fileName)`).
-    Pick은 **사용자 기기의 사진**을 올려야 하므로 방향이 반대고 재사용할 수 없다
-  - **presigned(V4 signed URL) 발급 코드가 없다.** `storage.signUrl(...)`을 쓰는 곳이 한 군데도 없다
-  - **Cloud Run은 요청 크기·타임아웃 제약이 있어 presigned URL 방식 권장** (클라이언트가 GCS에 직접 PUT)
+  **추가된 것 (2026-08-30)**
+  - `discovery/application/ImageStorageClient` — 업로드 대상 발급 포트
+  - `discovery/infrastructure/storage/GcsImageStorageClient` — V4 서명 URL 발급 어댑터
+  - `discovery/domain/PickImage`·`PickImageType` — 형식·용량 불변식
+  - `gcs.pick-image.*` 설정. **버킷·IAM이 붙기 전까지 `enabled: false`**이고,
+    이때는 `UnavailableImageStorageClient`가 503으로 실패시킨다(가짜 URL을 내주지 않는다)
+
+  **아직 없는 것**
+  - **버킷 자체가 없다.** 비공개 버킷 생성이 콘솔 작업으로 남아 있다
+  - **`signBlob` IAM이 없다.** 이게 없으면 `signUrl` 호출이 런타임에 실패한다
+  - **업로드된 사진을 읽는 경로가 없다.** 비공개 버킷이라 무드 분석 시 읽기용 서명 URL이 따로 필요하다
 
   **결정·작업이 남은 것**
   - **버킷 분리** — 기존 `moodi-spot-images`는 `PUBLIC_URL_FORMAT`(`storage.googleapis.com/{bucket}/{obj}`)으로

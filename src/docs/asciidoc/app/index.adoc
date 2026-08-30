@@ -21,6 +21,8 @@ include::../spot/bookmark.adoc[]
 
 include::../discovery/feed.adoc[]
 
+include::../discovery/pick.adoc[]
+
 include::../route/generate.adoc[]
 
 include::../route/save.adoc[]
