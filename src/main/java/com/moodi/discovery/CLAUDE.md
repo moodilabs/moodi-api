@@ -17,10 +17,10 @@
 | `DSC-01` | Discover 메인 A — 선호 무드 설정 완료 사용자 | `FED-F01` | ✅ 구현 |
 | `DSC-02` | Discover 메인 B — 선호 무드 미설정 사용자 | `FED-F02` | 🔶 부분 구현 (인기 스팟만) |
 | `DSC-03` | Discover 메인 C — 비회원 | — | ⚠️ **화면정의서 `작성 중`**. 확정 전 |
-| `DSC-04` | 추천 정보 입력 (스팟 추천 STEP 1) | `PCK-F01` | ❌ 미구현 |
+| `DSC-04` | 추천 정보 입력 (스팟 추천 STEP 1) | `PCK-F01` | 🔶 업로드·추천 API 구현. 지역 자동완성은 이슈 #55 대기 |
 | `DSC-04-02` | 추천 처리 로딩 | `PCK-F01` | ❌ 미구현 (클라이언트 전용) |
-| `DSC-05-01` | 추천 결과 (스팟 추천 STEP 2) | `PCK-F02`·`PCK-F03` | ❌ 미구현 |
-| `DSC-05-02` | 추천 결과 없음 (Empty State) | `PCK-F02` | ❌ 미구현 |
+| `DSC-05-01` | 추천 결과 (스팟 추천 STEP 2) | `PCK-F02`·`PCK-F03` | 🔶 추천 API 구현. 루트 연동은 클라이언트가 RTE 호출 |
+| `DSC-05-02` | 추천 결과 없음 (Empty State) | `PCK-F02` | ✅ 대체 추천 포함 |
 
 > **명세서 ID 오류 주의** — CSV에서 Pick 3개 기능이 전부 `PCK-F01`로 적혀 있다.
 > 화면 ID로는 구분되므로 이 문서는 `F01`/`F02`/`F03`으로 나눠 부른다. 기획에 정정 요청 필요.
@@ -62,9 +62,9 @@ route/infrastructure/spot/SpotSnapshotReaderAdapter.java  ← 어댑터. 여기�
 | 피드 스팟 목록 | `FeedSpotReader` ✅ | `infrastructure/persistence/FeedSpotReaderAdapter` |
 | 인기 스팟 (북마크 수) | `PopularSpotReader` ✅ | `infrastructure/persistence/PopularSpotReaderAdapter` |
 | 회원 선호 무드 | `PreferredMoodReader` ✅ | `infrastructure/member/PreferredMoodReaderAdapter` |
-| Pick 후보 스팟 (지역+무드) | `PickCandidateReader` (신설) | `infrastructure/persistence/` |
+| Pick 후보 스팟 (지역+무드) | `PickCandidateReader` ✅ | `infrastructure/persistence/PickCandidateReaderAdapter` |
 | 지역 자동완성 | `AreaSuggestReader` (신설) | `infrastructure/spot/` — `spot`의 검색 자산 재사용 |
-| 이미지 → 무드 분석 | `MoodAnalysisClient` (신설, 자체 선언) | `infrastructure/mood/` — `spot`과 같은 API를 써도 무방 |
+| 이미지 → 무드 분석 | `MoodAnalysisClient` ✅ | `infrastructure/mood/SpotMoodAnalysisClientAdapter` — `spot`의 분석기에 위임 |
 | 이미지 업로드 URL 발급 | `ImageStorageClient` ✅ | `infrastructure/storage/GcsImageStorageClient` |
 | 선호 벡터 갱신 | `PreferredVectorWriter` (신설) | `infrastructure/member/` — ⚠️ **`member` 상태를 쓴다.** 아래 참고 |
 
@@ -150,8 +150,10 @@ route/infrastructure/spot/SpotSnapshotReaderAdapter.java  ← 어댑터. 여기�
 - 태그 일치 수는 **정수 등급**이라 동점이 많이 생기고, 그 안은 셔플로 갈린다.
 - 벡터 유사도는 **연속값**이라 순서가 촘촘하지만, 회원 선호 **벡터가 아직 없다**(위 "선호 벡터" 참고).
 
-**미결.** 선호 벡터 도입 여부와 함께 결정한다. 벡터를 도입하면 `rank_score`를 코사인 유사도로 교체하고,
-도입하지 않으면 화면정의서 문구를 "무드 일치 수"로 정정 요청한다.
+**Feed는 미결로 남아 있고, Pick은 벡터 유사도로 구현했다 (2026-08-30).**
+Pick은 상위 5개만 뽑으므로 정수 등급으로는 동점이 너무 많이 생겨 순서를 가릴 수 없다.
+Feed는 무한 스크롤이라 동점을 셔플로 갈라도 되고, 회원 선호 **벡터가 아직 없어**(위 "선호 벡터" 참고)
+당장 바꿀 수단도 없다. 선호 벡터가 도입되면 Feed의 `rank_score`도 코사인 유사도로 교체할 수 있다.
 
 ### 정렬 — 커서 페이징과 "당겨서 새로고침"을 동시에 만족시켜야 한다
 
@@ -400,9 +402,23 @@ Feed는 노출 이력만, Pick은 요청·이미지·지역·결과를 가진다
 - **PickRequestArea**(신설): 선택 지역. `pick_request_id · level(REGION/DISTRICT/NEIGHBORHOOD) · region · district · neighborhood · sort_order`
 - **PickResultSpot**(신설): 추천 결과. `pick_request_id · spot_id · rank · fallback(대체 추천 여부)`
 
-> **결과를 저장할지 여부는 여전히 미결.** `DSC-05`의 "모달 종료 시 기존 결과·카드·지도 위치 유지"는
-> 클라이언트 상태로도 충족 가능하다. 저장하면 재조회·이력 분석이 가능해지는 대신 테이블이 3개 늘어난다.
-> **선호 벡터 갱신이 확정되면 이력이 필요해지므로 저장 쪽으로 기운다.**
+> **결정 — 저장한다 (2026-08-30).** `pickId`가 있어야 `DSC-05` 재조회가 가능하고,
+> 선호 벡터 갱신(신규 요구)도 어떤 사진으로 추천받았는지에 대한 이력을 전제로 한다.
+> 저장 비용은 요청당 최대 11행(요청 1 + 지역 5 + 결과 5)이라 크지 않다.
+> 다만 `GET /picks/{pickId}` 재조회 API는 아직 만들지 않았다.
+
+> **사진이 5장으로 되돌아가면 이 스키마가 달라진다.** `PickRequest.image_key` 컬럼 대신
+> `PickRequestImage` 테이블이 필요해지고, 여러 벡터를 어떻게 합칠지도 정해야 한다. 미결 0번 참고.
+
+### 유사도 계산 위치 — SQL이 아니라 자바
+
+후보 선별은 SQL(지역 또는 무드 태그 필터), 순위 매기기는 `PickService`에서 한다.
+`spot_mood.mood_vector`가 JSONB 맵이라 SQL로 코사인 유사도를 계산하려면 6개 축을 전부 펼쳐야 해서
+쿼리를 읽기 어렵고 인덱스도 타지 못한다.
+
+**대신 후보를 자바로 다 읽어 온다.** 지역이 넓게 잡히면 후보가 크게 불어날 수 있어
+`moodi.pick.candidate-limit`(기본 500)로 상한을 둔다. **이 상한을 넘으면 `spot.id` 순으로 잘리므로
+유사도 상위가 후보에서 빠질 수 있다.** 카탈로그가 커지면 재검토 대상이다(이슈 #21과 함께 본다).
 
 ## 규칙 · 불변식
 
@@ -425,7 +441,7 @@ Feed는 노출 이력만, Pick은 요청·이미지·지역·결과를 가진다
 | GET | `/api/v1/feed/popular-spots` | `@LoginRequired` | → `List<PopularSpotResponse>` (5) | `DSC-02` | ✅ |
 | GET | `/api/v1/picks/upload-url` | `@LoginRequired` | `?contentType=&contentLength=` → `{ uploadUrl, imageKey, expiresInSeconds }` | `DSC-04` | ✅ |
 | GET | `/api/v1/picks/popular-areas` | `@OptionalAuthMember` | → `List<AreaResponse>` (5) | `DSC-04` | ❌ |
-| POST | `/api/v1/picks` | `@LoginRequired` | `{ imageUrl, areas: [...] }` → `{ pickId, spots: [...5], fallbackSpots: [...5] }` | `DSC-04`→`DSC-05` | ❌ |
+| POST | `/api/v1/picks` | `@LoginRequired` | `{ imageKey, areas: [...] }` → `{ pickId, spots: [...5], fallbackSpots: [...5] }` | `DSC-04`→`DSC-05` | ✅ |
 | GET | `/api/v1/picks/{pickId}` | `@LoginRequired` | → 위와 동일 | `DSC-05` 재조회 | ❌ |
 
 - **지역 자동완성은 `spot`의 통합 검색(`COM-02`, 이슈 #55)을 재사용한다.** `discovery`가 따로 만들지 않는다.
@@ -438,14 +454,14 @@ Feed는 노출 이력만, Pick은 요청·이미지·지역·결과를 가진다
 
 | 코드 | HTTP | 설명 |
 |---|---|---|
-| `PICK_NOT_FOUND` | 404 | 추천 요청 없음 |
-| `PICK_FORBIDDEN` | 403 | 타인의 추천 결과 접근 |
-| `PICK_INVALID_AREA_SELECTION` | 400 | 지역 미선택 · 5개 초과 · 상하위 중복 |
+| `PICK_NOT_FOUND` | 404 | 추천 요청 없음 (재조회 API 미구현, 코드만 선언) |
+| `PICK_FORBIDDEN` | 403 | 타인의 추천 결과 접근 (재조회 API 미구현, 코드만 선언) |
+| `PICK_INVALID_AREA_SELECTION` | 400 | 지역 미선택 · 5개 초과 · 단계별 필수값 누락 ✅ |
 | `PICK_IMAGE_REQUIRED` | 400 | 사진 미등록 |
 | `PICK_UNSUPPORTED_IMAGE_TYPE` | 400 | JPG·PNG·HEIC 외 형식 ✅ |
 | `PICK_IMAGE_TOO_LARGE` | 400 | 10MB 초과 · 0바이트 이하 ✅ |
 | `IMAGE_UPLOAD_UNAVAILABLE` | 503 | 버킷·IAM 미구성 환경에서 업로드 URL 발급 시도 ✅ |
-| `PICK_ANALYSIS_FAILED` | 422 | 이미지 무드 분석 실패 (`COM-00` 서버 오류 모달 대상) |
+| `PICK_ANALYSIS_FAILED` | 422 | 이미지 무드 분석 실패 (`COM-00` 서버 오류 모달 대상) ✅ |
 
 추천 결과가 0건인 것은 **에러가 아니다.** 빈 배열 + 200으로 응답한다 (`DSC-05-02` Empty State).
 
@@ -495,8 +511,8 @@ Feed는 노출 이력만, Pick은 요청·이미지·지역·결과를 가진다
    사전조사 태그와의 관계·피드 정렬 근거 교체 여부. **Member 컨텍스트 스펙도 함께 수정해야 한다**
 3. **추천 루트 캐러셀** (`DSC-02`·`DSC-03`) — 운영자 등록 방식, 어드민 담당, 조회 API 소유 컨텍스트
 4. **인기 지역** (`DSC-04`) — 어드민 등록 방식. MVP는 상수/수동 INSERT로 갈 것인지
-5. **"유사도" 정의** — 무드 태그 일치 수(현 구현) vs 무드 벡터 코사인 유사도(화면정의서 문구). 2번과 연동
-6. **추천 결과 저장 여부** — 서버 저장(재조회·이력 분석, 테이블 3개) vs 클라이언트 보관(단순, 새로고침 시 소실)
+5. **Feed의 "유사도" 정의** — Pick은 벡터 코사인으로 구현했으나 Feed는 여전히 태그 일치 수다. 2번(선호 벡터)과 연동
+6. ~~추천 결과 저장 여부~~ — **저장으로 결정(2026-08-30).** `GET /picks/{pickId}` 재조회 API는 후속
 7. **버튼 라벨 통일** — `Find by photo`(메인 A) / `Find by mood`(메인 B)
 
 ### 🟠 인프라 결정이 필요한 것
@@ -512,6 +528,7 @@ Feed는 노출 이력만, Pick은 요청·이미지·지역·결과를 가진다
   - `discovery/application/ImageStorageClient` — 업로드 대상 발급 포트
   - `discovery/infrastructure/storage/GcsImageStorageClient` — V4 서명 URL 발급 어댑터
   - `discovery/domain/PickImage`·`PickImageType` — 형식·용량 불변식
+  - `ImageStorageClient#issueReadUrl` — 무드 분석기에 넘길 읽기용 서명 URL
   - `gcs.pick-image.*` 설정. **버킷·IAM이 붙기 전까지 `enabled: false`**이고,
     이때는 `UnavailableImageStorageClient`가 503으로 실패시킨다(가짜 URL을 내주지 않는다)
 

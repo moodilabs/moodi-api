@@ -34,7 +34,7 @@ class GcsImageStorageClientTest {
     @BeforeEach
     void setUp() throws Exception {
         storage = mock(Storage.class);
-        client = new GcsImageStorageClient(storage, new PickImageProperties(true, BUCKET, 300));
+        client = new GcsImageStorageClient(storage, new PickImageProperties(true, BUCKET, 300, 300));
         when(storage.signUrl(any(BlobInfo.class), anyLong(), any(TimeUnit.class), any(Storage.SignUrlOption[].class)))
                 .thenReturn(URI.create("https://signed.example/put").toURL());
     }
@@ -86,7 +86,7 @@ class GcsImageStorageClientTest {
     @Test
     @DisplayName("유효 시간을 설정하지 않으면 기본값 5분을 쓴다")
     void properties_fall_back_to_default_ttl() {
-        assertThat(new PickImageProperties(true, BUCKET, 0).uploadUrlTtlSeconds()).isEqualTo(300);
+        assertThat(new PickImageProperties(true, BUCKET, 0, 0).uploadUrlTtlSeconds()).isEqualTo(300);
     }
 
     private BlobInfo captureBlobInfo() {

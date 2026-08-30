@@ -49,6 +49,7 @@ gcs:
     enabled: false
     bucket: moodi-pick-uploads
     upload-url-ttl-seconds: 300
+    read-url-ttl-seconds: 300
 
 spot-tagging:
   enabled: false

@@ -43,6 +43,10 @@ public enum ErrorCode {
     ROUTE_GENERATION_FAILED(HttpStatus.UNPROCESSABLE_ENTITY, "ROUTE_GENERATION_FAILED", "루트 생성에 실패했습니다. 스팟 수를 줄이거나 기간을 늘려 주세요."),
     PICK_UNSUPPORTED_IMAGE_TYPE(HttpStatus.BAD_REQUEST, "PICK_UNSUPPORTED_IMAGE_TYPE", "지원하지 않는 파일 형식이에요. JPG, PNG, HEIC만 올릴 수 있어요."),
     PICK_IMAGE_TOO_LARGE(HttpStatus.BAD_REQUEST, "PICK_IMAGE_TOO_LARGE", "사진 용량이 너무 커요. 10MB 이하로 올려주세요."),
+    PICK_INVALID_AREA_SELECTION(HttpStatus.BAD_REQUEST, "PICK_INVALID_AREA_SELECTION", "지역은 1개 이상 5개 이하로 선택해주세요."),
+    PICK_ANALYSIS_FAILED(HttpStatus.UNPROCESSABLE_ENTITY, "PICK_ANALYSIS_FAILED", "사진의 무드를 분석하지 못했어요. 다시 시도해주세요."),
+    PICK_NOT_FOUND(HttpStatus.NOT_FOUND, "PICK_NOT_FOUND", "추천 결과를 찾을 수 없습니다."),
+    PICK_FORBIDDEN(HttpStatus.FORBIDDEN, "PICK_FORBIDDEN", "해당 추천 결과에 대한 권한이 없습니다."),
     IMAGE_UPLOAD_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "IMAGE_UPLOAD_UNAVAILABLE", "사진 업로드를 잠시 사용할 수 없어요."),
 
     INVALID_CURSOR_FORMAT(HttpStatus.BAD_REQUEST, "INVALID_CURSOR_FORMAT", "잘못된 커서 형식입니다.");

@@ -8,13 +8,17 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * 그래서 비공개 버킷을 따로 받는다.
  */
 @ConfigurationProperties("gcs.pick-image")
-public record PickImageProperties(boolean enabled, String bucket, long uploadUrlTtlSeconds) {
+public record PickImageProperties(boolean enabled, String bucket, long uploadUrlTtlSeconds,
+                                  long readUrlTtlSeconds) {
 
     private static final long DEFAULT_TTL_SECONDS = 300;
 
     public PickImageProperties {
         if (uploadUrlTtlSeconds <= 0) {
             uploadUrlTtlSeconds = DEFAULT_TTL_SECONDS;
+        }
+        if (readUrlTtlSeconds <= 0) {
+            readUrlTtlSeconds = DEFAULT_TTL_SECONDS;
         }
     }
 }
