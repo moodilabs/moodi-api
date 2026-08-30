@@ -8,6 +8,7 @@ import com.moodi.shared.support.PostgresTestSupport;
 import com.moodi.spot.domain.Bookmark;
 import com.moodi.spot.domain.Spot;
 import com.moodi.spot.domain.SpotContentType;
+import com.moodi.spot.domain.SpotDescription;
 import com.moodi.spot.domain.SpotImage;
 import com.moodi.spot.domain.SpotTranslation;
 import jakarta.persistence.EntityManager;
@@ -90,6 +91,48 @@ class PopularSpotReaderAdapterTest extends PostgresTestSupport {
         assertThat(rows).filteredOn(PopularSpotRow::bookmarked)
                 .extracting(PopularSpotRow::spotId).containsExactly(bookmarked);
         assertThat(rows).extracting(PopularSpotRow::spotId).contains(notBookmarked);
+    }
+
+    @Test
+    @DisplayName("스팟 설명이 함께 조회된다")
+    void read_includes_spot_description() {
+        Long spotId = insertPublishedSpot();
+        em.persist(SpotDescription.create(spotId, "ko-KR", "붉은 벽돌 공장을 고쳐 만든 카페들이 이어집니다."));
+        em.flush();
+
+        List<PopularSpotRow> rows = adapter.readTopByBookmarkCount(memberId, TOP_LIMIT);
+
+        assertThat(rows).singleElement()
+                .extracting(PopularSpotRow::description)
+                .isEqualTo("붉은 벽돌 공장을 고쳐 만든 카페들이 이어집니다.");
+    }
+
+    @Test
+    @DisplayName("설명이 없는 스팟도 목록에서 빠지지 않고 설명만 null로 조회된다")
+    void read_keeps_spot_without_description() {
+        Long spotId = insertPublishedSpot();
+
+        List<PopularSpotRow> rows = adapter.readTopByBookmarkCount(memberId, TOP_LIMIT);
+
+        assertThat(rows).singleElement()
+                .satisfies(row -> {
+                    assertThat(row.spotId()).isEqualTo(spotId);
+                    assertThat(row.description()).isNull();
+                });
+    }
+
+    @Test
+    @DisplayName("다른 로케일의 설명은 조회되지 않는다")
+    void read_ignores_other_locale_description() {
+        Long spotId = insertPublishedSpot();
+        em.persist(SpotDescription.create(spotId, "en-US", "Cafes in remodeled brick factories."));
+        em.flush();
+
+        List<PopularSpotRow> rows = adapter.readTopByBookmarkCount(memberId, TOP_LIMIT);
+
+        assertThat(rows).singleElement()
+                .extracting(PopularSpotRow::description)
+                .isNull();
     }
 
     private void addBookmarks(Long spotId, int count) {

@@ -7,12 +7,13 @@ public record PopularSpotResponse(
         String title,
         String imageUrl,
         String area,
+        String description,
         long bookmarkCount,
         boolean bookmarked
 ) {
 
     public static PopularSpotResponse from(PopularSpotItem item) {
         return new PopularSpotResponse(item.spotId(), item.title(), item.imageUrl(),
-                item.area(), item.bookmarkCount(), item.bookmarked());
+                item.area(), item.description(), item.bookmarkCount(), item.bookmarked());
     }
 }
