@@ -16,7 +16,7 @@ public class SpotTranslationJpaRepositoryImpl {
     public List<Long> findSpotIdsWithoutTranslation(String locale) {
         return entityManager.createNativeQuery(
                         "SELECT s.id FROM spot s " +
-                                "WHERE s.status = 'PUBLISHED' " +
+                                "WHERE s.status IN ('PUBLISHED', 'TAGGING_PENDING') " +
                                 "AND s.id NOT IN (" +
                                 "  SELECT st.spot_id FROM spot_translation st WHERE st.locale = :locale" +
                                 ")")

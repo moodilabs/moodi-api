@@ -29,7 +29,7 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class SpotDetailReader {
 
-    private static final String DEFAULT_LOCALE = "ko-KR";
+    private static final String DEFAULT_LOCALE = "en-US";
     private static final int SIMILAR_MOOD_LIMIT = 5;
     private static final int POPULAR_AREA_LIMIT = 5;
 
