@@ -60,8 +60,8 @@ class FeedControllerDocsTest extends RestDocsSupport {
     @DisplayName("회원 피드 조회 - 선호 무드 기반 개인화")
     void get_feed_for_member() throws Exception {
         List<FeedSpotItem> items = List.of(
-                new FeedSpotItem(42L, "익선동 한옥 골목", "https://img.moodi.kr/spot42.jpg", "서울", true),
-                new FeedSpotItem(17L, "성수동 카페 거리", "https://img.moodi.kr/spot17.jpg", "서울", false)
+                new FeedSpotItem(42L, "익선동 한옥 골목", "https://img.moodi.kr/spot42.jpg", "Seoul", true),
+                new FeedSpotItem(17L, "성수동 카페 거리", "https://img.moodi.kr/spot17.jpg", "Seoul", false)
         );
         when(feedService.getFeed(eq(memberId), any()))
                 .thenReturn(CursorResponse.of(items, NEXT_CURSOR, true));
@@ -101,9 +101,9 @@ class FeedControllerDocsTest extends RestDocsSupport {
     @DisplayName("인기 스팟 Top 5 조회")
     void get_popular_spots() throws Exception {
         List<PopularSpotItem> items = List.of(
-                new PopularSpotItem(42L, "익선동 한옥 골목", "https://img.moodi.kr/spot42.jpg", "서울",
+                new PopularSpotItem(42L, "익선동 한옥 골목", "https://img.moodi.kr/spot42.jpg", "Seoul",
                         "골목마다 다른 표정을 가진 한옥 거리. 해질 무렵이 가장 조용합니다.", 128L, true),
-                new PopularSpotItem(17L, "성수동 카페 거리", "https://img.moodi.kr/spot17.jpg", "서울",
+                new PopularSpotItem(17L, "성수동 카페 거리", "https://img.moodi.kr/spot17.jpg", "Seoul",
                         "붉은 벽돌 공장을 고쳐 만든 카페들이 이어집니다.", 96L, false)
         );
         when(feedService.getPopularSpots(memberId)).thenReturn(items);
@@ -116,7 +116,7 @@ class FeedControllerDocsTest extends RestDocsSupport {
                                 fieldWithPath("data[].spotId").type(JsonFieldType.NUMBER).description("스팟 ID"),
                                 fieldWithPath("data[].title").type(JsonFieldType.STRING).description("스팟 이름"),
                                 fieldWithPath("data[].imageUrl").type(JsonFieldType.STRING).description("대표 이미지").optional(),
-                                fieldWithPath("data[].area").type(JsonFieldType.STRING).description("지역"),
+                                fieldWithPath("data[].area").type(JsonFieldType.STRING).description("지역. 영문 표기로 내려간다"),
                                 fieldWithPath("data[].description").type(JsonFieldType.STRING)
                                         .description("스팟 설명. 2줄 초과 시 말줄임은 클라이언트가 처리한다").optional(),
                                 fieldWithPath("data[].bookmarkCount").type(JsonFieldType.NUMBER).description("전체 북마크 수"),
@@ -132,7 +132,7 @@ class FeedControllerDocsTest extends RestDocsSupport {
                 fieldWithPath("data.items[].spotId").type(JsonFieldType.NUMBER).description("스팟 ID"),
                 fieldWithPath("data.items[].title").type(JsonFieldType.STRING).description("스팟 이름"),
                 fieldWithPath("data.items[].imageUrl").type(JsonFieldType.STRING).description("대표 이미지").optional(),
-                fieldWithPath("data.items[].area").type(JsonFieldType.STRING).description("지역"),
+                fieldWithPath("data.items[].area").type(JsonFieldType.STRING).description("지역. 영문 표기로 내려간다"),
                 fieldWithPath("data.items[].bookmarked").type(JsonFieldType.BOOLEAN)
                         .description("현재 사용자 저장 여부. 비회원은 항상 false"),
                 fieldWithPath("data.nextCursor").type(JsonFieldType.STRING)

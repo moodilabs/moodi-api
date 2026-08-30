@@ -77,6 +77,21 @@ route/infrastructure/spot/SpotSnapshotReaderAdapter.java  ← 어댑터. 여기�
 즉 **경계를 어겨도 빌드는 깨지지 않는다. 리뷰에서 잡아야 한다.**
 (컨텍스트 경계를 강제하는 ArchUnit 규칙 추가는 팀 논의 대상.)
 
+### 지역명 표기 — 원장은 한국어, 응답은 영문
+
+`spot` 원장은 지역을 한국어로 저장하고(`spot.area`·`district`), 응답은 `RegionDictionary`로 영문 변환해 내보낸다
+(`SpotDetailReader`·`SpotSearchService`·`BookmarkService`). **`discovery`도 같은 표기를 따른다.**
+
+- **읽기** — 어댑터에서 `area`를 영문으로 바꿔 내보낸다. `district`는 discovery 응답에 노출되지 않아 변환하지 않는다.
+- **쓰기** — `POST /picks`의 지역 조건은 클라이언트가 자동완성에서 받은 **영문 지역명**으로 되돌아온다.
+  원장은 한국어라 조회 전에 되돌려야 한다. 이 변환이 없으면 **필터가 아무것도 매칭하지 못한다.**
+- **동·면(neighborhood)은 사전이 없어 한국어 그대로** 비교한다. 사전이 생기면 여기도 맞춰야 한다.
+
+참조는 `discovery/infrastructure/region/RegionNames`에만 둔다(컨텍스트 경계).
+
+> **`RegionDictionary`는 이제 두 컨텍스트가 함께 쓴다.** 성격상 `shared`로 옮기는 편이 맞지만
+> 공유 커널 변경은 합의가 필요해 지금은 `spot.application`에 두고 위임한다. **팀 논의 대상.**
+
 ### 공유 커널은 그대로 쓴다
 
 `shared.mood.MoodTag`·`MoodVector`, `shared.response.CursorResponse`,

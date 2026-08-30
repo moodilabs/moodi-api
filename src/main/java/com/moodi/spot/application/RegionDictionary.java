@@ -156,7 +156,15 @@ public class RegionDictionary {
             Map.entry("제주시", "Jeju-si"), Map.entry("서귀포시", "Seogwipo-si")
     );
 
+    private static final Map<String, String> REVERSE_AREA_MAP = invert(AREA_MAP);
+    private static final Map<String, String> REVERSE_DISTRICT_MAP = invert(DISTRICT_MAP);
+
     private RegionDictionary() {
+    }
+
+    private static Map<String, String> invert(Map<String, String> source) {
+        return source.entrySet().stream()
+                .collect(java.util.stream.Collectors.toUnmodifiableMap(Map.Entry::getValue, Map.Entry::getKey));
     }
 
     public static String translateArea(String koArea) {
@@ -171,5 +179,25 @@ public class RegionDictionary {
             return null;
         }
         return DISTRICT_MAP.getOrDefault(koDistrict, koDistrict);
+    }
+
+    /**
+     * 영문 지역명을 원장에 저장된 한국어로 되돌린다.
+     *
+     * <p>응답이 영문으로 나가므로 클라이언트는 영문 지역명을 되돌려 준다. 조회 조건으로 쓰려면
+     * 다시 한국어로 바꿔야 한다. 사전에 없는 값은 그대로 두어 한국어를 직접 보내도 동작한다.
+     */
+    public static String toKoreanArea(String area) {
+        if (area == null) {
+            return null;
+        }
+        return REVERSE_AREA_MAP.getOrDefault(area, area);
+    }
+
+    public static String toKoreanDistrict(String district) {
+        if (district == null) {
+            return null;
+        }
+        return REVERSE_DISTRICT_MAP.getOrDefault(district, district);
     }
 }

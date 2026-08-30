@@ -5,6 +5,7 @@ import com.moodi.discovery.application.PickCandidateReader;
 import com.moodi.discovery.domain.PickArea;
 import com.moodi.discovery.domain.PickAreaLevel;
 import com.moodi.discovery.domain.PickAreas;
+import com.moodi.discovery.infrastructure.region.RegionNames;
 import com.moodi.shared.mood.MoodTag;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
@@ -27,6 +28,12 @@ import java.util.UUID;
 public class PickCandidateReaderAdapter implements PickCandidateReader {
 
     private static final String DEFAULT_LOCALE = "ko-KR";
+
+    /*
+     * 지역명은 원장에 한국어로 저장돼 있고 응답은 영문으로 나간다. 클라이언트는 자동완성에서 받은
+     * 영문 지역명을 그대로 되돌려 주므로, 조회 조건으로 쓰기 전에 한국어로 되돌린다.
+     * 동(neighborhood)은 사전에 없어 한국어 그대로 비교한다.
+     */
 
     private static final String SELECT = """
             SELECT s.id, st.title, si.image_url, s.area, s.district, s.neighborhood,
@@ -86,10 +93,10 @@ public class PickCandidateReaderAdapter implements PickCandidateReader {
         for (int i = 0; i < values.size(); i++) {
             PickArea area = values.get(i);
             StringBuilder condition = new StringBuilder("(s.area = :region" + i);
-            params.put("region" + i, area.region());
+            params.put("region" + i, RegionNames.toKoreanArea(area.region()));
             if (area.level() != PickAreaLevel.REGION) {
                 condition.append(" AND s.district = :district").append(i);
-                params.put("district" + i, area.district());
+                params.put("district" + i, RegionNames.toKoreanDistrict(area.district()));
             }
             if (area.level() == PickAreaLevel.NEIGHBORHOOD) {
                 condition.append(" AND s.neighborhood = :neighborhood").append(i);
@@ -121,7 +128,7 @@ public class PickCandidateReaderAdapter implements PickCandidateReader {
                         ((Number) row[0]).longValue(),
                         (String) row[1],
                         (String) row[2],
-                        (String) row[3],
+                        RegionNames.toEnglishArea((String) row[3]),
                         (String) row[4],
                         (String) row[5],
                         (String) row[6],

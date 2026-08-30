@@ -139,6 +139,7 @@ class PickCandidateReaderAdapterTest extends PostgresTestSupport {
         PickCandidate candidate = adapter.readByAreas(memberId, areas(
                 new PickArea(PickAreaLevel.REGION, "서울", null, null)), LIMIT).getFirst();
 
+        assertThat(candidate.area()).isEqualTo("Seoul");
         assertThat(candidate.moodVector()).isNotNull();
         assertThat(candidate.moodTags()).contains(MoodTag.COZY);
         assertThat(candidate.address()).isEqualTo("서울 성동구 성수동");
@@ -181,6 +182,41 @@ class PickCandidateReaderAdapterTest extends PostgresTestSupport {
                 new PickArea(PickAreaLevel.REGION, "서울", null, null)), 2);
 
         assertThat(candidates).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("자동완성이 돌려준 영문 지역명으로도 후보를 찾는다")
+    void read_accepts_english_area_names() {
+        Long seongdong = insertSpot("서울", "성동구", "성수동");
+        insertSpot("서울", "마포구", "연남동");
+
+        List<PickCandidate> candidates = adapter.readByAreas(memberId, areas(
+                new PickArea(PickAreaLevel.DISTRICT, "Seoul", "Seongdong-gu", null)), LIMIT);
+
+        assertThat(candidates).extracting(PickCandidate::spotId).containsExactly(seongdong);
+    }
+
+    @Test
+    @DisplayName("한국어 지역명으로 보내도 그대로 동작한다")
+    void read_accepts_korean_area_names() {
+        Long seongdong = insertSpot("서울", "성동구", "성수동");
+
+        List<PickCandidate> candidates = adapter.readByAreas(memberId, areas(
+                new PickArea(PickAreaLevel.DISTRICT, "서울", "성동구", null)), LIMIT);
+
+        assertThat(candidates).extracting(PickCandidate::spotId).containsExactly(seongdong);
+    }
+
+    @Test
+    @DisplayName("지역명은 영문으로 조회된다")
+    void read_returns_english_area() {
+        insertSpot("부산", "해운대구", "우동");
+
+        List<PickCandidate> candidates = adapter.readByAreas(memberId, areas(
+                new PickArea(PickAreaLevel.REGION, "Busan", null, null)), LIMIT);
+
+        assertThat(candidates).singleElement()
+                .extracting(PickCandidate::area).isEqualTo("Busan");
     }
 
     private PickAreas areas(PickArea... areas) {

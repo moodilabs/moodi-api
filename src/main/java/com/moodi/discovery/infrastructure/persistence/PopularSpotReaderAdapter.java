@@ -2,6 +2,7 @@ package com.moodi.discovery.infrastructure.persistence;
 
 import com.moodi.discovery.application.PopularSpotReader;
 import com.moodi.discovery.application.PopularSpotRow;
+import com.moodi.discovery.infrastructure.region.RegionNames;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Repository;
 
@@ -55,7 +56,7 @@ public class PopularSpotReaderAdapter implements PopularSpotReader {
                         ((Number) row[0]).longValue(),
                         (String) row[1],
                         (String) row[2],
-                        (String) row[3],
+                        RegionNames.toEnglishArea((String) row[3]),
                         (String) row[4],
                         ((Number) row[5]).longValue(),
                         (Boolean) row[6]

@@ -135,6 +135,16 @@ class PopularSpotReaderAdapterTest extends PostgresTestSupport {
                 .isNull();
     }
 
+    @Test
+    @DisplayName("지역명은 영문으로 조회된다")
+    void read_returns_english_area() {
+        insertPublishedSpot();
+
+        List<PopularSpotRow> rows = adapter.readTopByBookmarkCount(memberId, TOP_LIMIT);
+
+        assertThat(rows).singleElement().extracting(PopularSpotRow::area).isEqualTo("Seoul");
+    }
+
     private void addBookmarks(Long spotId, int count) {
         for (int i = 0; i < count; i++) {
             em.persist(Bookmark.create(insertMember(), spotId));
