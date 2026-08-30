@@ -51,4 +51,19 @@ public class GcsImageStorageClient implements ImageStorageClient {
 
         return new UploadTarget(url.toString(), objectName, properties.uploadUrlTtlSeconds());
     }
+
+    @Override
+    public String issueReadUrl(String objectName) {
+        BlobInfo blobInfo = BlobInfo.newBuilder(properties.bucket(), objectName).build();
+
+        URL url = storage.signUrl(
+                blobInfo,
+                properties.readUrlTtlSeconds(),
+                TimeUnit.SECONDS,
+                Storage.SignUrlOption.httpMethod(HttpMethod.GET),
+                Storage.SignUrlOption.withV4Signature()
+        );
+
+        return url.toString();
+    }
 }

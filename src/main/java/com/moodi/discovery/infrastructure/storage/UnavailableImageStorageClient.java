@@ -16,4 +16,9 @@ public class UnavailableImageStorageClient implements ImageStorageClient {
     public UploadTarget issueUploadUrl(String objectName, String contentType, long contentLength) {
         throw new BusinessException(ErrorCode.IMAGE_UPLOAD_UNAVAILABLE);
     }
+
+    @Override
+    public String issueReadUrl(String objectName) {
+        throw new BusinessException(ErrorCode.IMAGE_UPLOAD_UNAVAILABLE);
+    }
 }

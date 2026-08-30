@@ -466,4 +466,72 @@
         </attributes>
     </entity>
 
+
+    <entity class="com.moodi.discovery.domain.PickRequest" access="FIELD">
+        <table name="pick_request"/>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="UUID"/>
+            </id>
+            <basic name="memberId">
+                <column name="member_id" nullable="false"/>
+            </basic>
+            <basic name="imageKey">
+                <column name="image_key" nullable="false" length="500"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <entity class="com.moodi.discovery.domain.PickRequestArea" access="FIELD">
+        <table name="pick_request_area"/>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="UUID"/>
+            </id>
+            <basic name="pickRequestId">
+                <column name="pick_request_id" nullable="false"/>
+            </basic>
+            <basic name="level">
+                <column name="level" nullable="false" length="20"/>
+                <enumerated>STRING</enumerated>
+            </basic>
+            <basic name="region">
+                <column name="region" nullable="false" length="50"/>
+            </basic>
+            <basic name="district">
+                <column name="district" length="50"/>
+            </basic>
+            <basic name="neighborhood">
+                <column name="neighborhood" length="50"/>
+            </basic>
+            <basic name="sortOrder">
+                <column name="sort_order" nullable="false"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <entity class="com.moodi.discovery.domain.PickResultSpot" access="FIELD">
+        <table name="pick_result_spot"/>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="UUID"/>
+            </id>
+            <basic name="pickRequestId">
+                <column name="pick_request_id" nullable="false"/>
+            </basic>
+            <basic name="spotId">
+                <column name="spot_id" nullable="false"/>
+            </basic>
+            <basic name="rank">
+                <column name="rank" nullable="false"/>
+            </basic>
+            <basic name="similarity">
+                <column name="similarity" nullable="false"/>
+            </basic>
+            <basic name="fallback">
+                <column name="fallback" nullable="false"/>
+            </basic>
+        </attributes>
+    </entity>
+
 </entity-mappings>
