@@ -27,15 +27,16 @@ public class SpotDetailQueryRepositoryImpl implements SpotDetailQueryRepository 
         }
 
         String sql = """
-                SELECT s.id, st.title, si.image_url, s.area,
+                SELECT s.id, st.title,
+                       (SELECT si.image_url FROM spot_image si WHERE si.spot_id = s.id AND si.is_primary = true LIMIT 1),
+                       s.area,
                        (SELECT COUNT(*) FROM bookmark b WHERE b.spot_id = s.id) AS bookmark_count
                 FROM spot s
                 JOIN spot_mood sm ON sm.spot_id = s.id
-                JOIN spot_translation st ON st.spot_id = s.id AND st.locale = 'ko-KR'
-                LEFT JOIN spot_image si ON si.spot_id = s.id AND si.is_primary = true
+                JOIN spot_translation st ON st.spot_id = s.id AND st.locale = 'en-US'
                 WHERE s.id != :spotId
                   AND s.status = 'PUBLISHED'
-                  AND sm.mood_tags ?| CAST(:moodTags AS text[])
+                  AND jsonb_exists_any(sm.mood_tags, CAST(:moodTags AS text[]))
                 ORDER BY RANDOM()
                 LIMIT :limit
                 """;
@@ -67,10 +68,11 @@ public class SpotDetailQueryRepositoryImpl implements SpotDetailQueryRepository 
         }
 
         String sql = """
-                SELECT s.id, st.title, si.image_url, sm.mood_tags
+                SELECT s.id, st.title,
+                       (SELECT si.image_url FROM spot_image si WHERE si.spot_id = s.id AND si.is_primary = true LIMIT 1),
+                       sm.mood_tags
                 FROM spot s
-                JOIN spot_translation st ON st.spot_id = s.id AND st.locale = 'ko-KR'
-                LEFT JOIN spot_image si ON si.spot_id = s.id AND si.is_primary = true
+                JOIN spot_translation st ON st.spot_id = s.id AND st.locale = 'en-US'
                 LEFT JOIN spot_mood sm ON sm.spot_id = s.id
                 WHERE s.id != :spotId
                   AND s.status = 'PUBLISHED'
