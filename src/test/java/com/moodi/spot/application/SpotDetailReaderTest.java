@@ -168,7 +168,7 @@ class SpotDetailReaderTest {
         spot.publish();
 
         when(spotRepository.findById(spotId)).thenReturn(Optional.of(spot));
-        when(translationRepository.findBySpotIdAndLocale(spotId, "ko-KR"))
+        when(translationRepository.findBySpotIdAndLocale(spotId, "en-US"))
                 .thenReturn(Optional.of(SpotTranslationFixture.create(spotId)));
         when(imageRepository.findBySpotId(spotId)).thenReturn(List.of());
         when(moodRepository.findBySpotId(spotId))
@@ -193,7 +193,7 @@ class SpotDetailReaderTest {
         spot.publish();
 
         when(spotRepository.findById(spotId)).thenReturn(Optional.of(spot));
-        when(translationRepository.findBySpotIdAndLocale(spotId, "ko-KR"))
+        when(translationRepository.findBySpotIdAndLocale(spotId, "en-US"))
                 .thenReturn(Optional.of(SpotTranslationFixture.create(spotId)));
         when(imageRepository.findBySpotId(spotId))
                 .thenReturn(List.of(SpotImageFixture.createPrimary(spotId)));
