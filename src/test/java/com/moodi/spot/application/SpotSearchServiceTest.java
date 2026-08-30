@@ -6,6 +6,8 @@ import com.moodi.spot.application.dto.SpotSearchItem;
 import com.moodi.spot.application.dto.SpotSearchRequest;
 import com.moodi.spot.application.dto.SpotSearchRow;
 import com.moodi.spot.application.dto.SpotSearchSortType;
+import com.moodi.spot.support.SpotSearchRequestFixture;
+import com.moodi.spot.support.SpotSearchRowFixture;
 import com.moodi.spot.domain.SpotDescription;
 import com.moodi.spot.domain.SpotDescriptionRepository;
 import com.moodi.spot.domain.SpotImage;
@@ -65,12 +67,11 @@ class SpotSearchServiceTest {
     @DisplayName("검색어 없이 조회하면 MOST_SAVED 정렬로 조회된다")
     void search_without_keyword_uses_most_saved() {
         // given
-        SpotSearchRequest request = SpotSearchRequest.of(
-                null, null, null, false, SpotSearchSortType.MOST_SAVED, null, null, 20);
+        SpotSearchRequest request = SpotSearchRequestFixture.createMostSaved();
 
         List<SpotSearchRow> rows = List.of(
-                new SpotSearchRow(8317L, "부산", "남구", 5L, 0),
-                new SpotSearchRow(8326L, "부산", "수영구", 3L, 0)
+                SpotSearchRowFixture.create(8317L, "남구", 5L),
+                SpotSearchRowFixture.create(8326L, "수영구", 3L)
         );
 
         when(spotSearchQueryRepository.searchByMostSaved(
@@ -93,12 +94,11 @@ class SpotSearchServiceTest {
     @DisplayName("검색어 + BEST_MATCH 정렬로 조회된다")
     void search_with_keyword_best_match() {
         // given
-        SpotSearchRequest request = SpotSearchRequest.of(
-                "부산", null, null, false, SpotSearchSortType.BEST_MATCH, null, null, 20);
+        SpotSearchRequest request = SpotSearchRequestFixture.createBestMatch("부산");
 
         List<SpotSearchRow> rows = List.of(
-                new SpotSearchRow(8317L, "부산", "남구", 5L, 3),
-                new SpotSearchRow(8326L, "부산", "수영구", 3L, 2)
+                SpotSearchRowFixture.create(8317L, "남구", 5L, 3),
+                SpotSearchRowFixture.create(8326L, "수영구", 3L, 2)
         );
 
         when(spotSearchQueryRepository.searchByBestMatch(
@@ -123,12 +123,11 @@ class SpotSearchServiceTest {
     void search_with_logged_in_member_includes_bookmark_status() {
         // given
         UUID memberId = UUID.randomUUID();
-        SpotSearchRequest request = SpotSearchRequest.of(
-                null, null, null, false, SpotSearchSortType.MOST_SAVED, null, null, 20);
+        SpotSearchRequest request = SpotSearchRequestFixture.createMostSaved();
 
         List<SpotSearchRow> rows = List.of(
-                new SpotSearchRow(8317L, "부산", "남구", 5L, 0),
-                new SpotSearchRow(8326L, "부산", "수영구", 3L, 0)
+                SpotSearchRowFixture.create(8317L, "남구", 5L),
+                SpotSearchRowFixture.create(8326L, "수영구", 3L)
         );
 
         when(spotSearchQueryRepository.searchByMostSaved(
@@ -151,11 +150,10 @@ class SpotSearchServiceTest {
     @DisplayName("비로그인 시 bookmarked는 항상 false")
     void search_without_member_bookmark_always_false() {
         // given
-        SpotSearchRequest request = SpotSearchRequest.of(
-                null, null, null, false, SpotSearchSortType.MOST_SAVED, null, null, 20);
+        SpotSearchRequest request = SpotSearchRequestFixture.createMostSaved();
 
         List<SpotSearchRow> rows = List.of(
-                new SpotSearchRow(8317L, "부산", "남구", 5L, 0)
+                SpotSearchRowFixture.create()
         );
 
         when(spotSearchQueryRepository.searchByMostSaved(
@@ -176,12 +174,11 @@ class SpotSearchServiceTest {
     void search_with_route_public_id_includes_in_route() {
         // given
         UUID routePublicId = UUID.randomUUID();
-        SpotSearchRequest request = SpotSearchRequest.of(
-                null, null, null, false, SpotSearchSortType.MOST_SAVED, routePublicId, null, 20);
+        SpotSearchRequest request = SpotSearchRequestFixture.createMostSaved(routePublicId);
 
         List<SpotSearchRow> rows = List.of(
-                new SpotSearchRow(8317L, "부산", "남구", 5L, 0),
-                new SpotSearchRow(516L, "서울", "종로구", 1L, 0)
+                SpotSearchRowFixture.create(8317L, "남구", 5L),
+                SpotSearchRowFixture.create(516L, "서울", "종로구", 1L)
         );
 
         when(spotSearchQueryRepository.searchByMostSaved(
@@ -203,11 +200,10 @@ class SpotSearchServiceTest {
     @DisplayName("routePublicId가 없으면 isInRoute는 항상 false")
     void search_without_route_public_id_in_route_always_false() {
         // given
-        SpotSearchRequest request = SpotSearchRequest.of(
-                null, null, null, false, SpotSearchSortType.MOST_SAVED, null, null, 20);
+        SpotSearchRequest request = SpotSearchRequestFixture.createMostSaved();
 
         List<SpotSearchRow> rows = List.of(
-                new SpotSearchRow(8317L, "부산", "남구", 5L, 0)
+                SpotSearchRowFixture.create()
         );
 
         when(spotSearchQueryRepository.searchByMostSaved(
@@ -227,8 +223,7 @@ class SpotSearchServiceTest {
     @DisplayName("검색 결과가 없으면 빈 CursorResponse를 반환한다")
     void search_empty_result_returns_empty_cursor_response() {
         // given
-        SpotSearchRequest request = SpotSearchRequest.of(
-                "없는키워드", null, null, false, SpotSearchSortType.BEST_MATCH, null, null, 20);
+        SpotSearchRequest request = SpotSearchRequestFixture.createBestMatch("없는키워드");
 
         when(spotSearchQueryRepository.searchByBestMatch(
                 eq("없는키워드"), any(), any(), anyBoolean(), any(),
@@ -249,14 +244,13 @@ class SpotSearchServiceTest {
     void search_paging_has_next_true_when_extra_row_exists() {
         // given
         int size = 2;
-        SpotSearchRequest request = SpotSearchRequest.of(
-                null, null, null, false, SpotSearchSortType.MOST_SAVED, null, null, size);
+        SpotSearchRequest request = SpotSearchRequestFixture.createMostSaved(size);
 
         // size+1 = 3개 반환
         List<SpotSearchRow> rows = List.of(
-                new SpotSearchRow(8317L, "부산", "남구", 5L, 0),
-                new SpotSearchRow(8326L, "부산", "수영구", 3L, 0),
-                new SpotSearchRow(516L, "서울", "종로구", 1L, 0)
+                SpotSearchRowFixture.create(8317L, "남구", 5L),
+                SpotSearchRowFixture.create(8326L, "수영구", 3L),
+                SpotSearchRowFixture.create(516L, "서울", "종로구", 1L)
         );
 
         when(spotSearchQueryRepository.searchByMostSaved(
