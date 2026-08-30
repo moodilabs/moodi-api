@@ -200,7 +200,7 @@ class SpotControllerDocsTest extends RestDocsSupport {
                                 fieldWithPath("data.items[].imageUrl").type(JsonFieldType.STRING).description("대표 이미지 URL"),
                                 fieldWithPath("data.items[].area").type(JsonFieldType.STRING).description("지역 (시·도)"),
                                 fieldWithPath("data.items[].district").type(JsonFieldType.STRING).description("구·군"),
-                                fieldWithPath("data.items[].description").type(JsonFieldType.STRING).description("AI 생성 설명"),
+                                fieldWithPath("data.items[].description").type(JsonFieldType.STRING).description("AI 생성 스팟 한 줄 설명"),
                                 fieldWithPath("data.items[].moodTags[]").type(JsonFieldType.ARRAY).description("무드 태그 목록"),
                                 fieldWithPath("data.items[].bookmarkCount").type(JsonFieldType.NUMBER).description("북마크 수"),
                                 fieldWithPath("data.items[].bookmarked").type(JsonFieldType.BOOLEAN).description("현재 사용자 북마크 여부 (비회원: false)"),

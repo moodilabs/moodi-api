@@ -22,6 +22,7 @@ import com.moodi.spot.application.dto.BookmarkListRequest;
 import com.moodi.spot.application.dto.BookmarkSortType;
 import com.moodi.spot.application.dto.BookmarkSpotItem;
 import com.moodi.spot.application.dto.BookmarkToggleResult;
+import com.moodi.spot.application.RegionDictionary;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -144,8 +145,8 @@ public class BookmarkService {
                             row.spotId(),
                             translation != null ? translation.getTitle() : null,
                             imageMap.get(row.spotId()),
-                            row.area(),
-                            row.district(),
+                            RegionDictionary.translateArea(row.area()),
+                            RegionDictionary.translateDistrict(row.district()),
                             descriptionMap.get(row.spotId()),
                             row.latitude(),
                             row.longitude(),

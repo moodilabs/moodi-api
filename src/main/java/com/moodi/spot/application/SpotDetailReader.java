@@ -7,6 +7,7 @@ import com.moodi.spot.application.dto.PopularAreaSpotItem;
 import com.moodi.spot.application.dto.SimilarMoodSpotItem;
 import com.moodi.spot.application.dto.SpotDetailSnapshot;
 import com.moodi.spot.application.dto.SpotImageItem;
+import com.moodi.spot.application.RegionDictionary;
 import com.moodi.spot.domain.BookmarkRepository;
 import com.moodi.spot.domain.Spot;
 import com.moodi.spot.domain.SpotImage;
@@ -96,8 +97,8 @@ public class SpotDetailReader {
         return new SpotDetailSnapshot(
                 spot.getId(),
                 translation.getTitle(),
-                spot.getArea(),
-                spot.getDistrict(),
+                RegionDictionary.translateArea(spot.getArea()),
+                RegionDictionary.translateDistrict(spot.getDistrict()),
                 translation.getOverview(),
                 spot.getHomepage(),
                 spot.getTel(),

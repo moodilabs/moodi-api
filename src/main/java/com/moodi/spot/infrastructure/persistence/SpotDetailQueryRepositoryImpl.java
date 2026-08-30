@@ -4,6 +4,7 @@ import com.moodi.shared.mood.MoodTag;
 import com.moodi.spot.application.SpotDetailQueryRepository;
 import com.moodi.spot.application.dto.PopularAreaSpotItem;
 import com.moodi.spot.application.dto.SimilarMoodSpotItem;
+import com.moodi.spot.application.RegionDictionary;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Repository;
 
@@ -53,7 +54,7 @@ public class SpotDetailQueryRepositoryImpl implements SpotDetailQueryRepository 
                         ((Number) row[0]).longValue(),
                         (String) row[1],
                         (String) row[2],
-                        (String) row[3],
+                        RegionDictionary.translateArea((String) row[3]),
                         ((Number) row[4]).longValue()
                 ))
                 .toList();

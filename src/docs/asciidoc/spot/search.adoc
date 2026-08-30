@@ -1,0 +1,17 @@
+== 스팟 검색 (Spot Search)
+
+키워드·지역·무드 태그 등 조건으로 스팟을 검색합니다.
+
+=== 스팟 검색
+
+.HTTP Request
+include::{snippets}/spot/search/http-request.adoc[]
+
+.Query Parameters
+include::{snippets}/spot/search/query-parameters.adoc[]
+
+.HTTP Response
+include::{snippets}/spot/search/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/spot/search/response-fields.adoc[]
