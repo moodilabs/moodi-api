@@ -29,7 +29,7 @@ public class BookmarkQueryRepositoryImpl implements BookmarkQueryRepository {
                                                      Long cursorId, LocalDateTime cursorCreatedAt,
                                                      int size) {
         StringBuilder sql = new StringBuilder("""
-                SELECT b.id, b.spot_id, s.area, b.created_at,
+                SELECT b.id, b.spot_id, s.area, s.district, s.latitude, s.longitude, b.created_at,
                        (SELECT COUNT(*) FROM bookmark bc WHERE bc.spot_id = b.spot_id) AS bookmark_count
                 FROM bookmark b
                 JOIN spot s ON s.id = b.spot_id
@@ -55,13 +55,7 @@ public class BookmarkQueryRepositoryImpl implements BookmarkQueryRepository {
         List<Object[]> rows = query.getResultList();
 
         return rows.stream()
-                .map(row -> new BookmarkSpotRow(
-                        ((Number) row[0]).longValue(),
-                        ((Number) row[1]).longValue(),
-                        (String) row[2],
-                        toLocalDateTime(row[3]),
-                        ((Number) row[4]).longValue()
-                ))
+                .map(this::toBookmarkSpotRow)
                 .toList();
     }
 
@@ -70,7 +64,7 @@ public class BookmarkQueryRepositoryImpl implements BookmarkQueryRepository {
                                                       Long cursorSpotId, Long cursorBookmarkCount,
                                                       int size) {
         StringBuilder sql = new StringBuilder("""
-                SELECT b.id, b.spot_id, s.area, b.created_at,
+                SELECT b.id, b.spot_id, s.area, s.district, s.latitude, s.longitude, b.created_at,
                        bc.bookmark_count
                 FROM bookmark b
                 JOIN spot s ON s.id = b.spot_id
@@ -101,13 +95,7 @@ public class BookmarkQueryRepositoryImpl implements BookmarkQueryRepository {
         List<Object[]> rows = query.getResultList();
 
         return rows.stream()
-                .map(row -> new BookmarkSpotRow(
-                        ((Number) row[0]).longValue(),
-                        ((Number) row[1]).longValue(),
-                        (String) row[2],
-                        toLocalDateTime(row[3]),
-                        ((Number) row[4]).longValue()
-                ))
+                .map(this::toBookmarkSpotRow)
                 .toList();
     }
 
@@ -210,6 +198,19 @@ public class BookmarkQueryRepositoryImpl implements BookmarkQueryRepository {
             params.put("cursorBookmarkCount", cursorBookmarkCount);
             params.put("cursorSpotId", cursorSpotId);
         }
+    }
+
+    private BookmarkSpotRow toBookmarkSpotRow(Object[] row) {
+        return new BookmarkSpotRow(
+                ((Number) row[0]).longValue(),
+                ((Number) row[1]).longValue(),
+                (String) row[2],
+                (String) row[3],
+                row[4] != null ? ((Number) row[4]).doubleValue() : null,
+                row[5] != null ? ((Number) row[5]).doubleValue() : null,
+                toLocalDateTime(row[6]),
+                ((Number) row[7]).longValue()
+        );
     }
 
     private LocalDateTime toLocalDateTime(Object value) {

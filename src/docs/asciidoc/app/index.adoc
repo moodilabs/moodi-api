@@ -15,6 +15,8 @@ include::../member/auth.adoc[]
 
 include::../member/onboarding.adoc[]
 
+include::../spot/search.adoc[]
+
 include::../spot/detail.adoc[]
 
 include::../spot/bookmark.adoc[]

@@ -68,10 +68,14 @@ class BookmarkControllerDocsTest extends AuthenticatedRestDocsSupport {
     void get_bookmarks() throws Exception {
         List<BookmarkSpotItem> items = List.of(
                 new BookmarkSpotItem(1L, "익선동 한옥 골목", "https://img.moodi.kr/spot1.jpg",
-                        "서울", List.of(MoodTag.TRADITIONAL, MoodTag.COZY), 12L,
+                        "서울", "종로구", "Narrow alleys of 1920s hanok now filled with charming cafes.",
+                        37.5726, 126.9922,
+                        List.of(MoodTag.TRADITIONAL, MoodTag.COZY), 12L,
                         LocalDateTime.of(2026, 7, 25, 10, 0), true),
                 new BookmarkSpotItem(2L, "성수동 카페", "https://img.moodi.kr/spot2.jpg",
-                        "서울", List.of(MoodTag.RETRO, MoodTag.INDUSTRIAL), 8L,
+                        "서울", "성동구", "A retro-chic cafe street in Seongsu-dong.",
+                        37.5445, 127.0565,
+                        List.of(MoodTag.RETRO, MoodTag.INDUSTRIAL), 8L,
                         LocalDateTime.of(2026, 7, 24, 15, 30), true)
         );
         CursorResponse<BookmarkSpotItem> result = CursorResponse.of(items,
@@ -101,6 +105,10 @@ class BookmarkControllerDocsTest extends AuthenticatedRestDocsSupport {
                                 fieldWithPath("data.items[].title").type(JsonFieldType.STRING).description("스팟 이름"),
                                 fieldWithPath("data.items[].imageUrl").type(JsonFieldType.STRING).description("대표 이미지"),
                                 fieldWithPath("data.items[].area").type(JsonFieldType.STRING).description("지역"),
+                                fieldWithPath("data.items[].district").type(JsonFieldType.STRING).description("세부 지역"),
+                                fieldWithPath("data.items[].description").type(JsonFieldType.STRING).description("한줄 소개"),
+                                fieldWithPath("data.items[].latitude").type(JsonFieldType.NUMBER).description("위도"),
+                                fieldWithPath("data.items[].longitude").type(JsonFieldType.NUMBER).description("경도"),
                                 fieldWithPath("data.items[].moodTags[]").type(JsonFieldType.ARRAY).description("무드 태그 목록"),
                                 fieldWithPath("data.items[].bookmarkCount").type(JsonFieldType.NUMBER).description("전체 북마크 수"),
                                 fieldWithPath("data.items[].bookmarkedAt").type(JsonFieldType.STRING).description("저장 시각"),

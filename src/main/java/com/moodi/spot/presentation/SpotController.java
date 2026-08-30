@@ -1,26 +1,53 @@
 package com.moodi.spot.presentation;
 
 import com.moodi.shared.auth.OptionalAuthMember;
+import com.moodi.shared.response.CursorResponse;
 import com.moodi.shared.response.SuccessResponse;
 import com.moodi.spot.application.SpotDetailService;
+import com.moodi.spot.application.SpotSearchService;
 import com.moodi.spot.application.dto.SpotDetailSnapshot;
+import com.moodi.spot.application.dto.SpotSearchItem;
+import com.moodi.spot.application.dto.SpotSearchRequest;
+import com.moodi.spot.application.dto.SpotSearchSortType;
 import com.moodi.spot.presentation.dto.PopularSpotResponse;
 import com.moodi.spot.presentation.dto.SimilarMoodSpotResponse;
 import com.moodi.spot.presentation.dto.SpotDetailResponse;
 import com.moodi.spot.presentation.dto.SpotDetailResponse.SpotImageResponse;
+import com.moodi.spot.presentation.dto.SpotSearchResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
 public class SpotController {
 
     private final SpotDetailService spotDetailService;
+    private final SpotSearchService spotSearchService;
 
-    public SpotController(SpotDetailService spotDetailService) {
+    public SpotController(SpotDetailService spotDetailService, SpotSearchService spotSearchService) {
         this.spotDetailService = spotDetailService;
+        this.spotSearchService = spotSearchService;
+    }
+
+    @GetMapping("/api/spots/search")
+    public SuccessResponse<CursorResponse<SpotSearchResponse>> searchSpots(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String area,
+            @RequestParam(required = false) List<String> moodTags,
+            @RequestParam(defaultValue = "false") boolean saved,
+            @RequestParam(defaultValue = "BEST_MATCH") SpotSearchSortType sort,
+            @RequestParam(required = false) UUID routePublicId,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") int size,
+            @OptionalAuthMember UUID memberId) {
+        SpotSearchRequest request = SpotSearchRequest.of(keyword, area, moodTags, saved, sort,
+                routePublicId, cursor, size);
+        CursorResponse<SpotSearchItem> result = spotSearchService.search(memberId, request);
+        return SuccessResponse.of(result.map(SpotSearchResponse::from));
     }
 
     @GetMapping("/api/spots/{spotId}")

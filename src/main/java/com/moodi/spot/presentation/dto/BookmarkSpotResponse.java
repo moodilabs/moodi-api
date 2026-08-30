@@ -11,6 +11,10 @@ public record BookmarkSpotResponse(
         String title,
         String imageUrl,
         String area,
+        String district,
+        String description,
+        Double latitude,
+        Double longitude,
         List<MoodTag> moodTags,
         long bookmarkCount,
         LocalDateTime bookmarkedAt,
@@ -19,7 +23,9 @@ public record BookmarkSpotResponse(
 
     public static BookmarkSpotResponse from(BookmarkSpotItem item) {
         return new BookmarkSpotResponse(
-                item.spotId(), item.title(), item.imageUrl(), item.area(),
+                item.spotId(), item.title(), item.imageUrl(),
+                item.area(), item.district(), item.description(),
+                item.latitude(), item.longitude(),
                 item.moodTags(), item.bookmarkCount(), item.bookmarkedAt(), item.bookmarked()
         );
     }

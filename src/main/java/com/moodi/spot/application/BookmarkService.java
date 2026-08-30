@@ -7,6 +7,8 @@ import com.moodi.shared.response.CursorResponse;
 import com.moodi.spot.domain.Bookmark;
 import com.moodi.spot.domain.BookmarkRepository;
 import com.moodi.spot.domain.Spot;
+import com.moodi.spot.domain.SpotDescription;
+import com.moodi.spot.domain.SpotDescriptionRepository;
 import com.moodi.spot.domain.SpotImage;
 import com.moodi.spot.domain.SpotImageRepository;
 import com.moodi.spot.domain.SpotMood;
@@ -20,6 +22,7 @@ import com.moodi.spot.application.dto.BookmarkListRequest;
 import com.moodi.spot.application.dto.BookmarkSortType;
 import com.moodi.spot.application.dto.BookmarkSpotItem;
 import com.moodi.spot.application.dto.BookmarkToggleResult;
+import com.moodi.spot.application.RegionDictionary;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,10 +38,13 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class BookmarkService {
 
+    private static final String DESCRIPTION_LOCALE = "en-US";
+
     private final BookmarkRepository bookmarkRepository;
     private final BookmarkQueryRepository bookmarkQueryRepository;
     private final SpotRepository spotRepository;
     private final SpotTranslationRepository spotTranslationRepository;
+    private final SpotDescriptionRepository spotDescriptionRepository;
     private final SpotImageRepository spotImageRepository;
     private final SpotMoodRepository spotMoodRepository;
 
@@ -47,6 +53,7 @@ public class BookmarkService {
             BookmarkQueryRepository bookmarkQueryRepository,
             SpotRepository spotRepository,
             SpotTranslationRepository spotTranslationRepository,
+            SpotDescriptionRepository spotDescriptionRepository,
             SpotImageRepository spotImageRepository,
             SpotMoodRepository spotMoodRepository
     ) {
@@ -54,6 +61,7 @@ public class BookmarkService {
         this.bookmarkQueryRepository = bookmarkQueryRepository;
         this.spotRepository = spotRepository;
         this.spotTranslationRepository = spotTranslationRepository;
+        this.spotDescriptionRepository = spotDescriptionRepository;
         this.spotImageRepository = spotImageRepository;
         this.spotMoodRepository = spotMoodRepository;
     }
@@ -117,6 +125,11 @@ public class BookmarkService {
                 .stream()
                 .collect(Collectors.toMap(SpotTranslation::getSpotId, Function.identity(), (a, b) -> a));
 
+        Map<Long, String> descriptionMap = spotDescriptionRepository
+                .findBySpotIdInAndLocale(spotIds, DESCRIPTION_LOCALE)
+                .stream()
+                .collect(Collectors.toMap(SpotDescription::getSpotId, SpotDescription::getContent, (a, b) -> a));
+
         Map<Long, String> imageMap = spotImageRepository.findBySpotIdInAndIsPrimaryTrue(spotIds)
                 .stream()
                 .collect(Collectors.toMap(SpotImage::getSpotId, SpotImage::getImageUrl, (a, b) -> a));
@@ -132,7 +145,11 @@ public class BookmarkService {
                             row.spotId(),
                             translation != null ? translation.getTitle() : null,
                             imageMap.get(row.spotId()),
-                            row.area(),
+                            RegionDictionary.translateArea(row.area()),
+                            RegionDictionary.translateDistrict(row.district()),
+                            descriptionMap.get(row.spotId()),
+                            row.latitude(),
+                            row.longitude(),
                             moodTagMap.getOrDefault(row.spotId(), List.of()),
                             row.bookmarkCount(),
                             row.bookmarkedAt(),
