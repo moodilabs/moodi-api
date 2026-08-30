@@ -5,12 +5,13 @@ public record PopularSpotItem(
         String title,
         String imageUrl,
         String area,
+        String description,
         long bookmarkCount,
         boolean bookmarked
 ) {
 
     public static PopularSpotItem from(PopularSpotRow row) {
         return new PopularSpotItem(row.spotId(), row.title(), row.imageUrl(),
-                row.area(), row.bookmarkCount(), row.bookmarked());
+                row.area(), row.description(), row.bookmarkCount(), row.bookmarked());
     }
 }

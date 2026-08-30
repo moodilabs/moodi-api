@@ -5,6 +5,7 @@ public record PopularSpotRow(
         String title,
         String imageUrl,
         String area,
+        String description,
         long bookmarkCount,
         boolean bookmarked
 ) {

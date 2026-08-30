@@ -196,7 +196,7 @@ class FeedServiceTest {
     @DisplayName("인기 스팟은 정확히 5개까지만 조회한다")
     void reads_exactly_five_popular_spots() {
         given(popularSpotReader.readTopByBookmarkCount(memberId, 5)).willReturn(List.of(
-                new PopularSpotRow(1L, "스팟", "https://img/1", "서울", 10L, true)));
+                new PopularSpotRow(1L, "스팟", "https://img/1", "서울", "스팟 설명", 10L, true)));
 
         List<PopularSpotItem> items = feedService.getPopularSpots(memberId);
 

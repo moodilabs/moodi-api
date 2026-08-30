@@ -243,8 +243,9 @@ B+의 정렬 키 4개 중 앞 2개가 무의미해지고 자동으로 **B(시드
 - **카드 구성**: 대표 이미지 1장 · 지역 정보(동, 시) · 스팟명 · **스팟 설명(2줄 초과 시 말줄임)**
 - List Item 클릭 → `COM-00` 스팟 상세를 Full Screen Layer Modal로 표시
 
-> **⚠️ 구현과의 차이** — 현재 `PopularSpotResponse`에 **스팟 설명 필드가 없다**(`spotId·title·imageUrl·area·bookmarkCount·bookmarked`).
-> 화면정의서가 요구하므로 `description`(또는 `overview`) 추가가 필요하다. 말줄임은 클라이언트 처리.
+> **해소됨 (2026-08-30)** — `PopularSpotResponse.description` 추가 완료.
+> `spot_description`(locale별)을 `LEFT JOIN`해 조회하므로 **설명이 없는 스팟도 목록에서 빠지지 않고 `null`로 나간다.**
+> 말줄임은 클라이언트 처리.
 
 ### 2. 추천 루트 캐러셀 — ❌ 미구현 · 담당 미정
 
@@ -421,7 +422,7 @@ Feed는 노출 이력만, Pick은 요청·이미지·지역·결과를 가진다
 | Method | Path | 인증 | 요청 → 응답 | 화면 | 상태 |
 |---|---|---|---|---|---|
 | GET | `/api/v1/feed?cursor=` | `@OptionalAuthMember` | → `CursorResponse<FeedSpotResponse>` | `DSC-01` | ✅ |
-| GET | `/api/v1/feed/popular-spots` | `@LoginRequired` | → `List<PopularSpotResponse>` (5) | `DSC-02` | ✅ (`description` 추가 필요) |
+| GET | `/api/v1/feed/popular-spots` | `@LoginRequired` | → `List<PopularSpotResponse>` (5) | `DSC-02` | ✅ |
 | GET | `/api/v1/picks/upload-url` | `@LoginRequired` | `?contentType=&size=` → `{ uploadUrl, imageUrl }` | `DSC-04` | ❌ |
 | GET | `/api/v1/picks/popular-areas` | `@OptionalAuthMember` | → `List<AreaResponse>` (5) | `DSC-04` | ❌ |
 | POST | `/api/v1/picks` | `@LoginRequired` | `{ imageUrl, areas: [...] }` → `{ pickId, spots: [...5], fallbackSpots: [...5] }` | `DSC-04`→`DSC-05` | ❌ |
@@ -529,7 +530,6 @@ Feed는 노출 이력만, Pick은 요청·이미지·지역·결과를 가진다
 
 - **지역 자동완성 응답 스키마** — `DSC-04`가 Region/District/Neighborhood 3레벨과 상위 지역 라벨을 요구한다.
   이슈 #55(통합 검색)에 이 요구가 반영돼야 한다
-- **인기 스팟 응답에 스팟 설명 추가** — `DSC-02` 카드 요구
 - **이슈 #38** 유사 무드 스팟 조회가 `?|` 연산자로 항상 실패 — Pick 후보 조회가 같은 쿼리를 원형으로 쓴다. **선결**
 - **이슈 #21** JSONB GIN 인덱스 기반 무드 필터링 성능 검증 — 피드와 Pick 양쪽 병목
 
