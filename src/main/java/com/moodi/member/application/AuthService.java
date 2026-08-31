@@ -66,8 +66,21 @@ public class AuthService {
 
     private MemberResolution resolveMember(OAuthProvider provider, OidcPayload payload) {
         return memberRepository.findByProviderAndProviderId(provider, payload.providerId())
-                .map(member -> new MemberResolution(member, false))
+                .map(member -> resolveExisting(member, payload))
                 .orElseGet(() -> new MemberResolution(register(provider, payload), true));
+    }
+
+    /**
+     * 탈퇴한 회원이 같은 소셜 계정으로 돌아오면 복구한다.
+     * 탈퇴 시 프로필을 비웠으므로 온보딩을 다시 밟아야 한다 → 신규 로그인과 같은 분기를 타도록
+     * {@code isNew = true}로 돌려준다(`AUT-F01`).
+     */
+    private MemberResolution resolveExisting(Member member, OidcPayload payload) {
+        if (member.isWithdrawn()) {
+            member.restore(payload.email());
+            return new MemberResolution(member, true);
+        }
+        return new MemberResolution(member, false);
     }
 
     private Member register(OAuthProvider provider, OidcPayload payload) {

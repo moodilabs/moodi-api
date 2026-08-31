@@ -92,6 +92,43 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("탈퇴한 회원이 같은 소셜 계정으로 다시 로그인하면 복구된다")
+    void login_restores_withdrawn_member() {
+        UUID memberId = UUID.randomUUID();
+        Member withdrawn = MemberFixture.create(memberId, PROVIDER, PROVIDER_ID, EMAIL);
+        withdrawn.withdraw(LocalDateTime.now());
+        TokenPair tokens = new TokenPair("access-token", "refresh-token", LocalDateTime.now().plusDays(14));
+        when(oAuthClient.verify(PROVIDER, ID_TOKEN)).thenReturn(new OidcPayload(PROVIDER_ID, EMAIL));
+        when(memberRepository.findByProviderAndProviderId(PROVIDER, PROVIDER_ID))
+                .thenReturn(Optional.of(withdrawn));
+        when(tokenProvider.issue(memberId)).thenReturn(tokens);
+
+        LoginResult result = authService.login(PROVIDER, ID_TOKEN);
+
+        assertThat(withdrawn.isWithdrawn()).isFalse();
+        assertThat(withdrawn.getEmail()).isEqualTo(EMAIL);
+        verify(memberRepository, never()).save(any(Member.class));
+    }
+
+    @Test
+    @DisplayName("복구된 회원은 프로필이 비어 있으므로 신규 로그인과 같은 분기를 탄다")
+    void login_restored_member_is_treated_as_new() {
+        UUID memberId = UUID.randomUUID();
+        Member withdrawn = MemberFixture.create(memberId, PROVIDER, PROVIDER_ID, EMAIL);
+        withdrawn.withdraw(LocalDateTime.now());
+        TokenPair tokens = new TokenPair("access-token", "refresh-token", LocalDateTime.now().plusDays(14));
+        when(oAuthClient.verify(PROVIDER, ID_TOKEN)).thenReturn(new OidcPayload(PROVIDER_ID, EMAIL));
+        when(memberRepository.findByProviderAndProviderId(PROVIDER, PROVIDER_ID))
+                .thenReturn(Optional.of(withdrawn));
+        when(tokenProvider.issue(memberId)).thenReturn(tokens);
+
+        LoginResult result = authService.login(PROVIDER, ID_TOKEN);
+
+        assertThat(result.isNewMember()).isTrue();
+        assertThat(withdrawn.hasProfile()).isFalse();
+    }
+
+    @Test
     @DisplayName("신규 회원 가입 시 이메일이 중복이면 예외가 발생한다")
     void login_new_member_with_duplicate_email_throws() {
         when(oAuthClient.verify(PROVIDER, ID_TOKEN)).thenReturn(new OidcPayload(PROVIDER_ID, EMAIL));

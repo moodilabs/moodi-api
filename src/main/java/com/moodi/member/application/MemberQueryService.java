@@ -34,6 +34,7 @@ public class MemberQueryService {
      */
     public MemberInfo getMe(UUID memberId) {
         Member member = memberRepository.findById(memberId)
+                .filter(found -> !found.isWithdrawn())
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
         boolean hasPreferredMood = memberPreferredMoodRepository.existsByMemberId(memberId);
         return new MemberInfo(member.getStatus(), member.getNickname(), member.hasProfile(), hasPreferredMood);

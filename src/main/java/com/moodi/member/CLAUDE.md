@@ -171,6 +171,7 @@ com.moodi.member/
 | POST | `/api/v1/members/profile` | `{ nickname, country, birthYear, gender }` → `204` (PENDING 유지) | A | ✅ |
 | POST | `/api/v1/members/agreements` | `{ termsOfService, privacyPolicy, ageOver14, marketing }` → `204` (PENDING→ACTIVE) | A | ✅ |
 | GET | `/api/v1/members/me` | → `{ status, nickname, hasProfile, hasPreferredMood }` | C | ✅ |
+| DELETE | `/api/v1/members/me` | 없음 → `204` (소프트 삭제) | D | ✅ |
 | POST | `/api/v1/members/me/preferred-moods` | `{ moods: [ …0개 또는 ≥3 ] }` → `204` | B | ✅ |
 
 ### 에러 코드 (`ErrorCode` 추가)
@@ -211,9 +212,43 @@ com.moodi.member/
 
 무드 20종은 `com.moodi.shared.mood.MoodTag`로 확정 완료.
 
+## 회원 탈퇴 (D) — 소프트 삭제
+
+명세서에 행이 없지만 **Google Play가 계정 삭제 경로를 의무화**해 출시 요건으로 구현했다.
+공개 안내 페이지는 `src/main/resources/static/account-deletion.html`
+(→ `https://moodi.kr/account-deletion.html`).
+
+### 왜 하드 삭제가 아닌가
+
+`bookmark`·`route`가 `member(id)`를 FK로 참조하는데 **`ON DELETE CASCADE`가 없다**
+(`fk_bookmark_member`·`fk_route_member`). 행을 지우려면 다른 컨텍스트의 데이터까지 지워야 한다.
+
+> **루트 `CLAUDE.md`와 스키마가 어긋나 있다.** 문서는 "컨텍스트 간 참조는 ID만, JPA 연관관계를
+> 경계 너머로 걸지 않는다"고 하는데 **DB FK는 실제로 걸려 있다**. 별도 정리 대상.
+
+### 처리 내용 (`MemberWithdrawService`)
+
+| 처리 | 대상 |
+|---|---|
+| 비움 | `email` · `nickname` · `country` · `birth_year` · `gender`, `status`는 `PENDING`으로 복귀 |
+| 삭제 | `member_preferred_mood` · `member_agreement` · `refresh_token` |
+| 유지 | `provider` · `provider_id`(복구용), `bookmark` · `route` · `feed_impression` · `pick_request` |
+
+- `deleted_at`은 `V15__add_member_deleted_at.sql`. 루트의 `V12__add_route_deleted_at.sql` 선례를 따랐다.
+- **`provider_id`를 남기는 것이 설계의 핵심이자 약점**이다. 같은 소셜 계정으로 다시 로그인하면
+  `AuthService`가 `Member.restore()`로 복구하고 북마크·루트가 되살아난다. 대신 OIDC `sub`라는
+  개인 식별자가 남으므로 **엄밀히는 삭제가 아니라 비활성화**다. 안내 페이지에 이 사실과
+  "전부 삭제를 원하면 메일로 요청" 경로를 함께 적어 고지와 동작을 일치시켰다.
+- 복구된 회원은 프로필이 비어 있어 로그인 응답 `isNewMember`가 `true`로 나간다 → 클라이언트가
+  온보딩으로 분기(`AUT-F01`).
+- access token 만료가 30분이라 탈퇴 직후 잠시 유효하다. `MemberQueryService.getMe`는
+  탈퇴 회원을 `MEMBER_NOT_FOUND`로 막지만, 다른 컨텍스트 API는 만료로 자연 해소된다.
+
 ### 미결 (구현 전 확정 필요)
 
-- **회원 탈퇴** — 명세서에 행 자체가 없다(마이페이지 영역 명세 부재).
+- **공유된 루트가 탈퇴 후에도 열린다** — `route.is_shared`가 그대로라 `publicId`를 아는 사람은
+  계속 조회할 수 있다. 탈퇴 시 공유를 내릴지는 루트 컨텍스트(개발자 B) 협의 대상.
+  현재는 안내 페이지에 "탈퇴 전 직접 삭제하라"고 고지해 두었다.
 - **`DUPLICATE_EMAIL` 응답에 provider 포함** — `AUT-01` 에러 모달 문구가
   "This email is linked to **{provider}**. Log in with {provider} to continue." 라 클라이언트가 provider 값을 받아야 한다.
   현재 `AuthService.register()`는 `existsByEmail`(boolean)이라 provider를 알 수 없고,
