@@ -7,6 +7,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
@@ -30,6 +31,7 @@ public class Member extends BaseEntity {
     private Integer birthYear;
     private Gender gender;
     private MemberStatus status;
+    private LocalDateTime deletedAt;
 
     private Member(OAuthProvider provider, String providerId, String email) {
         this.provider = provider;
@@ -66,6 +68,43 @@ public class Member extends BaseEntity {
             throw new BusinessException(ErrorCode.PROFILE_REQUIRED);
         }
         this.status = MemberStatus.ACTIVE;
+    }
+
+    /**
+     * 탈퇴(소프트 삭제). 개인정보 컬럼을 비우고 `deletedAt`을 찍는다.
+     * <p>
+     * 행을 지우지 않는 이유는 `bookmark`·`route`가 `member(id)`를 FK로 참조하고 있어서다
+     * (`fk_bookmark_member`·`fk_route_member`, `ON DELETE CASCADE` 없음).
+     * 하드 삭제하려면 그 행들까지 지워야 하는데, 재로그인 시 되살릴 수 있도록 남겨둔다.
+     * <p>
+     * `provider`·`providerId`는 **의도적으로 남긴다** — 같은 소셜 계정으로 다시 로그인했을 때
+     * {@link #restore(String)}로 이전 북마크·루트를 되찾게 하기 위한 유일한 식별 수단이다.
+     * 프로필이 비워지므로 상태는 `PENDING`으로 되돌려 온보딩을 다시 밟게 한다.
+     */
+    public void withdraw(LocalDateTime now) {
+        if (isWithdrawn()) {
+            throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
+        }
+        this.email = null;
+        this.nickname = null;
+        this.country = null;
+        this.birthYear = null;
+        this.gender = null;
+        this.status = MemberStatus.PENDING;
+        this.deletedAt = now;
+    }
+
+    /**
+     * 탈퇴한 회원이 같은 소셜 계정으로 다시 로그인했을 때의 복구.
+     * 프로필은 탈퇴 시 비워졌으므로 `PENDING` 상태로 온보딩을 다시 진행한다.
+     */
+    public void restore(String email) {
+        this.deletedAt = null;
+        this.email = email;
+    }
+
+    public boolean isWithdrawn() {
+        return deletedAt != null;
     }
 
     public boolean isPending() {

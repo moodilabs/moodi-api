@@ -2,6 +2,7 @@ package com.moodi.member.presentation;
 
 import com.moodi.member.application.MemberOnboardingService;
 import com.moodi.member.application.MemberQueryService;
+import com.moodi.member.application.MemberWithdrawService;
 import com.moodi.member.application.dto.MemberInfo;
 import com.moodi.member.presentation.dto.AgreementRequest;
 import com.moodi.member.presentation.dto.MemberMeResponse;
@@ -13,6 +14,7 @@ import com.moodi.shared.auth.LoginRequired;
 import com.moodi.shared.response.SuccessResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,13 +32,16 @@ public class MemberController {
 
     private final MemberOnboardingService memberOnboardingService;
     private final MemberQueryService memberQueryService;
+    private final MemberWithdrawService memberWithdrawService;
 
     public MemberController(
             MemberOnboardingService memberOnboardingService,
-            MemberQueryService memberQueryService
+            MemberQueryService memberQueryService,
+            MemberWithdrawService memberWithdrawService
     ) {
         this.memberOnboardingService = memberOnboardingService;
         this.memberQueryService = memberQueryService;
+        this.memberWithdrawService = memberWithdrawService;
     }
 
     @GetMapping("/me")
@@ -70,5 +75,11 @@ public class MemberController {
     @PostMapping("/me/preferred-moods")
     public void updatePreferredMoods(@AuthMember UUID memberId, @Valid @RequestBody PreferredMoodRequest request) {
         memberOnboardingService.updatePreferredMoods(memberId, request.moods());
+    }
+
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @DeleteMapping("/me")
+    public void withdraw(@AuthMember UUID memberId) {
+        memberWithdrawService.withdraw(memberId);
     }
 }

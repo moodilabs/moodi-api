@@ -76,6 +76,9 @@
                 <column name="status" nullable="false" length="20"/>
                 <enumerated>STRING</enumerated>
             </basic>
+            <basic name="deletedAt">
+                <column name="deleted_at" nullable="true"/>
+            </basic>
         </attributes>
     </entity>
 

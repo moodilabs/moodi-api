@@ -2,6 +2,7 @@ package com.moodi.member.presentation;
 
 import com.moodi.member.application.MemberOnboardingService;
 import com.moodi.member.application.MemberQueryService;
+import com.moodi.member.application.MemberWithdrawService;
 import com.moodi.member.application.dto.AgreementCommand;
 import com.moodi.member.application.dto.MemberInfo;
 import com.moodi.member.application.dto.ProfileCommand;
@@ -26,6 +27,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
@@ -39,10 +41,11 @@ class MemberControllerDocsTest extends AuthenticatedRestDocsSupport {
 
     private final MemberOnboardingService memberOnboardingService = mock(MemberOnboardingService.class);
     private final MemberQueryService memberQueryService = mock(MemberQueryService.class);
+    private final MemberWithdrawService memberWithdrawService = mock(MemberWithdrawService.class);
 
     @Override
     protected Object initController() {
-        return new MemberController(memberOnboardingService, memberQueryService);
+        return new MemberController(memberOnboardingService, memberQueryService, memberWithdrawService);
     }
 
     @Test
@@ -147,5 +150,15 @@ class MemberControllerDocsTest extends AuthenticatedRestDocsSupport {
                 ));
 
         verify(memberOnboardingService).agree(any(), any(AgreementCommand.class));
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴 성공")
+    void withdraw_success() throws Exception {
+        mockMvc.perform(delete("/api/v1/members/me"))
+                .andExpect(status().isNoContent())
+                .andDo(document("member/withdraw"));
+
+        verify(memberWithdrawService).withdraw(any());
     }
 }
