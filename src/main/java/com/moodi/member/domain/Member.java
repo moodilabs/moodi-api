@@ -73,9 +73,8 @@ public class Member extends BaseEntity {
     /**
      * 탈퇴(소프트 삭제). 개인정보 컬럼을 비우고 `deletedAt`을 찍는다.
      * <p>
-     * 행을 지우지 않는 이유는 `bookmark`·`route`가 `member(id)`를 FK로 참조하고 있어서다
-     * (`fk_bookmark_member`·`fk_route_member`, `ON DELETE CASCADE` 없음).
-     * 하드 삭제하려면 그 행들까지 지워야 하는데, 재로그인 시 되살릴 수 있도록 남겨둔다.
+     * 행을 지우지 않는 것은 **복구 가능하게 하려는 설계 선택**이다. 탈퇴 후 같은 소셜 계정으로
+     * 돌아온 사용자에게 이전 북마크·루트를 돌려주려면 회원 행이 남아 있어야 한다.
      * <p>
      * `provider`·`providerId`는 **의도적으로 남긴다** — 같은 소셜 계정으로 다시 로그인했을 때
      * {@link #restore(String)}로 이전 북마크·루트를 되찾게 하기 위한 유일한 식별 수단이다.

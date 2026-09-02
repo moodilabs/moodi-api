@@ -220,11 +220,13 @@ com.moodi.member/
 
 ### 왜 하드 삭제가 아닌가
 
-`bookmark`·`route`가 `member(id)`를 FK로 참조하는데 **`ON DELETE CASCADE`가 없다**
-(`fk_bookmark_member`·`fk_route_member`). 행을 지우려면 다른 컨텍스트의 데이터까지 지워야 한다.
+**복구 가능하게 하려는 설계 선택**이다. 탈퇴 후 같은 소셜 계정으로 돌아온 사용자에게
+이전 북마크·루트를 돌려주려면 회원 행이 남아 있어야 한다.
 
-> **루트 `CLAUDE.md`와 스키마가 어긋나 있다.** 문서는 "컨텍스트 간 참조는 ID만, JPA 연관관계를
-> 경계 너머로 걸지 않는다"고 하는데 **DB FK는 실제로 걸려 있다**. 별도 정리 대상.
+> 처음 구현할 때는 `bookmark`·`route`의 FK(`fk_bookmark_member`·`fk_route_member`) 때문에
+> 하드 삭제가 **불가능**해서 소프트 삭제를 택했다. `V16__drop_cross_context_fk.sql`로 경계를 넘는
+> FK를 걷어내 이제는 하드 삭제도 가능하지만, 복구 기능을 유지하기로 해 소프트 삭제를 그대로 둔다.
+> 제약이 아니라 선택이 됐다는 뜻이다.
 
 ### 처리 내용 (`MemberWithdrawService`)
 
@@ -235,6 +237,7 @@ com.moodi.member/
 | 유지 | `provider` · `provider_id`(복구용), `bookmark` · `route` · `feed_impression` · `pick_request` |
 
 - `deleted_at`은 `V15__add_member_deleted_at.sql`. 루트의 `V12__add_route_deleted_at.sql` 선례를 따랐다.
+- 경계를 넘는 FK가 없으므로 `bookmark`·`route` 행은 회원 행과 독립적이다. 정합성은 애플리케이션이 책임진다.
 - **`provider_id`를 남기는 것이 설계의 핵심이자 약점**이다. 같은 소셜 계정으로 다시 로그인하면
   `AuthService`가 `Member.restore()`로 복구하고 북마크·루트가 되살아난다. 대신 OIDC `sub`라는
   개인 식별자가 남으므로 **엄밀히는 삭제가 아니라 비활성화**다. 안내 페이지에 이 사실과
