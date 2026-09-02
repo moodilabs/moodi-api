@@ -97,14 +97,14 @@ class PopularSpotReaderAdapterTest extends PostgresTestSupport {
     @DisplayName("스팟 설명이 함께 조회된다")
     void read_includes_spot_description() {
         Long spotId = insertPublishedSpot();
-        em.persist(SpotDescription.create(spotId, "en-US", "붉은 벽돌 공장을 고쳐 만든 카페들이 이어집니다."));
+        em.persist(SpotDescription.create(spotId, "en-US", "Cafes in remodeled brick factories."));
         em.flush();
 
         List<PopularSpotRow> rows = adapter.readTopByBookmarkCount(memberId, TOP_LIMIT);
 
         assertThat(rows).singleElement()
                 .extracting(PopularSpotRow::description)
-                .isEqualTo("붉은 벽돌 공장을 고쳐 만든 카페들이 이어집니다.");
+                .isEqualTo("Cafes in remodeled brick factories.");
     }
 
     @Test
@@ -125,7 +125,7 @@ class PopularSpotReaderAdapterTest extends PostgresTestSupport {
     @DisplayName("다른 로케일의 설명은 조회되지 않는다")
     void read_ignores_other_locale_description() {
         Long spotId = insertPublishedSpot();
-        em.persist(SpotDescription.create(spotId, "en-US", "Cafes in remodeled brick factories."));
+        em.persist(SpotDescription.create(spotId, "ko-KR", "붉은 벽돌 공장을 고쳐 만든 카페들이 이어집니다."));
         em.flush();
 
         List<PopularSpotRow> rows = adapter.readTopByBookmarkCount(memberId, TOP_LIMIT);
