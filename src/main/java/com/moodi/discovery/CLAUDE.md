@@ -264,6 +264,20 @@ B+의 정렬 키 4개 중 앞 2개가 무의미해지고 자동으로 **B(시드
 > `spot_description`(locale별)을 `LEFT JOIN`해 조회하므로 **설명이 없는 스팟도 목록에서 빠지지 않고 `null`로 나간다.**
 > 말줄임은 클라이언트 처리.
 
+## 로케일 — `en-US` 고정
+
+서비스 언어는 영문이다(앱 UI·스토어 등록정보 모두 en-US). `spot` 원장은 한국어로 적재되지만
+`spot_translation`·`spot_description`에 en-US 행이 함께 쌓이므로, **사용자에게 나가는 조회는 en-US를 본다.**
+
+조회 어댑터 3곳(`FeedSpotReaderAdapter` · `PopularSpotReaderAdapter` · `PickCandidateReaderAdapter`)의
+`DEFAULT_LOCALE`이 그 기준이며, 스팟 컨텍스트의 상세·검색·북마크와 같은 값을 쓴다.
+
+- `spot_translation` 조인은 **`INNER JOIN`** 이다. en-US 번역이 없는 스팟은 피드·Pick 후보에서 **아예 빠진다.**
+  번역 배치(`SpotTranslationBatchService`)가 새 스팟을 따라잡지 못하면 조용히 노출이 줄어든다는 뜻이다.
+- `spot_description` 조인은 `LEFT JOIN`이라 설명이 없어도 목록에서 빠지지 않고 `null`로 나간다.
+
+> 다국어가 필요해지면 상수를 지우고 `Accept-Language`로 분기한다. 지금은 영어 단일 서비스라 상수로 둔다.
+
 ### 2. 추천 루트 캐러셀 — ❌ 미구현 · 담당 미정
 
 - **운영자가 사전 등록한 추천 루트 3개** 표시. 어드민에서 등록·수정·노출 여부 관리 필요

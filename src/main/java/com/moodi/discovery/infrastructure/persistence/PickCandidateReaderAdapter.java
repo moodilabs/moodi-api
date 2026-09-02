@@ -27,7 +27,8 @@ import java.util.UUID;
 @Repository
 public class PickCandidateReaderAdapter implements PickCandidateReader {
 
-    private static final String DEFAULT_LOCALE = "ko-KR";
+    /** 서비스 언어는 영문이다. 자세한 배경은 {@link FeedSpotReaderAdapter} 참고. */
+    private static final String DEFAULT_LOCALE = "en-US";
 
     /*
      * 지역명은 원장에 한국어로 저장돼 있고 응답은 영문으로 나간다. 클라이언트는 자동완성에서 받은
