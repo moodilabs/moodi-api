@@ -32,6 +32,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWit
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
+import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -185,6 +186,68 @@ class PickControllerDocsTest extends AuthenticatedRestDocsSupport {
                         .content(objectMapper.writeValueAsString(new PickRequestDto("picks/a.jpg", List.of()))))
                 .andExpect(status().isBadRequest())
                 .andDo(document("picks/recommend-no-area"));
+    }
+
+    @Test
+    @DisplayName("저장된 추천 결과 재조회")
+    void get_pick() throws Exception {
+        when(pickService.getPick(eq(memberId), eq(PICK_ID)))
+                .thenReturn(new PickResult(PICK_ID, List.of(item(101L, "Seoul Forest"), item(102L, "Ibagu-gil")), List.of()));
+
+        mockMvc.perform(get("/api/v1/picks/{pickId}", PICK_ID))
+                .andExpect(status().isOk())
+                .andDo(document("picks/detail",
+                        pathParameters(
+                                parameterWithName("pickId").description("추천 요청 시 응답받은 ID")
+                        ),
+                        responseFields(
+                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("추천 결과"),
+                                fieldWithPath("data.pickId").type(JsonFieldType.STRING).description("추천 요청 ID"),
+                                fieldWithPath("data.spots").type(JsonFieldType.ARRAY)
+                                        .description("저장된 순위 그대로 내려간다. 사진을 다시 분석하지 않아 순서가 바뀌지 않는다"),
+                                fieldWithPath("data.spots[].spotId").type(JsonFieldType.NUMBER).description("스팟 ID"),
+                                fieldWithPath("data.spots[].title").type(JsonFieldType.STRING).description("스팟명"),
+                                fieldWithPath("data.spots[].imageUrl").type(JsonFieldType.STRING)
+                                        .description("대표 이미지").optional(),
+                                fieldWithPath("data.spots[].area").type(JsonFieldType.STRING).description("지역. 영문 표기로 내려간다"),
+                                fieldWithPath("data.spots[].address").type(JsonFieldType.STRING)
+                                        .description("스팟 주소").optional(),
+                                fieldWithPath("data.spots[].description").type(JsonFieldType.STRING)
+                                        .description("스팟 설명").optional(),
+                                fieldWithPath("data.spots[].latitude").type(JsonFieldType.NUMBER)
+                                        .description("위도").optional(),
+                                fieldWithPath("data.spots[].longitude").type(JsonFieldType.NUMBER)
+                                        .description("경도").optional(),
+                                fieldWithPath("data.spots[].moodTags").type(JsonFieldType.ARRAY)
+                                        .description("무드 태그"),
+                                fieldWithPath("data.spots[].bookmarked").type(JsonFieldType.BOOLEAN)
+                                        .description("현재 사용자 저장 여부. 추천 시점이 아니라 **조회 시점** 값이다"),
+                                fieldWithPath("data.fallbackSpots").type(JsonFieldType.ARRAY)
+                                        .description("추천 당시 대체 추천이 나갔다면 함께 내려간다")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 추천 결과는 404를 응답한다")
+    void get_pick_not_found() throws Exception {
+        when(pickService.getPick(eq(memberId), eq(PICK_ID)))
+                .thenThrow(new BusinessException(ErrorCode.PICK_NOT_FOUND));
+
+        mockMvc.perform(get("/api/v1/picks/{pickId}", PICK_ID))
+                .andExpect(status().isNotFound())
+                .andDo(document("picks/detail-not-found"));
+    }
+
+    @Test
+    @DisplayName("타인의 추천 결과는 403을 응답한다")
+    void get_pick_forbidden() throws Exception {
+        when(pickService.getPick(eq(memberId), eq(PICK_ID)))
+                .thenThrow(new BusinessException(ErrorCode.PICK_FORBIDDEN));
+
+        mockMvc.perform(get("/api/v1/picks/{pickId}", PICK_ID))
+                .andExpect(status().isForbidden())
+                .andDo(document("picks/detail-forbidden"));
     }
 
     private PickResultItem item(long spotId, String title) {

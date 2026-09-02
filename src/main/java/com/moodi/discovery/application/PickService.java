@@ -18,7 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -75,6 +77,53 @@ public class PickService {
 
         UUID pickId = persist(memberId, imageKey, areas, spots, fallbackSpots);
         return new PickResult(pickId, toItems(spots), toItems(fallbackSpots));
+    }
+
+    /**
+     * 저장해 둔 추천 결과를 다시 조회한다 (DSC-05 재조회).
+     *
+     * <p>사진을 다시 분석하지 않는다. 같은 사진이라도 분석 결과가 매번 미세하게 달라질 수 있어
+     * 재조회 때마다 순서가 바뀌면 "모달 종료 시 기존 결과 유지" 요구를 만족하지 못한다.
+     * 그래서 순서는 저장된 순위를 그대로 쓰고, 스팟 내용만 최신으로 채운다.
+     */
+    public PickResult getPick(UUID memberId, UUID pickId) {
+        PickRequest pickRequest = pickRequestRepository.findById(pickId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PICK_NOT_FOUND));
+        if (!pickRequest.isOwnedBy(memberId)) {
+            throw new BusinessException(ErrorCode.PICK_FORBIDDEN);
+        }
+
+        List<PickResultSpot> saved = pickResultSpotRepository.findByPickRequestIdOrderByRank(pickId);
+        Map<Long, PickCandidate> candidates = readCandidates(memberId, saved);
+
+        return new PickResult(
+                pickId,
+                hydrate(saved, candidates, false),
+                hydrate(saved, candidates, true)
+        );
+    }
+
+    private Map<Long, PickCandidate> readCandidates(UUID memberId, List<PickResultSpot> saved) {
+        List<Long> spotIds = saved.stream().map(PickResultSpot::getSpotId).distinct().toList();
+        Map<Long, PickCandidate> bySpotId = new LinkedHashMap<>();
+        for (PickCandidate candidate : pickCandidateReader.readBySpotIds(memberId, spotIds)) {
+            bySpotId.put(candidate.spotId(), candidate);
+        }
+        return bySpotId;
+    }
+
+    /**
+     * 저장 이후 비활성으로 내려간 스팟은 조회에서 빠지므로 결과가 저장 시점보다 적을 수 있다.
+     * 빈 자리를 다른 스팟으로 메우지는 않는다. 재조회는 그때 본 목록을 되살리는 것이지 새로 추천하는 게 아니다.
+     */
+    private List<PickResultItem> hydrate(List<PickResultSpot> saved, Map<Long, PickCandidate> candidates,
+                                         boolean fallback) {
+        return saved.stream()
+                .filter(result -> result.isFallback() == fallback)
+                .map(result -> candidates.get(result.getSpotId()))
+                .filter(candidate -> candidate != null)
+                .map(PickResultItem::from)
+                .toList();
     }
 
     private List<Ranked> rankFallback(UUID memberId, MoodVector uploaded) {

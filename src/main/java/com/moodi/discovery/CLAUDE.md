@@ -19,7 +19,7 @@
 | `DSC-03` | Discover 메인 C — 비회원 | — | ⚠️ **화면정의서 `작성 중`**. 확정 전 |
 | `DSC-04` | 추천 정보 입력 (스팟 추천 STEP 1) | `PCK-F01` | 🔶 업로드·추천 API 구현. 지역 자동완성은 이슈 #55 대기 |
 | `DSC-04-02` | 추천 처리 로딩 | `PCK-F01` | ❌ 미구현 (클라이언트 전용) |
-| `DSC-05-01` | 추천 결과 (스팟 추천 STEP 2) | `PCK-F02`·`PCK-F03` | 🔶 추천 API 구현. 루트 연동은 클라이언트가 RTE 호출 |
+| `DSC-05-01` | 추천 결과 (스팟 추천 STEP 2) | `PCK-F02`·`PCK-F03` | ✅ 추천·재조회 API 구현. 루트 연동은 클라이언트가 RTE 호출 |
 | `DSC-05-02` | 추천 결과 없음 (Empty State) | `PCK-F02` | ✅ 대체 추천 포함 |
 
 > **명세서 ID 오류 주의** — CSV에서 Pick 3개 기능이 전부 `PCK-F01`로 적혀 있다.
@@ -375,6 +375,21 @@ Full Screen Layer Modal로 표시. 종료 시 진입 화면으로 복귀(스크�
 - **`DSC-04`에서 선택한 지역 내 스팟만 후보로 적용**
 - 결과 없음은 에러가 아니다. **빈 배열 + 200**으로 응답한다 (`DSC-05-02` Empty State)
 
+### 재조회 — 사진을 다시 분석하지 않는다 (2026-09-02)
+
+`GET /picks/{pickId}`는 저장된 `pick_result_spot`의 순위를 그대로 쓰고 **스팟 내용만 최신으로 채운다.**
+
+같은 사진이라도 무드 분석은 매번 미세하게 다른 벡터를 낼 수 있다. 재조회 때마다 다시 분석하면
+순서가 흔들려 `DSC-05`의 "모달 종료 시 기존 결과 유지" 요구를 만족하지 못한다.
+분석 API 호출 비용도 재조회마다 발생한다.
+
+반대로 스팟 정보를 저장 시점 값으로 굳히지도 않는다. **저장 여부(북마크)는 그 사이 바뀌고,
+비활성으로 내려간 스팟을 다시 보여줘서는 안 되기 때문**이다. 그래서 `readBySpotIds`로 그때그때 읽는다.
+
+- 비활성 스팟은 조회에서 빠지므로 **결과가 추천 당시보다 적을 수 있다.** 빈 자리를 메우지 않는다 —
+  재조회는 그때 본 목록을 되살리는 것이지 새로 추천하는 게 아니다.
+- `fallback` 플래그로 `spots`와 `fallbackSpots`를 나눈다. 추천 당시 대체 추천이 나갔다면 재조회에도 나간다.
+
 ### 지도 + 카드 캐러셀 (`DSC-05-01`)
 
 - **[Map]**: 추천 스팟 위치 마커. 선택 상태에 따라 표시가 다르다(Selected / Unselected).
@@ -434,7 +449,7 @@ Feed는 노출 이력만, Pick은 요청·이미지·지역·결과를 가진다
 > **결정 — 저장한다 (2026-08-30).** `pickId`가 있어야 `DSC-05` 재조회가 가능하고,
 > 선호 벡터 갱신(신규 요구)도 어떤 사진으로 추천받았는지에 대한 이력을 전제로 한다.
 > 저장 비용은 요청당 최대 11행(요청 1 + 지역 5 + 결과 5)이라 크지 않다.
-> 다만 `GET /picks/{pickId}` 재조회 API는 아직 만들지 않았다.
+> `GET /picks/{pickId}` 재조회 API도 구현 완료(2026-09-02).
 
 > **사진이 5장으로 되돌아가면 이 스키마가 달라진다.** `PickRequest.image_key` 컬럼 대신
 > `PickRequestImage` 테이블이 필요해지고, 여러 벡터를 어떻게 합칠지도 정해야 한다. 미결 0번 참고.
@@ -471,7 +486,7 @@ Feed는 노출 이력만, Pick은 요청·이미지·지역·결과를 가진다
 | GET | `/api/v1/picks/upload-url` | `@LoginRequired` | `?contentType=&contentLength=` → `{ uploadUrl, imageKey, expiresInSeconds }` | `DSC-04` | ✅ |
 | GET | `/api/v1/picks/popular-areas` | `@OptionalAuthMember` | → `List<AreaResponse>` (5) | `DSC-04` | ❌ |
 | POST | `/api/v1/picks` | `@LoginRequired` | `{ imageKey, areas: [...] }` → `{ pickId, spots: [...5], fallbackSpots: [...5] }` | `DSC-04`→`DSC-05` | ✅ |
-| GET | `/api/v1/picks/{pickId}` | `@LoginRequired` | → 위와 동일 | `DSC-05` 재조회 | ❌ |
+| GET | `/api/v1/picks/{pickId}` | `@LoginRequired` | → 위와 동일 | `DSC-05` 재조회 | ✅ |
 
 - **지역 자동완성은 `spot`의 통합 검색(`COM-02`, 이슈 #55)을 재사용한다.** `discovery`가 따로 만들지 않는다.
   Region/District/Neighborhood 3레벨 응답이 필요하므로 **개발자 B와 응답 스키마 합의가 필요하다.**
@@ -483,8 +498,8 @@ Feed는 노출 이력만, Pick은 요청·이미지·지역·결과를 가진다
 
 | 코드 | HTTP | 설명 |
 |---|---|---|
-| `PICK_NOT_FOUND` | 404 | 추천 요청 없음 (재조회 API 미구현, 코드만 선언) |
-| `PICK_FORBIDDEN` | 403 | 타인의 추천 결과 접근 (재조회 API 미구현, 코드만 선언) |
+| `PICK_NOT_FOUND` | 404 | 존재하지 않는 추천 요청 |
+| `PICK_FORBIDDEN` | 403 | 타인의 추천 결과 접근 |
 | `PICK_INVALID_AREA_SELECTION` | 400 | 지역 미선택 · 5개 초과 · 단계별 필수값 누락 ✅ |
 | `PICK_IMAGE_REQUIRED` | 400 | 사진 미등록 |
 | `PICK_UNSUPPORTED_IMAGE_TYPE` | 400 | JPG·PNG·HEIC 외 형식 ✅ |
@@ -541,7 +556,7 @@ Feed는 노출 이력만, Pick은 요청·이미지·지역·결과를 가진다
 3. **추천 루트 캐러셀** (`DSC-02`·`DSC-03`) — 운영자 등록 방식, 어드민 담당, 조회 API 소유 컨텍스트
 4. **인기 지역** (`DSC-04`) — 어드민 등록 방식. MVP는 상수/수동 INSERT로 갈 것인지
 5. **Feed의 "유사도" 정의** — Pick은 벡터 코사인으로 구현했으나 Feed는 여전히 태그 일치 수다. 2번(선호 벡터)과 연동
-6. ~~추천 결과 저장 여부~~ — **저장으로 결정(2026-08-30).** `GET /picks/{pickId}` 재조회 API는 후속
+6. ~~추천 결과 저장 여부~~ — **저장으로 결정(2026-08-30).** `GET /picks/{pickId}` 재조회 API도 구현 완료(2026-09-02). 이하는 당시 기록
 7. **버튼 라벨 통일** — `Find by photo`(메인 A) / `Find by mood`(메인 B)
 
 ### 🟠 인프라 결정이 필요한 것

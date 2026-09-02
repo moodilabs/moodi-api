@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -61,5 +62,15 @@ public class PickController {
     ) {
         PickResult result = pickService.recommend(memberId, request.imageKey(), request.toAreas());
         return SuccessResponse.of(PickResponse.from(result));
+    }
+
+    /**
+     * 저장된 추천 결과를 다시 조회한다 (DSC-05).
+     *
+     * <p>사진을 다시 분석하지 않으므로 순서가 그대로다. 저장 여부와 스팟 내용만 최신으로 채워진다.
+     */
+    @GetMapping("/{pickId}")
+    public SuccessResponse<PickResponse> getPick(@AuthMember UUID memberId, @PathVariable UUID pickId) {
+        return SuccessResponse.of(PickResponse.from(pickService.getPick(memberId, pickId)));
     }
 }
