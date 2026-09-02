@@ -21,6 +21,14 @@ public final class RegionNames {
     }
 
     /**
+     * 지역 자동완성(`DSC-04`)이 시·군·구를 영문으로 내보낼 때 쓴다.
+     * 피드·Pick 후보 응답에는 시·군·구가 실리지 않아 그동안 필요 없었다.
+     */
+    public static String toEnglishDistrict(String koreanDistrict) {
+        return RegionDictionary.translateDistrict(koreanDistrict);
+    }
+
+    /**
      * 응답이 영문으로 나가므로 클라이언트가 되돌려 주는 지역명도 영문이다.
      * 조회 조건으로 쓰려면 원장에 저장된 한국어로 되돌려야 한다.
      */

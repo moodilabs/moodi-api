@@ -1,5 +1,7 @@
 package com.moodi.discovery.presentation;
 
+import com.moodi.discovery.application.AreaSuggestService;
+import com.moodi.discovery.application.AreaSuggestion;
 import com.moodi.discovery.application.ImageStorageClient;
 import com.moodi.discovery.application.PickImageUploadService;
 import com.moodi.discovery.application.PickResult;
@@ -19,6 +21,7 @@ import org.springframework.restdocs.payload.JsonFieldType;
 import java.util.List;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -42,12 +45,14 @@ class PickControllerDocsTest extends AuthenticatedRestDocsSupport {
 
     private PickImageUploadService pickImageUploadService;
     private PickService pickService;
+    private AreaSuggestService areaSuggestService;
 
     @Override
     protected Object initController() {
         pickImageUploadService = mock(PickImageUploadService.class);
         pickService = mock(PickService.class);
-        return new PickController(pickImageUploadService, pickService);
+        areaSuggestService = mock(AreaSuggestService.class);
+        return new PickController(pickImageUploadService, pickService, areaSuggestService);
     }
 
     @Test
@@ -133,7 +138,7 @@ class PickControllerDocsTest extends AuthenticatedRestDocsSupport {
                                 fieldWithPath("areas[].district").type(JsonFieldType.STRING)
                                         .description("시·군·구. 영문 표기(`Seongdong-gu`). `DISTRICT` 이하에서 필수").optional(),
                                 fieldWithPath("areas[].neighborhood").type(JsonFieldType.STRING)
-                                        .description("동·면. 사전이 없어 한국어 표기 그대로. `NEIGHBORHOOD`에서 필수").optional()
+                                        .description("동·면. 자동완성이 돌려준 로마자 표기(`Seongsu`). `NEIGHBORHOOD`에서 필수").optional()
                         ),
                         responseFields(
                                 fieldWithPath("data").type(JsonFieldType.OBJECT).description("추천 결과"),
@@ -248,6 +253,47 @@ class PickControllerDocsTest extends AuthenticatedRestDocsSupport {
         mockMvc.perform(get("/api/v1/picks/{pickId}", PICK_ID))
                 .andExpect(status().isForbidden())
                 .andDo(document("picks/detail-forbidden"));
+    }
+
+    @Test
+    @DisplayName("지역 자동완성")
+    void suggest_areas() throws Exception {
+        when(areaSuggestService.search(anyString(), anyInt())).thenReturn(List.of(
+                new AreaSuggestion(PickAreaLevel.REGION, "Seoul", null, null, "Seoul"),
+                new AreaSuggestion(PickAreaLevel.DISTRICT, "Seoul", "Seongdong-gu", null, "Seongdong-gu, Seoul")));
+
+        mockMvc.perform(get("/api/v1/picks/areas").param("keyword", "seo"))
+                .andExpect(status().isOk())
+                .andDo(document("picks/areas",
+                        queryParameters(
+                                parameterWithName("keyword")
+                                        .description("검색어. 2자 미만이면 빈 목록을 돌려준다")
+                        ),
+                        responseFields(
+                                fieldWithPath("data").type(JsonFieldType.ARRAY)
+                                        .description("자동완성 후보. 시·도가 시·군·구보다 앞에 온다"),
+                                fieldWithPath("data[].level").type(JsonFieldType.STRING)
+                                        .description("`REGION`(시/도) · `DISTRICT`(시/군/구) · `NEIGHBORHOOD`(동/면). 화면 배지에 그대로 쓴다"),
+                                fieldWithPath("data[].region").type(JsonFieldType.STRING)
+                                        .description("시·도. 영문 표기"),
+                                fieldWithPath("data[].district").type(JsonFieldType.STRING)
+                                        .description("시·군·구. `level`이 `REGION`이면 null").optional(),
+                                fieldWithPath("data[].neighborhood").type(JsonFieldType.STRING)
+                                        .description("동·면. `level`이 `NEIGHBORHOOD`일 때만 채워진다. 로마자 표기법으로 옮긴 값이다").optional(),
+                                fieldWithPath("data[].label").type(JsonFieldType.STRING)
+                                        .description("Chip에 그대로 쓸 표기. 하위 단계는 상위 지역을 함께 담는다")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("검색어가 짧으면 빈 목록을 응답한다")
+    void suggest_areas_with_short_keyword() throws Exception {
+        when(areaSuggestService.search(anyString(), anyInt())).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/v1/picks/areas").param("keyword", "s"))
+                .andExpect(status().isOk())
+                .andDo(document("picks/areas-empty"));
     }
 
     private PickResultItem item(long spotId, String title) {
