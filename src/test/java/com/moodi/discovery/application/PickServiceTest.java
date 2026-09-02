@@ -31,6 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -226,6 +227,101 @@ class PickServiceTest {
                 List.of(new PickArea(PickAreaLevel.DISTRICT, "서울", "성동구", null), SEOUL));
 
         verify(pickRequestAreaRepository, org.mockito.Mockito.times(1)).save(any(PickRequestArea.class));
+    }
+
+    @Test
+    @DisplayName("저장된 추천 결과를 순위 순서대로 다시 조회한다")
+    void get_pick_returns_saved_results_in_rank_order() {
+        givenPickRequestFound();
+        given(pickResultSpotRepository.findByPickRequestIdOrderByRank(pickId))
+                .willReturn(List.of(savedResult(2L, 0, false), savedResult(1L, 1, false)));
+        given(pickCandidateReader.readBySpotIds(memberId, List.of(2L, 1L)))
+                .willReturn(List.of(candidate(1L, MoodVectorFixture.serene()),
+                        candidate(2L, MoodVectorFixture.serene())));
+
+        PickResult result = pickService.getPick(memberId, pickId);
+
+        assertThat(result.pickId()).isEqualTo(pickId);
+        assertThat(result.spots()).extracting(PickResultItem::spotId).containsExactly(2L, 1L);
+    }
+
+    @Test
+    @DisplayName("재조회는 사진을 다시 분석하지 않는다")
+    void get_pick_does_not_reanalyze_image() {
+        givenPickRequestFound();
+        given(pickResultSpotRepository.findByPickRequestIdOrderByRank(pickId))
+                .willReturn(List.of(savedResult(1L, 0, false)));
+        given(pickCandidateReader.readBySpotIds(memberId, List.of(1L)))
+                .willReturn(List.of(candidate(1L, MoodVectorFixture.serene())));
+
+        pickService.getPick(memberId, pickId);
+
+        verify(moodAnalysisClient, never()).analyze(anyString());
+        verify(pickResultSpotRepository, never()).save(any(PickResultSpot.class));
+    }
+
+    @Test
+    @DisplayName("대체 추천은 별도 목록으로 나뉘어 조회된다")
+    void get_pick_separates_fallback_spots() {
+        givenPickRequestFound();
+        given(pickResultSpotRepository.findByPickRequestIdOrderByRank(pickId))
+                .willReturn(List.of(savedResult(1L, 0, false), savedResult(2L, 0, true)));
+        given(pickCandidateReader.readBySpotIds(memberId, List.of(1L, 2L)))
+                .willReturn(List.of(candidate(1L, MoodVectorFixture.serene()),
+                        candidate(2L, MoodVectorFixture.serene())));
+
+        PickResult result = pickService.getPick(memberId, pickId);
+
+        assertThat(result.spots()).extracting(PickResultItem::spotId).containsExactly(1L);
+        assertThat(result.fallbackSpots()).extracting(PickResultItem::spotId).containsExactly(2L);
+    }
+
+    @Test
+    @DisplayName("저장 이후 비활성으로 내려간 스팟은 결과에서 빠진다")
+    void get_pick_drops_spots_no_longer_available() {
+        givenPickRequestFound();
+        given(pickResultSpotRepository.findByPickRequestIdOrderByRank(pickId))
+                .willReturn(List.of(savedResult(1L, 0, false), savedResult(2L, 1, false)));
+        given(pickCandidateReader.readBySpotIds(memberId, List.of(1L, 2L)))
+                .willReturn(List.of(candidate(1L, MoodVectorFixture.serene())));
+
+        PickResult result = pickService.getPick(memberId, pickId);
+
+        assertThat(result.spots()).extracting(PickResultItem::spotId).containsExactly(1L);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 추천 결과는 조회할 수 없다")
+    void get_pick_with_unknown_id_throws() {
+        given(pickRequestRepository.findById(pickId)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> pickService.getPick(memberId, pickId))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.PICK_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("타인의 추천 결과는 조회할 수 없다")
+    void get_pick_of_other_member_throws() {
+        PickRequest other = PickRequest.create(UUID.randomUUID(), IMAGE_KEY);
+        ReflectionTestUtils.setField(other, "id", pickId);
+        given(pickRequestRepository.findById(pickId)).willReturn(Optional.of(other));
+
+        assertThatThrownBy(() -> pickService.getPick(memberId, pickId))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.PICK_FORBIDDEN);
+    }
+
+    private void givenPickRequestFound() {
+        PickRequest found = PickRequest.create(memberId, IMAGE_KEY);
+        ReflectionTestUtils.setField(found, "id", pickId);
+        given(pickRequestRepository.findById(pickId)).willReturn(Optional.of(found));
+    }
+
+    private PickResultSpot savedResult(long spotId, int rank, boolean fallback) {
+        return PickResultSpot.of(pickId, spotId, rank, 0.9, fallback);
     }
 
     private void givenAnalyzed(MoodVector vector) {

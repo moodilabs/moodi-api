@@ -77,6 +77,18 @@ public class PickCandidateReaderAdapter implements PickCandidateReader {
         return execute(sql, params);
     }
 
+    @Override
+    public List<PickCandidate> readBySpotIds(UUID memberId, List<Long> spotIds) {
+        if (spotIds.isEmpty()) {
+            return List.of();
+        }
+        Map<String, Object> params = new HashMap<>();
+        params.put("locale", DEFAULT_LOCALE);
+        params.put("memberId", memberId);
+        params.put("spotIds", spotIds);
+        return execute(SELECT + "  AND s.id IN (:spotIds)\n", params);
+    }
+
     private Map<String, Object> baseParams(UUID memberId, int limit) {
         Map<String, Object> params = new HashMap<>();
         params.put("locale", DEFAULT_LOCALE);
