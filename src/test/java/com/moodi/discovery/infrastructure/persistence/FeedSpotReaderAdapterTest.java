@@ -319,6 +319,18 @@ class FeedSpotReaderAdapterTest extends PostgresTestSupport {
         return rows.stream().map(FeedSpotRow::spotId).toList();
     }
 
+    @Test
+    @DisplayName("지역명은 영문으로 조회된다")
+    void feed_returns_english_area() {
+        Long spotId = insertPublishedSpot();
+        insertSpotMood(spotId, List.of(MoodTag.COZY));
+
+        List<FeedSpotRow> rows = adapter.readPersonalizedFeed(
+                memberQuery(List.of(MoodTag.COZY), null, 20));
+
+        assertThat(rows).singleElement().extracting(FeedSpotRow::area).isEqualTo("Seoul");
+    }
+
     private UUID insertMember() {
         Member member = Member.create(OAuthProvider.GOOGLE, "sub-" + UUID.randomUUID(),
                 UUID.randomUUID() + "@test.com");

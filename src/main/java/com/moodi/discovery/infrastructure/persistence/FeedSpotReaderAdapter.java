@@ -4,6 +4,7 @@ import com.moodi.discovery.application.FeedCursor;
 import com.moodi.discovery.application.FeedQuery;
 import com.moodi.discovery.application.FeedSpotReader;
 import com.moodi.discovery.application.FeedSpotRow;
+import com.moodi.discovery.infrastructure.region.RegionNames;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import org.springframework.stereotype.Repository;
@@ -202,7 +203,7 @@ public class FeedSpotReaderAdapter implements FeedSpotReader {
                         ((Number) row[0]).longValue(),
                         (String) row[1],
                         (String) row[2],
-                        (String) row[3],
+                        RegionNames.toEnglishArea((String) row[3]),
                         (Boolean) row[4],
                         ((Number) row[5]).intValue(),
                         ((Number) row[6]).longValue(),
