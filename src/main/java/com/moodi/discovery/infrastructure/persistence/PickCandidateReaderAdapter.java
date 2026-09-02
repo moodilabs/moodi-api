@@ -6,6 +6,7 @@ import com.moodi.discovery.domain.PickArea;
 import com.moodi.discovery.domain.PickAreaLevel;
 import com.moodi.discovery.domain.PickAreas;
 import com.moodi.discovery.infrastructure.region.RegionNames;
+import com.moodi.discovery.infrastructure.region.Romanizer;
 import com.moodi.shared.mood.MoodTag;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
@@ -33,7 +34,8 @@ public class PickCandidateReaderAdapter implements PickCandidateReader {
     /*
      * 지역명은 원장에 한국어로 저장돼 있고 응답은 영문으로 나간다. 클라이언트는 자동완성에서 받은
      * 영문 지역명을 그대로 되돌려 주므로, 조회 조건으로 쓰기 전에 한국어로 되돌린다.
-     * 동(neighborhood)은 사전에 없어 한국어 그대로 비교한다.
+     * 동(neighborhood)은 사전이 없어 Romanizer로 옮겨 내보내는데, 변환을 되돌릴 수는 없다.
+     * 그래서 해당 구의 동 목록을 읽어 같은 방식으로 옮긴 뒤 일치하는 원문을 찾는다.
      */
 
     private static final String SELECT = """
@@ -113,11 +115,38 @@ public class PickCandidateReaderAdapter implements PickCandidateReader {
             }
             if (area.level() == PickAreaLevel.NEIGHBORHOOD) {
                 condition.append(" AND s.neighborhood = :neighborhood").append(i);
-                params.put("neighborhood" + i, area.neighborhood());
+                params.put("neighborhood" + i, toKoreanNeighborhood(area));
             }
             conditions.add(condition.append(")").toString());
         }
         return "  AND (" + String.join(" OR ", conditions) + ")\n";
+    }
+
+    /**
+     * 로마자로 받은 동명을 원장의 한국어 표기로 되돌린다.
+     *
+     * <p>변환이 단방향이라 사전을 뒤집을 수 없다. 대신 <b>같은 구 안의 동만</b> 읽어 같은 규칙으로
+     * 옮긴 뒤 대조한다. {@code idx_spot_area_district}가 덮는 좁은 범위라 비용이 낮다.
+     *
+     * <p>일치하는 것이 없으면 입력값을 그대로 쓴다. 한글로 보냈거나 자동완성을 거치지 않은
+     * 값일 수 있는데, 여기서 예외를 던지면 지역 하나 때문에 추천 전체가 실패한다.
+     */
+    private String toKoreanNeighborhood(PickArea area) {
+        Query query = em.createNativeQuery("""
+                SELECT DISTINCT neighborhood
+                FROM spot
+                WHERE area = :area AND district = :district AND neighborhood IS NOT NULL
+                """);
+        query.setParameter("area", RegionNames.toKoreanArea(area.region()));
+        query.setParameter("district", RegionNames.toKoreanDistrict(area.district()));
+
+        @SuppressWarnings("unchecked")
+        List<String> koreanNeighborhoods = query.getResultList();
+
+        return koreanNeighborhoods.stream()
+                .filter(korean -> Romanizer.romanizePlaceName(korean).equalsIgnoreCase(area.neighborhood()))
+                .findFirst()
+                .orElse(area.neighborhood());
     }
 
     private String moodTagFilter(List<MoodTag> moodTags, Map<String, Object> params) {

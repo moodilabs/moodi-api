@@ -1,9 +1,11 @@
 package com.moodi.discovery.presentation;
 
+import com.moodi.discovery.application.AreaSuggestService;
 import com.moodi.discovery.application.ImageStorageClient;
 import com.moodi.discovery.application.PickImageUploadService;
 import com.moodi.discovery.application.PickResult;
 import com.moodi.discovery.application.PickService;
+import com.moodi.discovery.presentation.dto.AreaSuggestResponse;
 import com.moodi.discovery.presentation.dto.PickRequestDto;
 import com.moodi.discovery.presentation.dto.PickResponse;
 import com.moodi.discovery.presentation.dto.PickUploadUrlResponse;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @LoginRequired
@@ -26,12 +29,33 @@ import java.util.UUID;
 @RequestMapping("/api/v1/picks")
 public class PickController {
 
+    private static final int DEFAULT_AREA_SUGGEST_LIMIT = 20;
+
     private final PickImageUploadService pickImageUploadService;
     private final PickService pickService;
+    private final AreaSuggestService areaSuggestService;
 
-    public PickController(PickImageUploadService pickImageUploadService, PickService pickService) {
+    public PickController(PickImageUploadService pickImageUploadService, PickService pickService,
+                          AreaSuggestService areaSuggestService) {
         this.pickImageUploadService = pickImageUploadService;
         this.pickService = pickService;
+        this.areaSuggestService = areaSuggestService;
+    }
+
+    /**
+     * 지역 자동완성 (DSC-04).
+     *
+     * <p>스팟이 실제로 있는 지역만 돌려준다. 고를 수는 있는데 추천 결과가 0건인 지역을 노출하면
+     * 사용자가 빈 결과 화면으로 떨어진다. 응답의 level·region·district·neighborhood를
+     * 그대로 추천 요청의 지역 조건에 실어 보내면 된다.
+     */
+    @GetMapping("/areas")
+    public SuccessResponse<List<AreaSuggestResponse>> suggestAreas(@RequestParam(required = false) String keyword) {
+        List<AreaSuggestResponse> responses =
+                areaSuggestService.search(keyword, DEFAULT_AREA_SUGGEST_LIMIT).stream()
+                        .map(AreaSuggestResponse::from)
+                        .toList();
+        return SuccessResponse.of(responses);
     }
 
     /**
