@@ -243,6 +243,38 @@ class PickCandidateReaderAdapterTest extends PostgresTestSupport {
         return spotId;
     }
 
+    @Test
+    @DisplayName("스팟 ID 목록으로 후보를 조회한다 - 재조회용")
+    void read_by_spot_ids() {
+        Long seoul = insertSpot("서울", "성동구", "성수동");
+        Long busan = insertSpot("부산", "해운대구", "우동");
+        insertSpot("대구", "중구", "동성로");
+
+        List<PickCandidate> candidates = adapter.readBySpotIds(memberId, List.of(seoul, busan));
+
+        assertThat(candidates).extracting(PickCandidate::spotId)
+                .containsExactlyInAnyOrder(seoul, busan);
+    }
+
+    @Test
+    @DisplayName("재조회에서도 비활성 스팟은 빠진다")
+    void read_by_spot_ids_excludes_unpublished() {
+        Long published = insertSpot("서울", "성동구", "성수동");
+        Long unpublished = insertUnpublishedSpot("서울", "성동구", "성수동");
+
+        List<PickCandidate> candidates = adapter.readBySpotIds(memberId, List.of(published, unpublished));
+
+        assertThat(candidates).extracting(PickCandidate::spotId).containsExactly(published);
+    }
+
+    @Test
+    @DisplayName("빈 목록으로 조회하면 쿼리 없이 빈 결과를 돌려준다")
+    void read_by_spot_ids_with_empty_list() {
+        List<PickCandidate> candidates = adapter.readBySpotIds(memberId, List.of());
+
+        assertThat(candidates).isEmpty();
+    }
+
     private Long insertSpotWithoutMood(String area, String district, String neighborhood) {
         Spot spot = createSpot(area, district, neighborhood);
         spot.publish();
