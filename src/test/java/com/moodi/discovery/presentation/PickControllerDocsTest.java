@@ -117,8 +117,8 @@ class PickControllerDocsTest extends AuthenticatedRestDocsSupport {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new PickRequestDto(
                                 "picks/3f1c.../8a2e....jpg",
-                                List.of(new PickRequestDto.AreaDto(PickAreaLevel.NEIGHBORHOOD, "서울", "성동구", "성수동"),
-                                        new PickRequestDto.AreaDto(PickAreaLevel.REGION, "부산", null, null))))))
+                                List.of(new PickRequestDto.AreaDto(PickAreaLevel.NEIGHBORHOOD, "Seoul", "Seongdong-gu", "성수동"),
+                                        new PickRequestDto.AreaDto(PickAreaLevel.REGION, "Busan", null, null))))))
                 .andExpect(status().isOk())
                 .andDo(document("picks/recommend",
                         requestFields(
@@ -128,11 +128,11 @@ class PickControllerDocsTest extends AuthenticatedRestDocsSupport {
                                         .description("선택한 지역. 1개 이상 5개 이하"),
                                 fieldWithPath("areas[].level").type(JsonFieldType.STRING)
                                         .description("`REGION`(시·도) · `DISTRICT`(시·군·구) · `NEIGHBORHOOD`(동·면)"),
-                                fieldWithPath("areas[].region").type(JsonFieldType.STRING).description("시·도"),
+                                fieldWithPath("areas[].region").type(JsonFieldType.STRING).description("시·도. 검색 API가 돌려준 영문 표기(`Seoul`)를 그대로 보낸다"),
                                 fieldWithPath("areas[].district").type(JsonFieldType.STRING)
-                                        .description("시·군·구. `DISTRICT` 이하에서 필수").optional(),
+                                        .description("시·군·구. 영문 표기(`Seongdong-gu`). `DISTRICT` 이하에서 필수").optional(),
                                 fieldWithPath("areas[].neighborhood").type(JsonFieldType.STRING)
-                                        .description("동·면. `NEIGHBORHOOD`에서 필수").optional()
+                                        .description("동·면. 사전이 없어 한국어 표기 그대로. `NEIGHBORHOOD`에서 필수").optional()
                         ),
                         responseFields(
                                 fieldWithPath("data").type(JsonFieldType.OBJECT).description("추천 결과"),
@@ -144,7 +144,7 @@ class PickControllerDocsTest extends AuthenticatedRestDocsSupport {
                                 fieldWithPath("data.spots[].title").type(JsonFieldType.STRING).description("스팟명"),
                                 fieldWithPath("data.spots[].imageUrl").type(JsonFieldType.STRING)
                                         .description("대표 이미지").optional(),
-                                fieldWithPath("data.spots[].area").type(JsonFieldType.STRING).description("지역"),
+                                fieldWithPath("data.spots[].area").type(JsonFieldType.STRING).description("지역. 영문 표기로 내려간다"),
                                 fieldWithPath("data.spots[].address").type(JsonFieldType.STRING)
                                         .description("스팟 주소").optional(),
                                 fieldWithPath("data.spots[].description").type(JsonFieldType.STRING)
@@ -172,7 +172,7 @@ class PickControllerDocsTest extends AuthenticatedRestDocsSupport {
         mockMvc.perform(post("/api/v1/picks")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new PickRequestDto("picks/a.jpg",
-                                List.of(new PickRequestDto.AreaDto(PickAreaLevel.REGION, "서울", null, null))))))
+                                List.of(new PickRequestDto.AreaDto(PickAreaLevel.REGION, "Seoul", null, null))))))
                 .andExpect(status().isOk())
                 .andDo(document("picks/recommend-empty"));
     }
@@ -189,7 +189,7 @@ class PickControllerDocsTest extends AuthenticatedRestDocsSupport {
 
     private PickResultItem item(long spotId, String title) {
         return new PickResultItem(spotId, title, "https://img.moodi.kr/spot" + spotId + ".jpg",
-                "서울", "서울 성동구 성수동", "설명이 여기에 표시됩니다.", 37.5445, 127.0374,
+                "Seoul", "서울 성동구 성수동", "설명이 여기에 표시됩니다.", 37.5445, 127.0374,
                 List.of(MoodTag.NATURE, MoodTag.SERENE, MoodTag.EXPANSIVE), false);
     }
 }
