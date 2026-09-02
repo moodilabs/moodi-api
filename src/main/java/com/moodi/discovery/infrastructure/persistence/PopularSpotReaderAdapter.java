@@ -12,7 +12,8 @@ import java.util.UUID;
 @Repository
 public class PopularSpotReaderAdapter implements PopularSpotReader {
 
-    private static final String DEFAULT_LOCALE = "ko-KR";
+    /** 서비스 언어는 영문이다. 자세한 배경은 {@link FeedSpotReaderAdapter} 참고. */
+    private static final String DEFAULT_LOCALE = "en-US";
 
     private static final String SQL = """
             SELECT s.id, st.title, si.image_url, s.area, sd.content AS description,

@@ -130,7 +130,7 @@ class FeedQueryPerformanceTest extends PostgresTestSupport {
 
         em.createNativeQuery("""
                 INSERT INTO spot_translation (spot_id, locale, title, created_at, updated_at)
-                SELECT s.id, 'ko-KR', '스팟-' || s.id, now(), now()
+                SELECT s.id, 'en-US', '스팟-' || s.id, now(), now()
                 FROM spot s WHERE s.content_id LIKE 'perf-%'
                 """).executeUpdate();
 

@@ -26,7 +26,12 @@ import java.util.Map;
 @Repository
 public class FeedSpotReaderAdapter implements FeedSpotReader {
 
-    private static final String DEFAULT_LOCALE = "ko-KR";
+    /**
+     * 서비스 언어는 영문이다(스토어 등록정보·앱 UI 모두 en-US).
+     * `spot` 원장은 한국어로 적재되고 `spot_translation`·`spot_description`에 en-US가 함께 쌓이므로,
+     * 사용자에게 나가는 조회는 en-US를 본다. 스팟 상세·검색·북마크도 같은 로케일을 쓴다.
+     */
+    private static final String DEFAULT_LOCALE = "en-US";
 
     /**
      * 대표 이미지는 정렬·페이징이 끝난 뒤 한 페이지분에만 붙인다. 후보 전건에 붙이면

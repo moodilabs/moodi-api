@@ -358,7 +358,7 @@ class FeedSpotReaderAdapterTest extends PostgresTestSupport {
     private Long persistSpotWithDetails(Spot spot) {
         em.persist(spot);
         em.flush();
-        em.persist(SpotTranslation.create(spot.getId(), "ko-KR", "스팟-" + spot.getId(),
+        em.persist(SpotTranslation.create(spot.getId(), "en-US", "스팟-" + spot.getId(),
                 null, null, null));
         em.persist(SpotImage.createPrimary(spot.getId(), "https://img/" + spot.getId()));
         em.flush();

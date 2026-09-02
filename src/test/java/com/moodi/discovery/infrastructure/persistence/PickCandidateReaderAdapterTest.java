@@ -132,7 +132,7 @@ class PickCandidateReaderAdapterTest extends PostgresTestSupport {
     @DisplayName("무드 벡터·태그·주소·설명·좌표·저장 여부가 함께 조회된다")
     void read_maps_candidate_fields() {
         Long spotId = insertSpot("서울", "성동구", "성수동");
-        em.persist(SpotDescription.create(spotId, "ko-KR", "붉은 벽돌 거리"));
+        em.persist(SpotDescription.create(spotId, "en-US", "붉은 벽돌 거리"));
         em.persist(Bookmark.create(memberId, spotId));
         em.flush();
 
@@ -261,7 +261,7 @@ class PickCandidateReaderAdapterTest extends PostgresTestSupport {
     private Long persistSpotWithDetails(Spot spot, String area, String district, String neighborhood) {
         em.persist(spot);
         em.flush();
-        em.persist(SpotTranslation.create(spot.getId(), "ko-KR", "스팟-" + spot.getId(), null,
+        em.persist(SpotTranslation.create(spot.getId(), "en-US", "스팟-" + spot.getId(), null,
                 area + " " + district + " " + neighborhood, null));
         em.persist(SpotImage.createPrimary(spot.getId(), "https://img/" + spot.getId()));
         em.flush();
