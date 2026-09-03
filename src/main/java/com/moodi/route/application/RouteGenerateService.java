@@ -27,6 +27,7 @@ public class RouteGenerateService {
 
     private final Clock clock;
     private final SpotSnapshotReader spotSnapshotReader;
+    private final SpotRecommendationReader spotRecommendationReader;
     private final SpotDistributor spotDistributor;
     private final LegCalculator legCalculator;
     private final DayScheduleValidator dayScheduleValidator;
@@ -35,11 +36,20 @@ public class RouteGenerateService {
     public RouteGenerateResult generate(RouteGenerateCommand command) {
         validateCommand(command);
 
-        List<SpotSnapshot> snapshots = loadAndValidateSpots(command.spotIds());
+        List<SpotSnapshot> baseSnapshots = loadAndValidateSpots(command.spotIds());
 
         int totalDays = calculateTotalDays(command.startDate(), command.endDate());
+        int maxSpots = totalDays * MAX_SPOTS_PER_DAY;
+        int neededCount = maxSpots - baseSnapshots.size();
 
-        List<List<SpotSnapshot>> distribution = spotDistributor.distribute(snapshots, totalDays);
+        List<SpotSnapshot> allSnapshots = new ArrayList<>(baseSnapshots);
+        if (neededCount > 0 && command.areas() != null && !command.areas().isEmpty()) {
+            List<SpotSnapshot> recommended = spotRecommendationReader.recommend(
+                    command.spotIds(), command.areas(), neededCount);
+            allSnapshots.addAll(recommended);
+        }
+
+        List<List<SpotSnapshot>> distribution = spotDistributor.distribute(allSnapshots, totalDays);
 
         List<List<LegResult>> legsByDay = calculateLegsForAllDays(distribution);
 
