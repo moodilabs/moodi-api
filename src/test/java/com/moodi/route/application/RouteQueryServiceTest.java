@@ -50,15 +50,15 @@ class RouteQueryServiceTest {
                 List.of(RouteFixture.createDay(1, START, 2))
         );
 
-        given(routeRepository.findByPublicId(publicId))
+        given(routeRepository.findByPublicIdWithDays(publicId))
                 .willReturn(Optional.of(route));
 
         // when
-        Route result = routeQueryService.getDetail(publicId, MEMBER_ID);
+        RouteDetail result = routeQueryService.getDetail(publicId, MEMBER_ID);
 
         // then
-        assertThat(result.getTitle()).isEqualTo("Seoul vibes trip");
-        assertThat(result.getDays()).hasSize(1);
+        assertThat(result.title()).isEqualTo("Seoul vibes trip");
+        assertThat(result.days()).hasSize(1);
     }
 
     @Test
@@ -66,7 +66,7 @@ class RouteQueryServiceTest {
     void get_detail_not_found() {
         // given
         UUID publicId = UUID.randomUUID();
-        given(routeRepository.findByPublicId(publicId))
+        given(routeRepository.findByPublicIdWithDays(publicId))
                 .willReturn(Optional.empty());
 
         // when & then
@@ -86,7 +86,7 @@ class RouteQueryServiceTest {
                 List.of(RouteFixture.createDay(1, START, 1))
         );
 
-        given(routeRepository.findByPublicId(publicId))
+        given(routeRepository.findByPublicIdWithDays(publicId))
                 .willReturn(Optional.of(route));
 
         UUID otherMemberId = UUID.randomUUID();
@@ -172,15 +172,15 @@ class RouteQueryServiceTest {
         );
         route.share();
 
-        given(routeRepository.findSharedByPublicId(publicId))
+        given(routeRepository.findSharedByPublicIdWithDays(publicId))
                 .willReturn(Optional.of(route));
 
         // when
-        Route result = routeQueryService.getSharedDetail(publicId);
+        SharedRouteDetail result = routeQueryService.getSharedDetail(publicId, MEMBER_ID);
 
         // then
-        assertThat(result.getTitle()).isEqualTo("Shared route");
-        assertThat(result.isShared()).isTrue();
+        assertThat(result.title()).isEqualTo("Shared route");
+        assertThat(result.isOwner()).isTrue();
     }
 
     @Test
@@ -188,11 +188,11 @@ class RouteQueryServiceTest {
     void get_shared_detail_not_found() {
         // given
         UUID publicId = UUID.randomUUID();
-        given(routeRepository.findSharedByPublicId(publicId))
+        given(routeRepository.findSharedByPublicIdWithDays(publicId))
                 .willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> routeQueryService.getSharedDetail(publicId))
+        assertThatThrownBy(() -> routeQueryService.getSharedDetail(publicId, MEMBER_ID))
                 .isInstanceOf(BusinessException.class)
                 .extracting(e -> ((BusinessException) e).getErrorCode())
                 .isEqualTo(ErrorCode.ROUTE_NOT_FOUND);
