@@ -42,17 +42,18 @@ GET {{host}}/api/dev/token
 ## 3. Route 초안 생성 (1단계)
 ## -----------------------------------------------
 ### spotIds에 실제 DB에 있는 스팟 ID를 넣어주세요
-### areas는 빈 배열이어도 OK
+### areas가 있으면 기준 스팟의 무드와 유사한 스팟을 자동으로 채워서 루트 생성
+### areas가 빈 배열이면 기준 스팟만으로 루트 생성
 ### 기간은 1~5일
 POST {{host}}/api/routes/generate
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "spotIds": [1, 2, 5,6,7,8,21,22,23],
-  "areas": [],
-  "startDate": "2026-09-01",
-  "endDate": "2026-09-03"
+  "spotIds": [1, 2],
+  "areas": ["Seoul"],
+  "startDate": "2026-09-10",
+  "endDate": "2026-09-11"
 }
 
 > {%

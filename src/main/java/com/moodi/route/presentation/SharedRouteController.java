@@ -1,8 +1,7 @@
 package com.moodi.route.presentation;
 
 import com.moodi.route.application.RouteQueryService;
-import com.moodi.route.domain.Route;
-import com.moodi.route.presentation.dto.SharedRouteDetailResponse;
+import com.moodi.route.application.SharedRouteDetail;
 import com.moodi.shared.auth.OptionalAuthMember;
 import com.moodi.shared.response.SuccessResponse;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,11 +22,10 @@ public class SharedRouteController {
     }
 
     @GetMapping("/{publicId}")
-    public SuccessResponse<SharedRouteDetailResponse> getSharedDetail(
+    public SuccessResponse<SharedRouteDetail> getSharedDetail(
             @OptionalAuthMember UUID memberId,
             @PathVariable UUID publicId) {
-        Route route = routeQueryService.getSharedDetail(publicId);
-        boolean isOwner = memberId != null && route.getMemberId().equals(memberId);
-        return SuccessResponse.of(SharedRouteDetailResponse.from(route, isOwner));
+        SharedRouteDetail detail = routeQueryService.getSharedDetail(publicId, memberId);
+        return SuccessResponse.of(detail);
     }
 }

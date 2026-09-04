@@ -11,7 +11,11 @@ public interface RouteRepository {
 
     Optional<Route> findByPublicId(UUID publicId);
 
+    Optional<Route> findByPublicIdWithDays(UUID publicId);
+
     Optional<Route> findSharedByPublicId(UUID publicId);
+
+    Optional<Route> findSharedByPublicIdWithDays(UUID publicId);
 
     void delete(Route route);
 }

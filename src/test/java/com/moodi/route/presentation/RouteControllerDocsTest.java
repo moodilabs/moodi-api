@@ -1,5 +1,6 @@
 package com.moodi.route.presentation;
 
+import com.moodi.route.application.RouteDetail;
 import com.moodi.route.application.RouteDeleteService;
 import com.moodi.route.application.RouteGenerateCommand;
 import com.moodi.route.application.RouteGenerateResult;
@@ -278,7 +279,7 @@ class RouteControllerDocsTest extends AuthenticatedRestDocsSupport {
         );
 
         given(routeQueryService.getDetail(any(UUID.class), any(UUID.class)))
-                .willReturn(route);
+                .willReturn(RouteDetail.from(route));
 
         // when & then
         mockMvc.perform(get("/api/routes/{publicId}", publicId))

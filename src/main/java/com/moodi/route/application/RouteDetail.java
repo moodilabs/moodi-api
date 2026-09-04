@@ -1,4 +1,4 @@
-package com.moodi.route.presentation.dto;
+package com.moodi.route.application;
 
 import com.moodi.route.domain.Route;
 import com.moodi.route.domain.RouteDay;
@@ -10,13 +10,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-public record SharedRouteDetailResponse(
+public record RouteDetail(
         UUID publicId,
         String title,
         LocalDate startDate,
         LocalDate endDate,
         int totalDays,
-        boolean isOwner,
         List<DayDetail> days
 ) {
     public record DayDetail(
@@ -52,29 +51,28 @@ public record SharedRouteDetailResponse(
     ) {
     }
 
-    public static SharedRouteDetailResponse from(Route route, boolean isOwner) {
+    public static RouteDetail from(Route route) {
         List<DayDetail> dayDetails = route.getDays().stream()
-                .map(SharedRouteDetailResponse::toDayDetail)
+                .map(RouteDetail::toDayDetail)
                 .toList();
 
-        return new SharedRouteDetailResponse(
+        return new RouteDetail(
                 route.getPublicId(),
                 route.getTitle(),
                 route.getStartDate(),
                 route.getEndDate(),
                 route.getTotalDays(),
-                isOwner,
                 dayDetails
         );
     }
 
     private static DayDetail toDayDetail(RouteDay day) {
         List<SpotDetail> spots = day.getSpots().stream()
-                .map(SharedRouteDetailResponse::toSpotDetail)
+                .map(RouteDetail::toSpotDetail)
                 .toList();
 
         List<LegDetail> legs = day.getLegs().stream()
-                .map(SharedRouteDetailResponse::toLegDetail)
+                .map(RouteDetail::toLegDetail)
                 .toList();
 
         return new DayDetail(day.getDayNumber(), day.getDate(), spots, legs);

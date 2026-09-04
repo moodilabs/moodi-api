@@ -19,7 +19,7 @@ import com.moodi.route.presentation.dto.RouteGenerateResponse;
 import com.moodi.route.presentation.dto.RouteGenerateResponse.DayPlan;
 import com.moodi.route.presentation.dto.RouteGenerateResponse.LegPlan;
 import com.moodi.route.presentation.dto.RouteGenerateResponse.SpotPlan;
-import com.moodi.route.presentation.dto.RouteDetailResponse;
+import com.moodi.route.application.RouteDetail;
 import com.moodi.route.presentation.dto.RouteListResponse;
 import com.moodi.route.presentation.dto.RouteSaveRequest;
 import com.moodi.route.presentation.dto.RouteSaveResponse;
@@ -109,11 +109,11 @@ public class RouteController {
     }
 
     @GetMapping("/{publicId}")
-    public SuccessResponse<RouteDetailResponse> getDetail(
+    public SuccessResponse<RouteDetail> getDetail(
             @AuthMember UUID memberId,
             @PathVariable UUID publicId) {
-        Route route = routeQueryService.getDetail(publicId, memberId);
-        return SuccessResponse.of(RouteDetailResponse.from(route));
+        RouteDetail detail = routeQueryService.getDetail(publicId, memberId);
+        return SuccessResponse.of(detail);
     }
 
     @PostMapping("/{publicId}/copy")

@@ -1,6 +1,8 @@
 package com.moodi.route.presentation;
 
 import com.moodi.route.application.RouteQueryService;
+import com.moodi.route.application.SharedRouteDetail;
+import com.moodi.route.application.RouteDetail;
 import com.moodi.route.domain.Route;
 import com.moodi.route.support.RouteFixture;
 import com.moodi.shared.auth.OptionalAuthMember;
@@ -56,8 +58,8 @@ class SharedRouteControllerDocsTest extends RestDocsSupport {
         );
         route.share();
 
-        given(routeQueryService.getSharedDetail(any(UUID.class)))
-                .willReturn(route);
+        given(routeQueryService.getSharedDetail(any(UUID.class), any()))
+                .willReturn(SharedRouteDetail.from(route, true));
 
         // when & then
         mockMvc.perform(get("/api/routes/shared/{publicId}", publicId))
