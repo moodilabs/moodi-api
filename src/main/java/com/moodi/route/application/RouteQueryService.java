@@ -57,17 +57,21 @@ public class RouteQueryService {
         return CursorResponse.of(pageRows, nextCursor, hasNext);
     }
 
-    public Route getDetail(UUID publicId, UUID memberId) {
-        Route route = routeRepository.findByPublicId(publicId)
+    public RouteDetail getDetail(UUID publicId, UUID memberId) {
+        Route route = routeRepository.findByPublicIdWithDays(publicId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROUTE_NOT_FOUND));
 
         route.validateOwner(memberId);
 
-        return route;
+        return RouteDetail.from(route);
     }
 
-    public Route getSharedDetail(UUID publicId) {
-        return routeRepository.findSharedByPublicId(publicId)
+    public SharedRouteDetail getSharedDetail(UUID publicId, UUID memberId) {
+        Route route = routeRepository.findSharedByPublicIdWithDays(publicId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROUTE_NOT_FOUND));
+
+        boolean isOwner = memberId != null && route.getMemberId().equals(memberId);
+
+        return SharedRouteDetail.from(route, isOwner);
     }
 }
