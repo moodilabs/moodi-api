@@ -74,8 +74,7 @@ class RouteGenerateServiceTest {
         given(spotSnapshotReader.readBySpotIds(command.spotIds())).willReturn(snapshots);
         given(legCalculator.calculate(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
                 .willReturn(Optional.of(new LegResult(TravelMode.WALK, 600, 800, null)));
-        given(dayScheduleValidator.validateAndRebalance(any(), any()))
-                .willAnswer(invocation -> invocation.getArgument(0));
+        given(dayScheduleValidator.calculateDayMinutes(anyList(), anyList())).willReturn(200);
         given(titleGenerator.generate(List.of("서울"), 2)).willReturn("서울 1박 2일 코스");
 
         // when
@@ -179,8 +178,7 @@ class RouteGenerateServiceTest {
                 .willReturn(recommended);
         given(legCalculator.calculate(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
                 .willReturn(Optional.of(new LegResult(TravelMode.WALK, 600, 800, null)));
-        given(dayScheduleValidator.validateAndRebalance(any(), any()))
-                .willAnswer(invocation -> invocation.getArgument(0));
+        given(dayScheduleValidator.calculateDayMinutes(anyList(), anyList())).willReturn(200);
         given(titleGenerator.generate(List.of("Seoul"), 2)).willReturn("Seoul 1박 2일");
 
         // when
@@ -209,8 +207,7 @@ class RouteGenerateServiceTest {
         given(spotSnapshotReader.readBySpotIds(spotIds)).willReturn(snapshots);
         given(legCalculator.calculate(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
                 .willReturn(Optional.of(new LegResult(TravelMode.WALK, 600, 800, null)));
-        given(dayScheduleValidator.validateAndRebalance(any(), any()))
-                .willAnswer(invocation -> invocation.getArgument(0));
+        given(dayScheduleValidator.calculateDayMinutes(anyList(), anyList())).willReturn(200);
         given(titleGenerator.generate(any(), anyInt())).willReturn("제목");
 
         // when
@@ -233,8 +230,6 @@ class RouteGenerateServiceTest {
 
         given(spotSnapshotReader.readBySpotIds(command.spotIds()))
                 .willReturn(List.of(createSnapshot(1L, 37.55, 127.05)));
-        given(dayScheduleValidator.validateAndRebalance(any(), any()))
-                .willAnswer(invocation -> invocation.getArgument(0));
         given(titleGenerator.generate(any(), anyInt())).willReturn("제목");
 
         // when
