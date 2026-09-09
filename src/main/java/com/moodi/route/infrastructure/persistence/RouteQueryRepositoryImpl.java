@@ -7,7 +7,7 @@ import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -67,15 +67,39 @@ public class RouteQueryRepositoryImpl implements RouteQueryRepository {
         params.put("cursorId", cursorId);
     }
 
-    private RouteListRow toRouteListRow(Object[] row) {
+    RouteListRow toRouteListRow(Object[] row) {
         return new RouteListRow(
                 ((Number) row[0]).longValue(),
                 (UUID) row[1],
                 (String) row[2],
-                ((java.sql.Date) row[3]).toLocalDate(),
-                ((java.sql.Date) row[4]).toLocalDate(),
+                toLocalDate(row[3]),
+                toLocalDate(row[4]),
                 ((Number) row[5]).intValue(),
-                ((Timestamp) row[6]).toLocalDateTime()
+                toLocalDateTime(row[6])
         );
+    }
+
+    /**
+     * 네이티브 쿼리 스칼라는 Hibernate 버전·드라이버에 따라 java.time 또는 java.sql 타입으로 온다.
+     * (Hibernate 7은 LocalDate/LocalDateTime을 돌려준다.) 둘 다 받아준다.
+     */
+    private LocalDate toLocalDate(Object value) {
+        if (value instanceof LocalDate ld) {
+            return ld;
+        }
+        if (value instanceof java.sql.Date d) {
+            return d.toLocalDate();
+        }
+        throw new IllegalArgumentException("Cannot convert to LocalDate: " + value.getClass());
+    }
+
+    private LocalDateTime toLocalDateTime(Object value) {
+        if (value instanceof LocalDateTime ldt) {
+            return ldt;
+        }
+        if (value instanceof java.sql.Timestamp ts) {
+            return ts.toLocalDateTime();
+        }
+        throw new IllegalArgumentException("Cannot convert to LocalDateTime: " + value.getClass());
     }
 }

@@ -42,7 +42,7 @@ public class RouteSaveService {
                 command.startDate(), command.endDate(), days
         );
 
-        return routeRepository.save(route);
+        return initializeDays(routeRepository.save(route));
     }
 
     @Transactional
@@ -60,7 +60,7 @@ public class RouteSaveService {
 
         route.update(command.title(), command.startDate(), command.endDate(), newDays);
 
-        return route;
+        return initializeDays(route);
     }
 
     @Transactional
@@ -71,10 +71,10 @@ public class RouteSaveService {
         route.validateOwner(memberId);
 
         RouteDay lastDay = route.getLastDay();
-        List<RouteSpot> existingSpots = lastDay.getSpots();
+        Optional<RouteSpot> lastSpot = lastDay.getLastSpot();
 
         SpotSnapshot snapshot = loadSnapshots(List.of(spotId)).get(spotId);
-        int newSequence = existingSpots.size() + 1;
+        int newSequence = lastDay.getNextSequence();
         RouteSpot newSpot = RouteSpot.create(
                 snapshot.spotId(), newSequence,
                 StayDurationPolicy.getEstimatedMinutes(snapshot.contentType()),
@@ -85,28 +85,50 @@ public class RouteSaveService {
                 snapshot.description()
         );
 
-        List<RouteSpot> spots = new ArrayList<>(existingSpots);
-        spots.add(newSpot);
+        // 영속 상태의 마지막 Day에 그대로 덧붙인다. 새 Day로 갈아끼우면 orphan 삭제보다 삽입이 먼저 실행되어
+        // uk_route_day_route_day_number 위반으로 실패한다.
+        lastDay.addSpot(newSpot);
 
-        List<RouteLeg> legs = new ArrayList<>(lastDay.getLegs());
-        if (!existingSpots.isEmpty()) {
-            RouteSpot lastSpot = existingSpots.get(existingSpots.size() - 1);
-            Optional<LegResult> result = legCalculator.calculate(
-                    lastSpot.getSpotLongitude(), lastSpot.getSpotLatitude(),
+        if (lastSpot.isPresent()) {
+            RouteSpot from = lastSpot.get();
+            LegResult leg = calculateLeg(
+                    from.getSpotLongitude(), from.getSpotLatitude(),
                     snapshot.longitude(), snapshot.latitude()
             );
-            LegResult leg = result.orElse(LegResult.unavailable());
-            legs.add(RouteLeg.create(
-                    lastSpot.getSequence(), newSequence,
+            lastDay.addLeg(RouteLeg.create(
+                    from.getSequence(), newSequence,
                     leg.travelMode(), leg.durationSeconds(),
                     leg.distanceMeters(), leg.landingUrl()
             ));
         }
 
-        RouteDay newLastDay = RouteDay.create(lastDay.getDayNumber(), lastDay.getDate(), spots, legs);
-        route.replaceLastDay(newLastDay);
+        return initializeDays(route);
+    }
 
+    /**
+     * 컨트롤러가 응답을 만들 때는 트랜잭션이 끝나 있어(open-in-view=false) 지연 로딩이 불가능하다.
+     * 트랜잭션 안에서 days → spots/legs 컬렉션을 모두 초기화한 뒤 돌려준다.
+     */
+    private Route initializeDays(Route route) {
+        for (RouteDay day : route.getDays()) {
+            day.getSpots().size();
+            day.getLegs().size();
+        }
         return route;
+    }
+
+    /**
+     * 좌표가 없는 스팟(원장에 위경도가 비어 있는 경우)은 이동정보를 계산하지 않고 '정보 없음'으로 둔다.
+     * LegCalculator는 primitive double을 받으므로 null을 그대로 넘기면 언박싱 NPE가 난다.
+     */
+    private LegResult calculateLeg(Double fromLongitude, Double fromLatitude,
+                                   Double toLongitude, Double toLatitude) {
+        if (fromLongitude == null || fromLatitude == null
+                || toLongitude == null || toLatitude == null) {
+            return LegResult.unavailable();
+        }
+        return legCalculator.calculate(fromLongitude, fromLatitude, toLongitude, toLatitude)
+                .orElse(LegResult.unavailable());
     }
 
     private Map<Integer, RouteDay> buildExistingDayMap(Route route) {
@@ -213,12 +235,10 @@ public class RouteSaveService {
             SpotSnapshot from = snapshotMap.get(spotIds.get(i));
             SpotSnapshot to = snapshotMap.get(spotIds.get(i + 1));
 
-            Optional<LegResult> result = legCalculator.calculate(
+            LegResult leg = calculateLeg(
                     from.longitude(), from.latitude(),
                     to.longitude(), to.latitude()
             );
-
-            LegResult leg = result.orElse(LegResult.unavailable());
             legs.add(RouteLeg.create(
                     i + 1, i + 2,
                     leg.travelMode(), leg.durationSeconds(),

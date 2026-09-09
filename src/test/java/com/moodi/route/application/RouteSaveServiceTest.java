@@ -2,6 +2,7 @@ package com.moodi.route.application;
 
 import com.moodi.route.application.RouteSaveCommand.DayCommand;
 import com.moodi.route.domain.Route;
+import com.moodi.route.domain.RouteDay;
 import com.moodi.route.domain.RouteRepository;
 import com.moodi.route.domain.RouteSpotType;
 import com.moodi.route.domain.TravelMode;
@@ -265,15 +266,81 @@ class RouteSaveServiceTest {
         given(legCalculator.calculate(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
                 .willReturn(Optional.of(new LegResult(TravelMode.WALK, 900, 1200, null)));
 
+        RouteDay lastDayBefore = existingRoute.getDays().get(1);
+
         // when
         Route result = routeSaveService.addSpotToLastDay(publicId, MEMBER_ID, newSpotId);
 
         // then
         assertThat(result.getDays().get(1).getSpots()).hasSize(2);
         assertThat(result.getDays().get(1).getSpots().get(1).getSpotId()).isEqualTo(newSpotId);
+        assertThat(result.getDays().get(1).getSpots().get(1).getSequence()).isEqualTo(2);
         assertThat(result.getDays().get(1).getLegs()).hasSize(1);
+        assertThat(result.getDays().get(1).getLegs().get(0).getFromSequence()).isEqualTo(1);
+        assertThat(result.getDays().get(1).getLegs().get(0).getToSequence()).isEqualTo(2);
+        // 영속 상태의 Day를 새 인스턴스로 갈아끼우지 않고 그대로 덧붙인다 (day_number 유니크 제약 회피)
+        assertThat(result.getDays().get(1)).isSameAs(lastDayBefore);
         // Day 1은 변경 없음
         assertThat(result.getDays().get(0).getSpots()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("마지막 Day에 스팟 추가 — 좌표가 없는 스팟은 이동정보를 계산하지 않는다")
+    void add_spot_to_last_day_without_coordinates() {
+        // given
+        UUID publicId = UUID.randomUUID();
+        Route existingRoute = RouteFixture.createRoute(
+                MEMBER_ID, "서울 여행", START, START,
+                List.of(RouteFixture.createDay(1, START, 1))
+        );
+
+        given(routeRepository.findByPublicId(publicId))
+                .willReturn(Optional.of(existingRoute));
+
+        Long newSpotId = 99L;
+        given(spotSnapshotReader.readBySpotIds(List.of(newSpotId)))
+                .willReturn(List.of(new SpotSnapshot(
+                        newSpotId, "좌표 없는 스팟", null, "서울", "성동구",
+                        null, null, RouteSpotType.TOURIST_ATTRACTION, null
+                )));
+
+        // when
+        Route result = routeSaveService.addSpotToLastDay(publicId, MEMBER_ID, newSpotId);
+
+        // then
+        RouteDay lastDay = result.getDays().get(0);
+        assertThat(lastDay.getSpots()).hasSize(2);
+        assertThat(lastDay.getLegs()).hasSize(1);
+        assertThat(lastDay.getLegs().get(0).getTravelMode()).isEqualTo(TravelMode.UNAVAILABLE);
+        verify(legCalculator, never()).calculate(anyDouble(), anyDouble(), anyDouble(), anyDouble());
+    }
+
+    @Test
+    @DisplayName("마지막 Day가 비어 있으면 스팟만 추가하고 이동정보는 만들지 않는다")
+    void add_spot_to_empty_last_day() {
+        // given
+        UUID publicId = UUID.randomUUID();
+        Route existingRoute = RouteFixture.createRoute(
+                MEMBER_ID, "서울 여행", START, START,
+                List.of(RouteFixture.createDay(1, START, 0))
+        );
+
+        given(routeRepository.findByPublicId(publicId))
+                .willReturn(Optional.of(existingRoute));
+
+        Long newSpotId = 99L;
+        given(spotSnapshotReader.readBySpotIds(List.of(newSpotId)))
+                .willReturn(List.of(createSnapshot(newSpotId, 37.58, 127.08)));
+
+        // when
+        Route result = routeSaveService.addSpotToLastDay(publicId, MEMBER_ID, newSpotId);
+
+        // then
+        RouteDay lastDay = result.getDays().get(0);
+        assertThat(lastDay.getSpots()).hasSize(1);
+        assertThat(lastDay.getSpots().get(0).getSequence()).isEqualTo(1);
+        assertThat(lastDay.getLegs()).isEmpty();
+        verify(legCalculator, never()).calculate(anyDouble(), anyDouble(), anyDouble(), anyDouble());
     }
 
     @Test
