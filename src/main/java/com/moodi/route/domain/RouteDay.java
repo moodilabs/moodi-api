@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Getter
@@ -47,6 +48,34 @@ public class RouteDay {
 
     public int getSpotCount() {
         return spots.size();
+    }
+
+    public int getNextSequence() {
+        return spots.size() + 1;
+    }
+
+    public Optional<RouteSpot> getLastSpot() {
+        if (spots.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(spots.get(spots.size() - 1));
+    }
+
+    /**
+     * 영속 상태의 Day를 새 인스턴스로 갈아끼우면 같은 day_number의 행이 삭제 전에 삽입되어 유니크 제약에 걸린다.
+     * 그래서 마지막 스팟 추가는 기존 Day를 그대로 두고 컬렉션에 덧붙인다.
+     */
+    public void addSpot(RouteSpot spot) {
+        boolean duplicated = spots.stream()
+                .anyMatch(existing -> existing.getSequence() == spot.getSequence());
+        if (duplicated) {
+            throw new BusinessException(ErrorCode.ROUTE_DUPLICATE_SPOT_SEQUENCE);
+        }
+        spots.add(spot);
+    }
+
+    public void addLeg(RouteLeg leg) {
+        legs.add(leg);
     }
 
     private void validateSpotSequences(List<RouteSpot> spots) {

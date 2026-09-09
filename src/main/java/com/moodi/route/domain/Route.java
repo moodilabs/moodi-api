@@ -94,10 +94,6 @@ public class Route extends BaseEntity {
         return days.get(days.size() - 1);
     }
 
-    public void replaceLastDay(RouteDay newLastDay) {
-        this.days.set(this.days.size() - 1, newLastDay);
-    }
-
     public void softDelete() {
         this.deletedAt = LocalDateTime.now();
     }
