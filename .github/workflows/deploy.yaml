@@ -3,6 +3,8 @@ name: Deploy
 on:
   push:
     branches: [develop]
+  # 시크릿(GOOGLE_CLIENT_ID 등)만 바뀐 경우 코드 푸시 없이 재배포하기 위한 수동 트리거
+  workflow_dispatch:
 
 permissions:
   contents: read
