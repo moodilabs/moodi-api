@@ -34,14 +34,15 @@ public class SpotSearchQueryRepositoryImpl implements SpotSearchQueryRepository 
                             WHEN st.title ILIKE :exactKeyword THEN 1
                             WHEN st.title ILIKE :startKeyword THEN 2
                             WHEN st.title ILIKE :containKeyword THEN 3
-                            WHEN s.area ILIKE :containKeyword THEN 4
-                            WHEN s.district ILIKE :containKeyword THEN 5
-                            ELSE 6
+                            WHEN st.addr1 ILIKE :containKeyword THEN 4
+                            WHEN s.area ILIKE :containKeyword THEN 5
+                            WHEN s.district ILIKE :containKeyword THEN 6
+                            ELSE 7
                         END) AS match_rank
                 FROM spot s
                 JOIN spot_translation st ON st.spot_id = s.id AND st.locale = 'en-US'
                 WHERE s.status = 'PUBLISHED'
-                  AND (st.title ILIKE :containKeyword OR s.area ILIKE :containKeyword OR s.district ILIKE :containKeyword)
+                  AND (st.title ILIKE :containKeyword OR st.addr1 ILIKE :containKeyword OR s.area ILIKE :containKeyword OR s.district ILIKE :containKeyword)
                 """);
 
         Map<String, Object> params = new HashMap<>();
@@ -145,7 +146,7 @@ public class SpotSearchQueryRepositoryImpl implements SpotSearchQueryRepository 
 
     private void appendKeywordFilter(StringBuilder sql, Map<String, Object> params, String keyword) {
         if (keyword != null && !keyword.isBlank()) {
-            sql.append(" AND (st.title ILIKE :containKeyword OR s.area ILIKE :containKeyword OR s.district ILIKE :containKeyword)");
+            sql.append(" AND (st.title ILIKE :containKeyword OR st.addr1 ILIKE :containKeyword OR s.area ILIKE :containKeyword OR s.district ILIKE :containKeyword)");
             params.put("containKeyword", "%" + keyword + "%");
         }
     }
