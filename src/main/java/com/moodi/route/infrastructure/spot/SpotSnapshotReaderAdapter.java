@@ -4,6 +4,7 @@ import com.moodi.route.application.SpotSnapshot;
 import com.moodi.route.application.SpotSnapshotReader;
 import com.moodi.route.domain.RouteSpotType;
 import com.moodi.spot.domain.Spot;
+import com.moodi.spot.domain.SpotContentType;
 import com.moodi.spot.domain.SpotDescription;
 import com.moodi.spot.domain.SpotDescriptionRepository;
 import com.moodi.spot.domain.SpotImage;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class SpotSnapshotReaderAdapter implements SpotSnapshotReader {
 
-    private static final String TRANSLATION_LOCALE = "ko-KR";
+    private static final String TRANSLATION_LOCALE = "en-US";
     private static final String DESCRIPTION_LOCALE = "en-US";
 
     private final SpotRepository spotRepository;
@@ -47,6 +48,8 @@ public class SpotSnapshotReaderAdapter implements SpotSnapshotReader {
         List<Spot> spots = spotRepository.findByIdIn(spotIds).stream()
                 .filter(spot -> spot.getStatus() == SpotStatus.PUBLISHED)
                 .filter(spot -> !spot.isRouteExcluded())
+                .filter(spot -> spot.getContentType() != SpotContentType.SHOPPING
+                        || "SH06".equals(spot.getLclsSystm2()))
                 .toList();
 
         List<Long> filteredIds = spots.stream().map(Spot::getId).toList();
