@@ -50,7 +50,7 @@ public class SpotRecommendationReaderAdapter implements SpotRecommendationReader
                    s.latitude, s.longitude, s.content_type,
                    sd.content, sm.mood_vector::text
             FROM spot s
-            JOIN spot_translation st ON st.spot_id = s.id AND st.locale = 'ko-KR'
+            JOIN spot_translation st ON st.spot_id = s.id AND st.locale = 'en-US'
             JOIN spot_mood sm ON sm.spot_id = s.id AND sm.mood_vector IS NOT NULL
             LEFT JOIN spot_description sd ON sd.spot_id = s.id AND sd.locale = :descLocale
             LEFT JOIN LATERAL (
@@ -61,6 +61,7 @@ public class SpotRecommendationReaderAdapter implements SpotRecommendationReader
             ) si ON true
             WHERE s.status = 'PUBLISHED'
               AND s.route_excluded = false
+              AND (s.content_type != 'SHOPPING' OR s.lcls_systm2 = 'SH06')
               AND s.id NOT IN (:excludeIds)
             """;
 
