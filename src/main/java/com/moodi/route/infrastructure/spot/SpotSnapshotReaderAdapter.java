@@ -3,6 +3,7 @@ package com.moodi.route.infrastructure.spot;
 import com.moodi.route.application.SpotSnapshot;
 import com.moodi.route.application.SpotSnapshotReader;
 import com.moodi.route.domain.RouteSpotType;
+import com.moodi.spot.application.RegionDictionary;
 import com.moodi.spot.domain.Spot;
 import com.moodi.spot.domain.SpotContentType;
 import com.moodi.spot.domain.SpotDescription;
@@ -74,8 +75,8 @@ public class SpotSnapshotReaderAdapter implements SpotSnapshotReader {
                             spot.getId(),
                             translation != null ? translation.getTitle() : null,
                             primaryImage != null ? primaryImage.getImageUrl() : null,
-                            spot.getArea(),
-                            spot.getDistrict(),
+                            RegionDictionary.translateArea(spot.getArea()),
+                            RegionDictionary.translateDistrict(spot.getDistrict()),
                             spot.getLatitude(),
                             spot.getLongitude(),
                             RouteSpotType.valueOf(spot.getContentType().name()),
