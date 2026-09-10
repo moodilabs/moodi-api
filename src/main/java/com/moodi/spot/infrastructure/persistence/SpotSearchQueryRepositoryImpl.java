@@ -39,7 +39,7 @@ public class SpotSearchQueryRepositoryImpl implements SpotSearchQueryRepository 
                             ELSE 6
                         END) AS match_rank
                 FROM spot s
-                JOIN spot_translation st ON st.spot_id = s.id AND st.locale = 'ko-KR'
+                JOIN spot_translation st ON st.spot_id = s.id AND st.locale = 'en-US'
                 WHERE s.status = 'PUBLISHED'
                   AND (st.title ILIKE :containKeyword OR s.area ILIKE :containKeyword OR s.district ILIKE :containKeyword)
                 """);
@@ -79,7 +79,7 @@ public class SpotSearchQueryRepositoryImpl implements SpotSearchQueryRepository 
         Map<String, Object> params = new HashMap<>();
 
         if (keyword != null && !keyword.isBlank()) {
-            sql.append("JOIN spot_translation st ON st.spot_id = s.id AND st.locale = 'ko-KR'");
+            sql.append("JOIN spot_translation st ON st.spot_id = s.id AND st.locale = 'en-US'");
         }
 
         sql.append(" WHERE s.status = 'PUBLISHED'");
