@@ -5,7 +5,6 @@ import com.moodi.route.application.SpotSnapshotReader;
 import com.moodi.route.domain.RouteSpotType;
 import com.moodi.spot.application.RegionDictionary;
 import com.moodi.spot.domain.Spot;
-import com.moodi.spot.domain.SpotContentType;
 import com.moodi.spot.domain.SpotDescription;
 import com.moodi.spot.domain.SpotDescriptionRepository;
 import com.moodi.spot.domain.SpotImage;
@@ -46,11 +45,11 @@ public class SpotSnapshotReaderAdapter implements SpotSnapshotReader {
 
     @Override
     public List<SpotSnapshot> readBySpotIds(List<Long> spotIds) {
+        // 사용자가 ID로 직접 지정한 스팟(루트 생성 기준 스팟·저장/수정 대상)을 그대로 조회한다.
+        // routeExcluded·비관광 쇼핑 제외는 "추천" 정책이라 여기 적용하면 안 된다 — 그 정책은
+        // SpotRecommendationReaderAdapter(루트 자동 채움)와 FeedSpotReaderAdapter(피드)에만 둔다.
         List<Spot> spots = spotRepository.findByIdIn(spotIds).stream()
                 .filter(spot -> spot.getStatus() == SpotStatus.PUBLISHED)
-                .filter(spot -> !spot.isRouteExcluded())
-                .filter(spot -> spot.getContentType() != SpotContentType.SHOPPING
-                        || "SH06".equals(spot.getLclsSystm2()))
                 .toList();
 
         List<Long> filteredIds = spots.stream().map(Spot::getId).toList();
