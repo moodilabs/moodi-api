@@ -240,4 +240,38 @@ class AuthServiceTest {
 
         verify(refreshTokenRepository).deleteByMemberId(memberId);
     }
+
+    @Test
+    @DisplayName("정지된 회원은 로그인할 수 없다")
+    void login_suspended_member_throws() {
+        Member suspended = MemberFixture.active();
+        suspended.suspend("reason", LocalDateTime.now());
+        when(oAuthClient.verify(PROVIDER, ID_TOKEN)).thenReturn(new OidcPayload(PROVIDER_ID, EMAIL));
+        when(memberRepository.findByProviderAndProviderId(PROVIDER, PROVIDER_ID)).thenReturn(Optional.of(suspended));
+
+        assertThatThrownBy(() -> authService.login(PROVIDER, ID_TOKEN))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.MEMBER_SUSPENDED);
+        verify(tokenProvider, never()).issue(any());
+    }
+
+    @Test
+    @DisplayName("정지된 회원은 리프레시 토큰을 재발급받을 수 없다")
+    void reissue_suspended_member_throws() {
+        UUID memberId = UUID.randomUUID();
+        String refreshToken = "old-refresh-token";
+        Member suspended = MemberFixture.active();
+        suspended.suspend("reason", LocalDateTime.now());
+        when(tokenProvider.parseRefreshToken(refreshToken)).thenReturn(Optional.of(memberId));
+        when(refreshTokenRepository.findByToken(refreshToken))
+                .thenReturn(Optional.of(RefreshTokenFixture.notExpired(memberId, refreshToken)));
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(suspended));
+
+        assertThatThrownBy(() -> authService.reissue(refreshToken))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.MEMBER_SUSPENDED);
+        verify(refreshTokenRepository, never()).deleteByToken(refreshToken);
+    }
 }

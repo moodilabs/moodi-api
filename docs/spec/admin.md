@@ -117,10 +117,11 @@ Flyway로 비밀번호를 심지 않는다. 앱 기동 시 `admin.bootstrap.emai
 - 목록·상세 집계는 `member/application/MemberAdminQueryRepository`(포트) + `infrastructure/persistence/MemberAdminQueryRepositoryImpl`(네이티브 SQL, bookmark/route/inquiry는 COUNT 서브쿼리).
 
 ```sql
--- V19__add_member_suspension.sql
+-- V22__add_member_suspension.sql (적용됨)
 ALTER TABLE member ADD COLUMN suspended_at TIMESTAMP, ADD COLUMN suspend_reason VARCHAR(200);
-CREATE INDEX idx_member_status_created ON member (status, created_at DESC);
+CREATE INDEX idx_member_created ON member (created_at DESC, id DESC);
 ```
+- `ADM-F04` 적용: `member/presentation/admin/AdminMemberController`, `MemberAdminService`, `MemberAdminQueryRepositoryImpl`(네이티브 SQL). 탈퇴 사유 표시는 `MY-F02` 이후.
 
 ## 4. 공지 관리 (support)
 

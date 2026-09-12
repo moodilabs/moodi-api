@@ -79,6 +79,12 @@
             <basic name="deletedAt">
                 <column name="deleted_at" nullable="true"/>
             </basic>
+            <basic name="suspendedAt">
+                <column name="suspended_at" nullable="true"/>
+            </basic>
+            <basic name="suspendReason">
+                <column name="suspend_reason" nullable="true" length="200"/>
+            </basic>
         </attributes>
     </entity>
 

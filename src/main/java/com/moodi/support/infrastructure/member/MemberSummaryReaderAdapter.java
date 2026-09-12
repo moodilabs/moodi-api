@@ -42,6 +42,14 @@ public class MemberSummaryReaderAdapter implements MemberSummaryReader {
     }
 
     private UUID toUuid(Object value) {
-        return value instanceof UUID uuid ? uuid : UUID.fromString(value.toString());
+        if (value instanceof UUID uuid) {
+            return uuid;
+        }
+        // H2는 네이티브 쿼리에서 UUID를 byte[]로 돌려준다. 운영(PostgreSQL)은 UUID 객체.
+        if (value instanceof byte[] bytes) {
+            java.nio.ByteBuffer buffer = java.nio.ByteBuffer.wrap(bytes);
+            return new UUID(buffer.getLong(), buffer.getLong());
+        }
+        return UUID.fromString(value.toString());
     }
 }

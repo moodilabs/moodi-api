@@ -21,6 +21,7 @@ public class Member extends BaseEntity {
     private static final Set<String> ISO_COUNTRIES = Set.of(Locale.getISOCountries());
     private static final int MIN_BIRTH_YEAR = 1900;
     private static final int MINIMUM_AGE = 14;
+    private static final int MAX_SUSPEND_REASON_LENGTH = 200;
 
     private UUID id;
     private OAuthProvider provider;
@@ -32,6 +33,8 @@ public class Member extends BaseEntity {
     private Gender gender;
     private MemberStatus status;
     private LocalDateTime deletedAt;
+    private LocalDateTime suspendedAt;
+    private String suspendReason;
 
     private Member(OAuthProvider provider, String providerId, String email) {
         this.provider = provider;
@@ -108,6 +111,8 @@ public class Member extends BaseEntity {
         this.birthYear = null;
         this.gender = null;
         this.status = MemberStatus.PENDING;
+        this.suspendedAt = null;
+        this.suspendReason = null;
         this.deletedAt = now;
     }
 
@@ -118,6 +123,34 @@ public class Member extends BaseEntity {
     public void restore(String email) {
         this.deletedAt = null;
         this.email = email;
+    }
+
+    /**
+     * 어드민 정지(`ADM-F04`). 가입 완료 회원만 정지할 수 있다 — 온보딩 중인 회원은 막을 게 없다.
+     */
+    public void suspend(String reason, LocalDateTime now) {
+        if (status != MemberStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
+        if (reason == null || reason.isBlank() || reason.length() > MAX_SUSPEND_REASON_LENGTH) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
+        this.status = MemberStatus.SUSPENDED;
+        this.suspendedAt = now;
+        this.suspendReason = reason;
+    }
+
+    public void unsuspend() {
+        if (status != MemberStatus.SUSPENDED) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
+        this.status = MemberStatus.ACTIVE;
+        this.suspendedAt = null;
+        this.suspendReason = null;
+    }
+
+    public boolean isSuspended() {
+        return status == MemberStatus.SUSPENDED;
     }
 
     public boolean isWithdrawn() {
