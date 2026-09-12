@@ -1,0 +1,77 @@
+== 마이페이지 · 계정설정 (My / Account)
+
+마이 메인(`MY-01-01`)과 계정설정(`MY-02`)에서 쓰는 API입니다.
+모든 요청에 `Authorization: Bearer {accessToken}` 헤더가 필요하며, 가입 완료(`ACTIVE`) 회원만 호출할 수 있습니다.
+
+=== 내 정보 요약
+
+마이 메인(`MY-01-01`)·계정설정(`MY-02-01`)·회원탈퇴 1단계(`MY-03-01`)가 공유합니다.
+스플래시 분기용 `GET /members/me`와 달리 북마크·루트 수까지 함께 내려줍니다.
+
+- `savedSpotCount`: 북마크한 스팟 수
+- `routeCount`: 생성한 루트 수 (삭제한 루트 제외)
+
+.HTTP Request
+include::{snippets}/member/summary/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/member/summary/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/member/summary/response-fields.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `MEMBER_NOT_FOUND` | 404 | 회원 없음 또는 탈퇴한 회원
+|===
+
+=== 닉네임 변경
+
+계정설정(`MY-02-02`)의 닉네임 변경입니다. 입력 정책은 회원가입과 같습니다(2~20자, 영문·숫자·`_`·`.`).
+같은 값으로 요청해도 204입니다. 사전 중복 체크가 필요하면 `GET /members/nickname-availability`를 재사용합니다.
+
+.HTTP Request
+include::{snippets}/member/change-nickname/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/member/change-nickname/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/member/change-nickname/http-response.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `DUPLICATE_NICKNAME` | 409 | 이미 사용 중인 닉네임
+| `INVALID_NICKNAME` | 400 | 닉네임 형식 위반
+| `INVALID_REQUEST` | 400 | 온보딩을 마치지 않은 회원
+| `MEMBER_NOT_FOUND` | 404 | 회원 없음 또는 탈퇴한 회원
+|===
+
+=== 국가 변경
+
+계정설정(`MY-02-03`)의 국가 변경입니다.
+
+.HTTP Request
+include::{snippets}/member/change-country/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/member/change-country/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/member/change-country/http-response.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `INVALID_COUNTRY` | 400 | ISO 3166-1 alpha-2 코드가 아님
+| `INVALID_REQUEST` | 400 | 온보딩을 마치지 않은 회원
+| `MEMBER_NOT_FOUND` | 404 | 회원 없음 또는 탈퇴한 회원
+|===

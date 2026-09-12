@@ -1,6 +1,7 @@
 package com.moodi.member.application;
 
 import com.moodi.member.application.dto.MemberInfo;
+import com.moodi.member.application.dto.MemberSummary;
 import com.moodi.member.domain.Member;
 import com.moodi.member.domain.MemberPreferredMoodRepository;
 import com.moodi.member.domain.MemberRepository;
@@ -17,13 +18,19 @@ public class MemberQueryService {
 
     private final MemberRepository memberRepository;
     private final MemberPreferredMoodRepository memberPreferredMoodRepository;
+    private final BookmarkCountReader bookmarkCountReader;
+    private final RouteCountReader routeCountReader;
 
     public MemberQueryService(
             MemberRepository memberRepository,
-            MemberPreferredMoodRepository memberPreferredMoodRepository
+            MemberPreferredMoodRepository memberPreferredMoodRepository,
+            BookmarkCountReader bookmarkCountReader,
+            RouteCountReader routeCountReader
     ) {
         this.memberRepository = memberRepository;
         this.memberPreferredMoodRepository = memberPreferredMoodRepository;
+        this.bookmarkCountReader = bookmarkCountReader;
+        this.routeCountReader = routeCountReader;
     }
 
     /**
@@ -33,10 +40,30 @@ public class MemberQueryService {
      * 그 판단에 쓰라고 hasProfile을 함께 내려준다.
      */
     public MemberInfo getMe(UUID memberId) {
-        Member member = memberRepository.findById(memberId)
-                .filter(found -> !found.isWithdrawn())
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        Member member = findActiveOrPending(memberId);
         boolean hasPreferredMood = memberPreferredMoodRepository.existsByMemberId(memberId);
         return new MemberInfo(member.getStatus(), member.getNickname(), member.hasProfile(), hasPreferredMood);
+    }
+
+    /**
+     * 마이 메인(`MY-01-01`)·계정설정(`MY-02-01`)·탈퇴 1단계(`MY-03-01`)가 공유하는 요약.
+     * 북마크·루트 수는 다른 컨텍스트 데이터라 포트로 읽는다.
+     */
+    public MemberSummary getSummary(UUID memberId) {
+        Member member = findActiveOrPending(memberId);
+        return new MemberSummary(
+                member.getNickname(),
+                member.getCountry(),
+                member.getProvider(),
+                member.getEmail(),
+                bookmarkCountReader.countByMemberId(memberId),
+                routeCountReader.countActiveByMemberId(memberId)
+        );
+    }
+
+    private Member findActiveOrPending(UUID memberId) {
+        return memberRepository.findById(memberId)
+                .filter(found -> !found.isWithdrawn())
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
     }
 }

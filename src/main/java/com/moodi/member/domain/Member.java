@@ -60,6 +60,24 @@ public class Member extends BaseEntity {
         this.gender = gender;
     }
 
+    /**
+     * 계정설정(`MY-02-02`)에서의 닉네임 변경. 온보딩용 {@link #updateProfile}과 달리 `ACTIVE` 회원만 허용한다.
+     */
+    public void changeNickname(String nickname) {
+        requireActive();
+        validateNickname(nickname);
+        this.nickname = nickname;
+    }
+
+    /**
+     * 계정설정(`MY-02-03`)에서의 국가 변경.
+     */
+    public void changeCountry(String country) {
+        requireActive();
+        validateCountry(country);
+        this.country = country;
+    }
+
     public void activate() {
         if (!isPending()) {
             throw new BusinessException(ErrorCode.ALREADY_ONBOARDED);
@@ -112,6 +130,12 @@ public class Member extends BaseEntity {
 
     public boolean hasProfile() {
         return nickname != null && country != null && birthYear != null && gender != null;
+    }
+
+    private void requireActive() {
+        if (status != MemberStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
     }
 
     private void validateNickname(String nickname) {
