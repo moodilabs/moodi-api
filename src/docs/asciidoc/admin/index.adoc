@@ -1,0 +1,166 @@
+= moodi ADMIN API Docs
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectlinks:
+:sectanchors:
+
+:snippets: ../../../build/generated-snippets
+
+관리자 프론트(`admin.moodi.kr`)가 호출하는 API입니다. 외부에 배포하지 않습니다.
+
+== 인증
+
+모든 관리자 API는 `/api/admin/**` 아래에 있으며 로그인·재발급을 제외하고 `Authorization: Bearer {adminAccessToken}` 헤더가 필요합니다.
+회원용 액세스 토큰으로는 호출할 수 없습니다(`UNAUTHORIZED` 401).
+
+|===
+| 권한 | 범위
+
+| `OPERATOR` | 콘텐츠(공지·FAQ·약관) 관리, 문의 답변, 회원 조회
+| `SUPER` | 전체 + 관리자 계정 관리 + 회원 정지·강제 탈퇴
+|===
+
+권한이 부족하면 `ADMIN_FORBIDDEN` 403입니다. 로그인 5회 실패 시 15분 잠깁니다(`ADMIN_ACCOUNT_LOCKED` 423).
+
+CORS는 `admin.moodi.kr` 오리진에만 열려 있으며 쿠키는 쓰지 않습니다 — 토큰은 Authorization 헤더로만 보냅니다.
+
+=== 로그인
+
+.HTTP Request
+include::{snippets}/admin/auth/login/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/admin/auth/login/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/auth/login/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/admin/auth/login/response-fields.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `ADMIN_LOGIN_FAILED` | 401 | 이메일 또는 비밀번호 불일치 (어느 쪽인지 알려주지 않음)
+| `ADMIN_ACCOUNT_LOCKED` | 423 | 실패 누적으로 잠김
+| `ADMIN_ACCOUNT_DISABLED` | 403 | 비활성 계정
+|===
+
+=== 토큰 재발급
+
+리프레시 토큰은 1회용입니다. 재발급 시 권한을 DB에서 다시 읽어 액세스 토큰에 싣습니다.
+
+.HTTP Request
+include::{snippets}/admin/auth/reissue/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/auth/reissue/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/admin/auth/reissue/response-fields.adoc[]
+
+=== 로그아웃
+
+.HTTP Request
+include::{snippets}/admin/auth/logout/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/auth/logout/http-response.adoc[]
+
+=== 내 정보
+
+.HTTP Request
+include::{snippets}/admin/auth/me/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/auth/me/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/admin/auth/me/response-fields.adoc[]
+
+=== 비밀번호 변경
+
+변경 후 모든 세션이 종료되므로 다시 로그인해야 합니다.
+
+.HTTP Request
+include::{snippets}/admin/auth/change-password/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/admin/auth/change-password/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/auth/change-password/http-response.adoc[]
+
+== 관리자 계정 (SUPER)
+
+최초 계정은 배포 환경변수 `ADMIN_BOOTSTRAP_EMAIL` / `ADMIN_BOOTSTRAP_PASSWORD`로 기동 시 한 번 생성됩니다.
+이후 계정은 여기서 추가합니다. 자기 자신의 상태·권한은 바꿀 수 없습니다.
+
+=== 목록
+
+.HTTP Request
+include::{snippets}/admin/accounts/list/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/accounts/list/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/admin/accounts/list/response-fields.adoc[]
+
+=== 생성
+
+.HTTP Request
+include::{snippets}/admin/accounts/create/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/admin/accounts/create/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/accounts/create/http-response.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `DUPLICATE_ADMIN_EMAIL` | 409 | 이미 등록된 이메일
+| `INVALID_REQUEST` | 400 | 비밀번호 10자 미만 등
+|===
+
+=== 상태 변경
+
+비활성화하면 리프레시 토큰이 지워져 재발급이 막힙니다. 액세스 토큰은 30분 내 만료됩니다.
+
+.HTTP Request
+include::{snippets}/admin/accounts/change-status/http-request.adoc[]
+
+.Path Parameters
+include::{snippets}/admin/accounts/change-status/path-parameters.adoc[]
+
+.Request Fields
+include::{snippets}/admin/accounts/change-status/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/accounts/change-status/http-response.adoc[]
+
+=== 권한 변경
+
+.HTTP Request
+include::{snippets}/admin/accounts/change-role/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/admin/accounts/change-role/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/accounts/change-role/http-response.adoc[]
+
+include::../support/admin-notice.adoc[]
+
+include::../support/admin-faq.adoc[]
+
+include::../support/admin-policy.adoc[]

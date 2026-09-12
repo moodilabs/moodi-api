@@ -20,6 +20,7 @@ repositories {
 
 val snippetsDir = file("build/generated-snippets")
 val appDocsOutDir = layout.buildDirectory.dir("docs/app")
+val adminDocsOutDir = layout.buildDirectory.dir("docs/admin")
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
@@ -37,6 +38,8 @@ dependencies {
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
 	implementation("com.nimbusds:nimbus-jose-jwt:10.3")
+	// 관리자 비밀번호 BCrypt. Security 필터체인은 쓰지 않고 crypto 모듈만 가져온다.
+	implementation("org.springframework.security:spring-security-crypto")
 	implementation("org.apache.commons:commons-csv:1.12.0")
 	implementation("com.google.cloud:google-cloud-storage:2.49.0")
 
@@ -79,6 +82,22 @@ tasks.register("asciidoctorApp", org.asciidoctor.gradle.jvm.AsciidoctorTask::cla
 	setSourceDir(file("src/docs/asciidoc/app"))
 	sources { include("index.adoc") }
 	setOutputDir(appDocsOutDir.get().asFile)
+}
+
+// 관리자 문서는 내부용이라 bootJar에 넣지 않는다.
+tasks.register("asciidoctorAdmin", org.asciidoctor.gradle.jvm.AsciidoctorTask::class) {
+	group = "documentation"
+	description = "Generate Admin API docs"
+
+	inputs.dir(snippetsDir)
+	dependsOn(tasks.named("test"))
+	baseDirFollowsSourceFile()
+
+	attributes(mapOf("snippets" to snippetsDir.absolutePath))
+
+	setSourceDir(file("src/docs/asciidoc/admin"))
+	sources { include("index.adoc") }
+	setOutputDir(adminDocsOutDir.get().asFile)
 }
 
 tasks.bootJar {

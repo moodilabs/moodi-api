@@ -23,6 +23,16 @@ moodi:
   kakao:
     rest-api-key: test-kakao-key
 
+admin:
+  cors:
+    allowed-origins: https://admin.moodi.kr
+  login:
+    max-failures: 5
+    lock-minutes: 15
+  bootstrap:
+    email:
+    password:
+
 oauth:
   google:
     issuer: https://accounts.google.com

@@ -2,5 +2,7 @@ package com.moodi.shared.auth;
 
 public enum TokenType {
     ACCESS,
-    REFRESH
+    REFRESH,
+    ADMIN_ACCESS,
+    ADMIN_REFRESH
 }

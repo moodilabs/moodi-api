@@ -1,0 +1,82 @@
+== FAQ 관리
+
+앱 화면 `MY-05`에 노출되는 FAQ입니다. 유형(카테고리)과 항목을 따로 관리하며 순서는 전체 ID 배열로 교체합니다.
+
+=== 전체 조회
+
+.HTTP Request
+include::{snippets}/admin/faqs/list/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/faqs/list/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/admin/faqs/list/response-fields.adoc[]
+
+=== 유형 등록
+
+새 유형은 마지막 순서로 들어갑니다. 수정은 `PUT /api/admin/faq-categories/{categoryId}`에 같은 본문을 보냅니다.
+
+.HTTP Request
+include::{snippets}/admin/faqs/create-category/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/admin/faqs/create-category/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/faqs/create-category/http-response.adoc[]
+
+=== 유형 순서 교체
+
+.HTTP Request
+include::{snippets}/admin/faqs/reorder-categories/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/admin/faqs/reorder-categories/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/faqs/reorder-categories/http-response.adoc[]
+
+=== 유형 삭제
+
+.HTTP Request
+include::{snippets}/admin/faqs/delete-category/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/faqs/delete-category/http-response.adoc[]
+
+=== 항목 등록
+
+새 항목은 유형 내 마지막 순서로 들어갑니다. 수정은 `PUT /api/admin/faqs/{faqId}`에 같은 본문을 보내며,
+`categoryId`를 바꾸면 그 유형의 마지막 순서로 옮겨집니다. 삭제는 `DELETE /api/admin/faqs/{faqId}`.
+
+.HTTP Request
+include::{snippets}/admin/faqs/create-faq/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/admin/faqs/create-faq/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/faqs/create-faq/http-response.adoc[]
+
+=== 항목 순서 교체
+
+.HTTP Request
+include::{snippets}/admin/faqs/reorder-faqs/http-request.adoc[]
+
+.Path Parameters
+include::{snippets}/admin/faqs/reorder-faqs/path-parameters.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/faqs/reorder-faqs/http-response.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `FAQ_CATEGORY_NOT_FOUND` | 404 | 유형 없음
+| `FAQ_NOT_FOUND` | 404 | 항목 없음
+| `FAQ_CATEGORY_NOT_EMPTY` | 409 | 항목이 남아 있는 유형 삭제
+| `INVALID_REQUEST` | 400 | 순서 교체 ID 누락·중복
+|===

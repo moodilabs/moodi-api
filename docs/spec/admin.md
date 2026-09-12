@@ -22,7 +22,7 @@
 | 관리자 계정 | 회원(`member`)과 **완전히 분리된 `admin_account`** (이메일 + 비밀번호). 회원 테이블에 role 추가하지 않음 |
 | 인증 | 관리자 전용 JWT (`type=ADMIN_ACCESS`), `@AdminRequired` + `AdminAuthInterceptor`. Spring Security 미도입(현 구조 유지) |
 | 코드 위치 | 관리자 **인증·감사·대시보드**만 새 컨텍스트 `admin`. 각 도메인의 관리 API는 **해당 컨텍스트 `presentation/admin/`** 에 둔다 (스팟은 B, 나머지 A) |
-| 프론트 | 범위 밖. API만 제공. (필요 시 별도 레포) |
+| 프론트 | `admin.moodi.kr` 서브도메인에 별도 배포. `/api/admin/**`만 CORS 허용(`admin.cors.allowed-origins`), 쿠키 미사용 |
 
 ## 1. 아키텍처
 
@@ -77,7 +77,14 @@ Flyway로 비밀번호를 심지 않는다. 앱 기동 시 `admin.bootstrap.emai
 `@AdminRequired(role = SUPER)`로 메서드 단위 제한. 인터셉터에서 role 클레임 비교.
 
 ### 1.5 감사 로그
-`/api/admin/**`의 `POST/PUT/PATCH/DELETE` 성공 시 `admin_audit_log`에 기록. `AdminAuditInterceptor`(`afterCompletion`)에서 경로·메서드·adminId·응답 상태 저장. 요청 본문은 저장하지 않는다(개인정보). 1차 범위에 포함하되 조회 API는 후순위.
+`/api/admin/**`의 `POST/PUT/PATCH/DELETE` 성공 시 `admin_audit_log`에 기록. `AdminAuditInterceptor`(`afterCompletion`)에서 경로·메서드·adminId·응답 상태 저장. 요청 본문은 저장하지 않는다(개인정보). **`ADM-F05`(대시보드)와 함께 진행** — `ADM-F01`에서는 제외됨.
+
+### 1.6 적용 현황 (ADM-F01)
+- `shared/auth`: `TokenType.ADMIN_ACCESS/ADMIN_REFRESH`, `AdminRole`, `AdminPrincipal`, `@AdminRequired(role)`, `@AuthAdmin`, `AdminAuthInterceptor`, `AuthAdminArgumentResolver`, `JwtProvider` 관리자 토큰 발급/파싱. 회원 인터셉터는 `/api/admin/**`를 제외.
+- CORS: `WebConfig.addCorsMappings` — `/api/admin/**`만, `ADMIN_ALLOWED_ORIGINS` env.
+- `admin` 컨텍스트: 계정·로그인·재발급·로그아웃·내 정보·비밀번호 변경·계정 관리(SUPER). `V20__create_admin.sql`.
+- `support/presentation/admin`: 공지·FAQ·약관 어드민 컨트롤러 3종.
+- 문서: `src/docs/asciidoc/admin/index.adoc`, `./gradlew asciidoctorAdmin`.
 
 ## 2. 관리자 인증 API
 
@@ -248,7 +255,7 @@ ArchUnit: `presentation/admin`은 `..presentation..` 패턴에 이미 포함되�
 ## 11. DB 마이그레이션
 
 ```sql
--- V20__create_admin.sql
+-- V20__create_admin.sql (적용됨 — admin_audit_log는 ADM-F05에서)
 CREATE TABLE admin_account (
     id                 UUID         PRIMARY KEY,
     email              VARCHAR(255) NOT NULL,
@@ -294,6 +301,8 @@ admin:
   jwt:
     access-token-expiry-ms: 1800000      # 30분
     refresh-token-expiry-ms: 43200000    # 12시간
+  cors:
+    allowed-origins: ${ADMIN_ALLOWED_ORIGINS:https://admin.moodi.kr,http://localhost:5173,http://localhost:3000}
   bootstrap:
     email: ${ADMIN_BOOTSTRAP_EMAIL:}
     password: ${ADMIN_BOOTSTRAP_PASSWORD:}
@@ -337,7 +346,7 @@ JWT secret은 회원과 같은 `jwt.secret`을 쓰되 `type` 클레임으로 구
 ## 16. 열린 질문 (합의 필요)
 
 1. **탈퇴 시 북마크·루트 삭제** — 화면 정책 문구대로 삭제하기로 확정(mypage.md §3). B에게 spot·route 리스너 작업 요청 필요.
-2. `shared/auth` 변경(`TokenType`, `JwtProvider`, 인터셉터 추가) — 공유 커널 규칙상 합의 후 진행.
-3. 관리자 접근 제한: Firebase Hosting rewrite가 전부 열려 있다. `/api/admin/**`에 IP 허용 목록 또는 별도 호스트(`admin-api.moodi.kr`)를 둘지.
+2. `shared/auth` 변경 — `ADM-F01` PR에서 추가만(회원 인증 동작 불변) 진행됨. B 리뷰 필요.
+3. 관리자 접근 제한: 프론트는 `admin.moodi.kr`로 분리됐지만 API 자체는 `moodi.kr/api/admin/**`로 열려 있다(CORS는 브라우저만 막음). IP 허용 목록 또는 별도 API 호스트는 후순위.
 4. 정지(`SUSPENDED`) 회원의 공유 루트 링크는 계속 열리는가 — 정책 미정, 기본은 열림.
 5. 1:1 문의 첨부 버킷 생성·IAM(signBlob) — Pick 버킷과 동일한 준비 필요.
