@@ -1,0 +1,62 @@
+== 공지사항 관리
+
+앱 화면 `MY-04`에 노출되는 공지입니다. 숨김(`visible=false`) 공지는 앱에 보이지 않습니다.
+
+=== 목록
+
+.HTTP Request
+include::{snippets}/admin/notices/list/http-request.adoc[]
+
+.Query Parameters
+include::{snippets}/admin/notices/list/query-parameters.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/notices/list/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/admin/notices/list/response-fields.adoc[]
+
+=== 등록
+
+.HTTP Request
+include::{snippets}/admin/notices/create/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/admin/notices/create/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/notices/create/http-response.adoc[]
+
+=== 수정
+
+요청 본문은 등록과 같습니다(전체 교체).
+
+.HTTP Request
+include::{snippets}/admin/notices/update/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/notices/update/http-response.adoc[]
+
+=== 노출 전환
+
+.HTTP Request
+include::{snippets}/admin/notices/visibility/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/notices/visibility/http-response.adoc[]
+
+=== 삭제
+
+.HTTP Request
+include::{snippets}/admin/notices/delete/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/notices/delete/http-response.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `NOTICE_NOT_FOUND` | 404 | 공지 없음
+|===

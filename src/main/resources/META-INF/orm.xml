@@ -631,4 +631,57 @@
         </attributes>
     </entity>
 
+    <entity class="com.moodi.admin.domain.AdminAccount" access="FIELD">
+        <table name="admin_account"/>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="UUID"/>
+            </id>
+            <basic name="email">
+                <column name="email" nullable="false" unique="true" length="255"/>
+            </basic>
+            <basic name="passwordHash">
+                <column name="password_hash" nullable="false" length="100"/>
+            </basic>
+            <basic name="name">
+                <column name="name" nullable="false" length="50"/>
+            </basic>
+            <basic name="role">
+                <column name="role" nullable="false" length="20"/>
+                <enumerated>STRING</enumerated>
+            </basic>
+            <basic name="status">
+                <column name="status" nullable="false" length="20"/>
+                <enumerated>STRING</enumerated>
+            </basic>
+            <basic name="failedLoginCount">
+                <column name="failed_login_count" nullable="false"/>
+            </basic>
+            <basic name="lockedUntil">
+                <column name="locked_until" nullable="true"/>
+            </basic>
+            <basic name="lastLoginAt">
+                <column name="last_login_at" nullable="true"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <entity class="com.moodi.admin.domain.AdminRefreshToken" access="FIELD">
+        <table name="admin_refresh_token"/>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="UUID"/>
+            </id>
+            <basic name="adminId">
+                <column name="admin_id" nullable="false"/>
+            </basic>
+            <basic name="token">
+                <column name="token" nullable="false" unique="true" length="512"/>
+            </basic>
+            <basic name="expiresAt">
+                <column name="expires_at" nullable="false"/>
+            </basic>
+        </attributes>
+    </entity>
+
 </entity-mappings>

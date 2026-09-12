@@ -1,0 +1,62 @@
+== 약관 관리
+
+앱 화면 `MY-07`에 노출되는 약관입니다. 종류별로 버전을 쌓고, 앱에는 시행일이 지난 최신 버전만 보입니다.
+
+[IMPORTANT]
+====
+시행일이 지난 버전은 **수정·삭제할 수 없습니다** (`POLICY_ALREADY_EFFECTIVE` 409).
+회원이 동의한 시점의 문서가 보존돼야 하므로 오탈자 수정도 새 버전으로 등록합니다.
+====
+
+=== 버전 목록
+
+.HTTP Request
+include::{snippets}/admin/policies/list/http-request.adoc[]
+
+.Query Parameters
+include::{snippets}/admin/policies/list/query-parameters.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/policies/list/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/admin/policies/list/response-fields.adoc[]
+
+=== 상세
+
+.HTTP Request
+include::{snippets}/admin/policies/detail/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/policies/detail/http-response.adoc[]
+
+=== 버전 등록
+
+수정은 `PUT /api/admin/policies/{policyId}`에 같은 본문을 보냅니다(시행 전만).
+
+.HTTP Request
+include::{snippets}/admin/policies/create/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/admin/policies/create/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/policies/create/http-response.adoc[]
+
+=== 삭제
+
+.HTTP Request
+include::{snippets}/admin/policies/delete/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/policies/delete/http-response.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `POLICY_NOT_FOUND` | 404 | 약관 없음
+| `POLICY_VERSION_DUPLICATE` | 409 | 같은 종류에 같은 버전 존재
+| `POLICY_ALREADY_EFFECTIVE` | 409 | 시행된 버전 수정·삭제
+|===

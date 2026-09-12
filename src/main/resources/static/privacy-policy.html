@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy — Moodi</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #5f6368;
+    --line: #e0e0e0;
+    --accent: #2f6df6;
+    --card: #f7f8fa;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14161a; --fg: #e8eaed; --muted: #9aa0a6;
+      --line: #2c2f34; --accent: #7aa2ff; --card: #1c1f24;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    line-height: 1.65; -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 48px 20px 80px; }
+  h1 { font-size: 1.75rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+  h2 { font-size: 1.1rem; margin: 40px 0 12px; letter-spacing: -0.005em; }
+  .sub { color: var(--muted); margin: 0 0 32px; font-size: 0.95rem; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; }
+  ol, ul { padding-left: 20px; }
+  li { margin: 8px 0; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-weight: 600; color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  a { color: var(--accent); }
+  code { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; font-size: 0.9em; }
+  .ko { border-top: 1px solid var(--line); margin-top: 56px; padding-top: 40px; }
+  footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.85rem; }
+  .scroll { overflow-x: auto; }
+</style>
+</head>
+<body>
+<main>
+
+  <h1>Moodi Privacy Policy</h1>
+  <p class="sub">Moodi — published by moodilabs · Effective 12 September 2026</p>
+
+  <div class="card">
+    <p style="margin:0">
+      <strong>moodilabs</strong> ("we") operates the <strong>Moodi</strong> app, which recommends
+      travel spots in Korea by mood. This policy explains what we collect, why, who we share it
+      with, and how long we keep it.
+    </p>
+  </div>
+
+  <h2>1. What we collect</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Category</th><th>Items</th><th>When</th></tr></thead>
+    <tbody>
+      <tr><td>Account</td><td>Email address and the account identifier supplied by Google or Apple</td><td>On sign-in</td></tr>
+      <tr><td>Profile</td><td>Nickname, country, birth year, gender</td><td>During onboarding</td></tr>
+      <tr><td>Preferences</td><td>Moods you select in the mood survey</td><td>During onboarding</td></tr>
+      <tr><td>Consent records</td><td>Terms of service, privacy policy, age-14-or-over confirmation, marketing opt-in, with timestamps</td><td>On consent</td></tr>
+      <tr><td>Photos</td><td>A photo you choose to upload for a photo-based recommendation, and the regions you select with it</td><td>Only when you use the photo recommendation feature</td></tr>
+      <tr><td>Service activity</td><td>Bookmarked spots, routes you create or share, feed view history, recommendation requests and their results</td><td>While using the app</td></tr>
+      <tr><td>Technical</td><td>Server access logs (request time, endpoint, request identifier, error details)</td><td>Automatically</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>
+    We do not collect your device location, contacts, payment details, or advertising identifiers,
+    and we do not use your data for advertising profiling.
+  </p>
+
+  <h2>2. Why we use it</h2>
+  <ul>
+    <li><strong>Sign-in and account management</strong> — account, consent records.</li>
+    <li><strong>Personalised recommendations</strong> — preferences, service activity, and the photo you upload.</li>
+    <li><strong>Providing app features</strong> — bookmarks, route creation and sharing.</li>
+    <li><strong>Operating and fixing the service</strong> — technical logs, abuse prevention.</li>
+    <li><strong>Marketing messages</strong> — only if you opted in; you can withdraw at any time.</li>
+  </ul>
+  <p>
+    We process this data to perform the service you asked for and on the consent you give during
+    onboarding. Withdrawing consent is always possible and does not affect processing already carried out.
+  </p>
+
+  <h2>3. How photos are handled</h2>
+  <ul>
+    <li>Your photo is uploaded directly to a <strong>private</strong> cloud storage bucket. It is never made public and has no public URL.</li>
+    <li>To generate a recommendation, the photo is sent to <strong>OpenAI</strong> through a short-lived signed link and analysed for mood. It is not used to train any model.</li>
+    <li>We keep the photo and the resulting recommendation so you can re-open past results in the app. You can ask us to delete them at any time (section 7).</li>
+  </ul>
+
+  <h2>4. Who we share it with</h2>
+  <p>We do not sell your personal data. We use the following processors:</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Provider</th><th>Purpose</th><th>Data</th></tr></thead>
+    <tbody>
+      <tr><td>Google Cloud Platform</td><td>Application hosting, database, photo storage (Seoul region, <code>asia-northeast3</code>)</td><td>All service data</td></tr>
+      <tr><td>Google / Apple</td><td>Social sign-in</td><td>Email address, account identifier</td></tr>
+      <tr><td>OpenAI</td><td>Analysing an uploaded photo for mood</td><td>The photo you upload</td></tr>
+      <tr><td>Kakao</td><td>Travel time and distance between spots on a route</td><td>Spot coordinates only — no personal data</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>
+    Service data is stored in the Republic of Korea. Photo analysis by OpenAI is processed outside
+    Korea, in the United States, for the duration of the analysis. We also disclose data where the
+    law requires it.
+  </p>
+
+  <h2>5. How long we keep it</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Data</th><th>Retention</th></tr></thead>
+    <tbody>
+      <tr><td>Account, profile, preferences, consent records</td><td>Until you withdraw from the service</td></tr>
+      <tr><td>Photos and recommendation results</td><td>Until you ask us to delete them, or you withdraw</td></tr>
+      <tr><td>Social account identifier</td><td>Kept after withdrawal so signing in again restores your bookmarks and routes</td></tr>
+      <tr><td>Bookmarks, routes, feed view history</td><td>Kept after withdrawal, no longer linked to your name, nickname, or email</td></tr>
+      <tr><td>Authentication tokens</td><td>Deleted on sign-out or withdrawal</td></tr>
+      <tr><td>Encrypted backups</td><td>Up to 30 days, then overwritten by backup rotation</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>
+    If you would rather leave nothing behind for restoration, tell us and we will erase the
+    remaining records too. See
+    <a href="/account-deletion.html">Account Deletion</a> for the full detail.
+  </p>
+
+  <h2>6. Security</h2>
+  <ul>
+    <li>All traffic runs over HTTPS.</li>
+    <li>Uploaded photos sit in a private bucket reachable only through short-lived signed links.</li>
+    <li>Access to production data is limited to the people who operate the service.</li>
+  </ul>
+
+  <h2>7. Your rights</h2>
+  <p>
+    You may ask us to show you the data we hold, correct it, delete it, or stop processing it, and
+    you may withdraw any consent you gave. Email
+    <a href="mailto:moodikr.2026@gmail.com">moodikr.2026@gmail.com</a> and we will respond within
+    <strong>7 business days</strong>. You can also delete your account in the app, or follow
+    <a href="/account-deletion.html">Account Deletion</a>.
+  </p>
+
+  <h2>8. Children</h2>
+  <p>
+    Moodi is not for children under 14. We ask you to confirm you are 14 or over at sign-up and do
+    not knowingly collect data from anyone younger. If you believe we have, contact us and we will
+    delete it.
+  </p>
+
+  <h2>9. Changes to this policy</h2>
+  <p>
+    We will post any change on this page with a new effective date, and notify you in the app before
+    a material change takes effect.
+  </p>
+
+  <h2>10. Contact</h2>
+  <p>
+    moodilabs — data protection contact:
+    <a href="mailto:moodikr.2026@gmail.com">moodikr.2026@gmail.com</a>
+  </p>
+
+  <section class="ko">
+    <h1>Moodi 개인정보 처리방침</h1>
+    <p class="sub">Moodi — moodilabs 제공 · 시행일 2026년 9월 12일</p>
+
+    <div class="card">
+      <p style="margin:0">
+        <strong>moodilabs</strong>(이하 "회사")는 무드 기반 국내 여행 스팟 추천 서비스
+        <strong>Moodi</strong>를 운영하며, 아래와 같이 개인정보를 수집·이용·보관합니다.
+      </p>
+    </div>
+
+    <h2>1. 수집하는 개인정보</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>구분</th><th>항목</th><th>시점</th></tr></thead>
+      <tbody>
+        <tr><td>계정</td><td>이메일 주소, Google·Apple이 제공하는 계정 식별자</td><td>로그인 시</td></tr>
+        <tr><td>프로필</td><td>닉네임, 국가, 출생연도, 성별</td><td>온보딩 시</td></tr>
+        <tr><td>선호 정보</td><td>사전조사에서 선택한 선호 무드</td><td>온보딩 시</td></tr>
+        <tr><td>동의 이력</td><td>이용약관, 개인정보 처리방침, 만 14세 이상 확인, 마케팅 수신 동의 및 각 동의 시각</td><td>동의 시</td></tr>
+        <tr><td>사진</td><td>사진 추천에 사용하기 위해 직접 업로드한 사진, 함께 선택한 지역</td><td>사진 추천 기능 이용 시에만</td></tr>
+        <tr><td>서비스 이용 기록</td><td>북마크한 스팟, 생성·공유한 루트, 피드 열람 이력, 추천 요청 및 결과</td><td>서비스 이용 중</td></tr>
+        <tr><td>기술 정보</td><td>서버 접속 로그(요청 시각, 호출 경로, 요청 식별자, 오류 내역)</td><td>자동 생성</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      회사는 기기 위치정보, 연락처, 결제정보, 광고 식별자를 수집하지 않으며, 개인정보를 광고
+      프로파일링에 이용하지 않습니다.
+    </p>
+
+    <h2>2. 이용 목적</h2>
+    <ul>
+      <li><strong>회원 가입 및 관리</strong> — 계정 정보, 동의 이력</li>
+      <li><strong>맞춤 추천 제공</strong> — 선호 정보, 이용 기록, 업로드한 사진</li>
+      <li><strong>서비스 기능 제공</strong> — 북마크, 루트 생성 및 공유</li>
+      <li><strong>서비스 운영·장애 대응·부정 이용 방지</strong> — 기술 정보</li>
+      <li><strong>마케팅 정보 발송</strong> — 동의하신 경우에 한하며 언제든 철회할 수 있습니다</li>
+    </ul>
+    <p>
+      회사는 서비스 제공에 필요한 범위와 이용자의 동의에 근거해 개인정보를 처리합니다. 동의는
+      언제든 철회할 수 있으며, 철회 이전의 처리에는 영향을 주지 않습니다.
+    </p>
+
+    <h2>3. 사진의 처리</h2>
+    <ul>
+      <li>업로드한 사진은 <strong>비공개</strong> 클라우드 스토리지에 저장되며, 공개 URL이 생성되지 않습니다.</li>
+      <li>추천 생성을 위해 사진은 단기 유효 서명 링크를 통해 <strong>OpenAI</strong>로 전송되어 무드 분석에 사용되며, 모델 학습에는 사용되지 않습니다.</li>
+      <li>지난 추천 결과를 앱에서 다시 열람할 수 있도록 사진과 결과를 보관합니다. 원하시면 언제든 삭제를 요청할 수 있습니다(7항).</li>
+    </ul>
+
+    <h2>4. 제3자 제공 및 처리 위탁</h2>
+    <p>회사는 개인정보를 판매하지 않으며, 아래 수탁자에게 처리를 위탁합니다.</p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>수탁자</th><th>위탁 업무</th><th>항목</th></tr></thead>
+      <tbody>
+        <tr><td>Google Cloud Platform</td><td>서버·데이터베이스·사진 저장소 운영(서울 리전 <code>asia-northeast3</code>)</td><td>서비스 데이터 전체</td></tr>
+        <tr><td>Google / Apple</td><td>소셜 로그인 인증</td><td>이메일 주소, 계정 식별자</td></tr>
+        <tr><td>OpenAI</td><td>업로드한 사진의 무드 분석</td><td>업로드한 사진</td></tr>
+        <tr><td>Kakao</td><td>루트 내 스팟 간 이동 시간·거리 계산</td><td>스팟 좌표(개인정보 아님)</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      서비스 데이터는 대한민국 내에 저장됩니다. 사진 무드 분석은 분석에 필요한 시간 동안
+      국외(미국)에서 처리됩니다. 그 밖에 법령에 따른 요구가 있는 경우 제공할 수 있습니다.
+    </p>
+
+    <h2>5. 보유 및 파기</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>항목</th><th>보유 기간</th></tr></thead>
+      <tbody>
+        <tr><td>계정·프로필·선호 정보·동의 이력</td><td>회원 탈퇴 시까지</td></tr>
+        <tr><td>사진 및 추천 결과</td><td>삭제 요청 시 또는 탈퇴 시까지</td></tr>
+        <tr><td>소셜 계정 식별자</td><td>탈퇴 후에도 보관 — 같은 계정으로 재로그인 시 북마크·루트 복구를 위한 유일한 식별 수단</td></tr>
+        <tr><td>북마크·루트·피드 열람 이력</td><td>탈퇴 후에도 보관하되 이름·닉네임·이메일과 연결되지 않는 형태로 남습니다</td></tr>
+        <tr><td>인증 토큰</td><td>로그아웃 또는 탈퇴 시 삭제</td></tr>
+        <tr><td>암호화 백업 사본</td><td>최대 30일, 이후 백업 주기에 따라 덮어쓰기</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      복구용으로도 아무것도 남기지 않기를 원하시면 요청해 주세요. 남은 기록까지 파기합니다.
+      자세한 내용은 <a href="/account-deletion.html">계정 삭제 안내</a>를 참고해 주세요.
+    </p>
+
+    <h2>6. 안전성 확보 조치</h2>
+    <ul>
+      <li>모든 통신은 HTTPS로 암호화됩니다.</li>
+      <li>업로드된 사진은 비공개 버킷에 저장되며 단기 유효 서명 링크로만 접근할 수 있습니다.</li>
+      <li>운영 데이터 접근 권한은 서비스 운영에 필요한 최소 인원으로 제한합니다.</li>
+    </ul>
+
+    <h2>7. 이용자의 권리</h2>
+    <p>
+      이용자는 개인정보의 열람·정정·삭제·처리정지를 요구할 수 있으며, 동의를 철회할 수 있습니다.
+      <a href="mailto:moodikr.2026@gmail.com">moodikr.2026@gmail.com</a> 으로 요청하시면
+      <strong>영업일 7일 이내</strong>에 처리 결과를 알려드립니다. 앱에서 직접 탈퇴하거나
+      <a href="/account-deletion.html">계정 삭제 안내</a>의 절차를 따르실 수도 있습니다.
+    </p>
+    <p>
+      개인정보 침해에 대한 상담이 필요하시면 개인정보침해신고센터(privacy.kisa.or.kr, 국번없이 118),
+      개인정보분쟁조정위원회(kopico.go.kr, 1833-6972)에 문의하실 수 있습니다.
+    </p>
+
+    <h2>8. 만 14세 미만 아동</h2>
+    <p>
+      Moodi는 만 14세 미만 아동을 대상으로 하지 않습니다. 가입 시 만 14세 이상임을 확인받으며,
+      만 14세 미만의 개인정보를 알고서 수집하지 않습니다. 해당 사실을 발견하시면 알려주세요.
+      즉시 파기하겠습니다.
+    </p>
+
+    <h2>9. 처리방침의 변경</h2>
+    <p>
+      변경 사항은 시행일과 함께 이 페이지에 게시하며, 중요한 변경은 시행 전에 앱에서 안내합니다.
+    </p>
+
+    <h2>10. 개인정보 보호책임자</h2>
+    <p>
+      moodilabs 개인정보 보호책임자 ·
+      <a href="mailto:moodikr.2026@gmail.com">moodikr.2026@gmail.com</a>
+    </p>
+  </section>
+
+  <footer>
+    Moodi · moodilabs<br>
+    Questions: <a href="mailto:moodikr.2026@gmail.com">moodikr.2026@gmail.com</a>
+  </footer>
+
+</main>
+</body>
+</html>

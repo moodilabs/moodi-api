@@ -1,0 +1,151 @@
+package com.moodi.admin.application;
+
+import com.moodi.admin.application.dto.AdminAccountCommand;
+import com.moodi.admin.domain.AdminAccount;
+import com.moodi.admin.domain.AdminAccountRepository;
+import com.moodi.admin.domain.AdminAccountStatus;
+import com.moodi.admin.domain.AdminRefreshTokenRepository;
+import com.moodi.admin.support.AdminAccountFixture;
+import com.moodi.shared.auth.AdminRole;
+import com.moodi.shared.error.BusinessException;
+import com.moodi.shared.error.ErrorCode;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class AdminAccountServiceTest {
+
+    private static final UUID ACTOR_ID = UUID.randomUUID();
+    private static final UUID TARGET_ID = UUID.randomUUID();
+
+    @Mock
+    private AdminAccountRepository adminAccountRepository;
+
+    @Mock
+    private AdminRefreshTokenRepository adminRefreshTokenRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @InjectMocks
+    private AdminAccountService adminAccountService;
+
+    @Test
+    @DisplayName("계정 생성 시 비밀번호를 해시하고 이메일을 소문자로 저장한다")
+    void create_hashes_password_and_normalizes_email() {
+        when(adminAccountRepository.existsByEmail("new@moodi.kr")).thenReturn(false);
+        when(passwordEncoder.encode("strong-password")).thenReturn("hashed");
+        when(adminAccountRepository.save(any(AdminAccount.class)))
+                .thenReturn(AdminAccountFixture.createWithId(TARGET_ID, AdminRole.OPERATOR));
+
+        UUID id = adminAccountService.create(new AdminAccountCommand(" New@Moodi.kr ", "strong-password", "신규",
+                AdminRole.OPERATOR));
+
+        ArgumentCaptor<AdminAccount> captor = ArgumentCaptor.forClass(AdminAccount.class);
+        verify(adminAccountRepository).save(captor.capture());
+        assertThat(captor.getValue().getEmail()).isEqualTo("new@moodi.kr");
+        assertThat(captor.getValue().getPasswordHash()).isEqualTo("hashed");
+        assertThat(id).isEqualTo(TARGET_ID);
+    }
+
+    @Test
+    @DisplayName("10자 미만 비밀번호로는 계정을 만들 수 없다")
+    void create_rejects_short_password() {
+        assertThatThrownBy(() -> adminAccountService.create(new AdminAccountCommand("new@moodi.kr", "short", "신규",
+                AdminRole.OPERATOR)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.INVALID_REQUEST);
+        verify(adminAccountRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("이미 등록된 이메일로는 계정을 만들 수 없다")
+    void create_rejects_duplicate_email() {
+        when(adminAccountRepository.existsByEmail("ops@moodi.kr")).thenReturn(true);
+
+        assertThatThrownBy(() -> adminAccountService.create(new AdminAccountCommand("ops@moodi.kr",
+                "strong-password", "운영자", AdminRole.OPERATOR)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.DUPLICATE_ADMIN_EMAIL);
+    }
+
+    @Test
+    @DisplayName("비활성화하면 리프레시 토큰도 지운다")
+    void disable_revokes_refresh_tokens() {
+        AdminAccount target = AdminAccountFixture.createWithId(TARGET_ID, AdminRole.OPERATOR);
+        when(adminAccountRepository.findById(TARGET_ID)).thenReturn(Optional.of(target));
+
+        adminAccountService.changeStatus(ACTOR_ID, TARGET_ID, AdminAccountStatus.DISABLED);
+
+        assertThat(target.isActive()).isFalse();
+        verify(adminRefreshTokenRepository).deleteByAdminId(TARGET_ID);
+    }
+
+    @Test
+    @DisplayName("자기 자신은 비활성화할 수 없다")
+    void cannot_disable_self() {
+        assertThatThrownBy(() -> adminAccountService.changeStatus(ACTOR_ID, ACTOR_ID, AdminAccountStatus.DISABLED))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.INVALID_REQUEST);
+        verify(adminAccountRepository, never()).findById(any());
+    }
+
+    @Test
+    @DisplayName("권한을 바꾸면 리프레시 토큰을 끊어 다음 재발급부터 새 권한을 받게 한다")
+    void change_role_revokes_refresh_tokens() {
+        AdminAccount target = AdminAccountFixture.createWithId(TARGET_ID, AdminRole.OPERATOR);
+        when(adminAccountRepository.findById(TARGET_ID)).thenReturn(Optional.of(target));
+
+        adminAccountService.changeRole(ACTOR_ID, TARGET_ID, AdminRole.SUPER);
+
+        assertThat(target.getRole()).isEqualTo(AdminRole.SUPER);
+        verify(adminRefreshTokenRepository).deleteByAdminId(TARGET_ID);
+    }
+
+    @Test
+    @DisplayName("현재 비밀번호가 틀리면 비밀번호를 바꿀 수 없다")
+    void change_password_with_wrong_current_throws() {
+        AdminAccount account = AdminAccountFixture.createWithId(ACTOR_ID, AdminRole.OPERATOR);
+        when(adminAccountRepository.findById(ACTOR_ID)).thenReturn(Optional.of(account));
+        when(passwordEncoder.matches("wrong", account.getPasswordHash())).thenReturn(false);
+
+        assertThatThrownBy(() -> adminAccountService.changePassword(ACTOR_ID, "wrong", "new-strong-password"))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.ADMIN_LOGIN_FAILED);
+    }
+
+    @Test
+    @DisplayName("최초 부트스트랩은 계정이 없을 때만 SUPER를 만든다")
+    void bootstrap_creates_super_only_when_empty() {
+        when(adminAccountRepository.count()).thenReturn(0L, 1L);
+        when(passwordEncoder.encode("bootstrap-password")).thenReturn("hashed");
+
+        boolean first = adminAccountService.bootstrap("root@moodi.kr", "bootstrap-password");
+        boolean second = adminAccountService.bootstrap("root@moodi.kr", "bootstrap-password");
+
+        assertThat(first).isTrue();
+        assertThat(second).isFalse();
+        ArgumentCaptor<AdminAccount> captor = ArgumentCaptor.forClass(AdminAccount.class);
+        verify(adminAccountRepository).save(captor.capture());
+        assertThat(captor.getValue().getRole()).isEqualTo(AdminRole.SUPER);
+    }
+}
