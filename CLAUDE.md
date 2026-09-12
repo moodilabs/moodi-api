@@ -4,12 +4,13 @@
 
 ## 도메인 컨텍스트
 
-바운디드 컨텍스트 4개 + 공유 커널.
+바운디드 컨텍스트 5개 + 공유 커널.
 
 - **회원 Member** — 인증·온보딩·프로필·약관·사전조사 (ONB, AUT) · 개발자 A
 - **스팟 Spot** — 콘텐츠 원장(TourAPI 동기화)·북마크 (COM-F) · 개발자 B
 - **추천 Discovery** — Feed(무드 개인화)·Pick(사진 AI 추천) (FED, PCK) · 개발자 A
 - **루트 Route** — AI 루트 생성·편집·공유 (RTE), 유일한 풀 DDD · 개발자 B
+- **고객지원 Support** — 공지·FAQ·약관·1:1 문의 (MY-04~07, SUP) · 개발자 A
 - **공유 커널(shared)** — 무드·커서 페이징·에러 포맷·회원/비회원 인증 분기 (COM-P)
 
 ### 유비쿼터스 언어
@@ -51,7 +52,7 @@ domain은 순수(의존 없음). 컨텍스트 간 참조는 ID(+필요 스냅샷
 
 ## 패키지 · 네이밍
 
-- 컨텍스트 최상위: `com.moodi.{context}` (member · spot · discovery · route).
+- 컨텍스트 최상위: `com.moodi.{context}` (member · spot · discovery · route · support).
 - 레이어: `presentation` / `application` / `domain` / `infrastructure`.
 - 클래스: 컨트롤러 `XxxController`, 서비스 `XxxService`, 요청/응답 DTO `XxxRequest`·`XxxResponse`(presentation/dto), 외부 시스템 포트 `XxxClient`(application), 도메인 Repository 포트 `XxxRepository`(domain, 순수 인터페이스).
 - **리포지토리**: Spring Data 인터페이스는 `JpaRepository`가 아니라 `org.springframework.data.repository.Repository<T, ID>`를 상속하고 **필요한 메서드만 선언**한다. infrastructure/persistence에 두고 도메인 Repository 포트를 구현한다.
