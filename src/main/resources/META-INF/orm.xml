@@ -562,4 +562,46 @@
         </attributes>
     </entity>
 
+    <entity class="com.moodi.support.domain.FaqCategory" access="FIELD">
+        <table name="faq_category"/>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="name">
+                <column name="name" nullable="false" length="50"/>
+            </basic>
+            <basic name="sortOrder">
+                <column name="sort_order" nullable="false"/>
+            </basic>
+            <basic name="visible">
+                <column name="visible" nullable="false"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <entity class="com.moodi.support.domain.Faq" access="FIELD">
+        <table name="faq"/>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="categoryId">
+                <column name="category_id" nullable="false"/>
+            </basic>
+            <basic name="question">
+                <column name="question" nullable="false" length="200"/>
+            </basic>
+            <basic name="answer">
+                <column name="answer" nullable="false" column-definition="TEXT"/>
+            </basic>
+            <basic name="sortOrder">
+                <column name="sort_order" nullable="false"/>
+            </basic>
+            <basic name="visible">
+                <column name="visible" nullable="false"/>
+            </basic>
+        </attributes>
+    </entity>
+
 </entity-mappings>

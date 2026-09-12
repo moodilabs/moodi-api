@@ -50,6 +50,9 @@ public enum ErrorCode {
     IMAGE_UPLOAD_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "IMAGE_UPLOAD_UNAVAILABLE", "사진 업로드를 잠시 사용할 수 없어요."),
 
     NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTICE_NOT_FOUND", "공지사항을 찾을 수 없습니다."),
+    FAQ_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "FAQ_CATEGORY_NOT_FOUND", "FAQ 유형을 찾을 수 없습니다."),
+    FAQ_NOT_FOUND(HttpStatus.NOT_FOUND, "FAQ_NOT_FOUND", "FAQ를 찾을 수 없습니다."),
+    FAQ_CATEGORY_NOT_EMPTY(HttpStatus.CONFLICT, "FAQ_CATEGORY_NOT_EMPTY", "항목이 남아 있는 FAQ 유형은 삭제할 수 없습니다."),
 
     INVALID_CURSOR_FORMAT(HttpStatus.BAD_REQUEST, "INVALID_CURSOR_FORMAT", "잘못된 커서 형식입니다.");
 
