@@ -223,4 +223,78 @@ class MemberTest {
                 .isEqualTo(ErrorCode.INVALID_COUNTRY);
         assertThat(member.getCountry()).isEqualTo("KR");
     }
+
+    @Test
+    @DisplayName("가입 완료 회원을 정지하면 SUSPENDED가 되고 사유·시각이 남는다")
+    void suspend_marks_suspended_with_reason() {
+        Member member = MemberFixture.active();
+        java.time.LocalDateTime now = java.time.LocalDateTime.of(2026, 8, 10, 9, 0);
+
+        member.suspend("스팸 문의 반복", now);
+
+        assertThat(member.getStatus()).isEqualTo(MemberStatus.SUSPENDED);
+        assertThat(member.isSuspended()).isTrue();
+        assertThat(member.getSuspendReason()).isEqualTo("스팸 문의 반복");
+        assertThat(member.getSuspendedAt()).isEqualTo(now);
+    }
+
+    @Test
+    @DisplayName("온보딩 중인 회원은 정지할 수 없다")
+    void suspend_rejects_pending_member() {
+        Member member = MemberFixture.withProfile();
+
+        assertThatThrownBy(() -> member.suspend("reason", java.time.LocalDateTime.of(2026, 8, 10, 9, 0)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.INVALID_REQUEST);
+    }
+
+    @Test
+    @DisplayName("사유 없이 정지할 수 없다")
+    void suspend_requires_reason() {
+        Member member = MemberFixture.active();
+
+        assertThatThrownBy(() -> member.suspend(" ", java.time.LocalDateTime.of(2026, 8, 10, 9, 0)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.INVALID_REQUEST);
+        assertThat(member.isSuspended()).isFalse();
+    }
+
+    @Test
+    @DisplayName("정지 해제하면 ACTIVE로 돌아가고 사유가 지워진다")
+    void unsuspend_restores_active() {
+        Member member = MemberFixture.active();
+        member.suspend("reason", java.time.LocalDateTime.of(2026, 8, 10, 9, 0));
+
+        member.unsuspend();
+
+        assertThat(member.getStatus()).isEqualTo(MemberStatus.ACTIVE);
+        assertThat(member.getSuspendReason()).isNull();
+        assertThat(member.getSuspendedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("정지 상태가 아니면 해제할 수 없다")
+    void unsuspend_rejects_active_member() {
+        Member member = MemberFixture.active();
+
+        assertThatThrownBy(member::unsuspend)
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.INVALID_REQUEST);
+    }
+
+    @Test
+    @DisplayName("정지 회원이 탈퇴하면 정지 정보도 지워진다")
+    void withdraw_clears_suspension() {
+        Member member = MemberFixture.active();
+        member.suspend("reason", java.time.LocalDateTime.of(2026, 8, 10, 9, 0));
+
+        member.withdraw(java.time.LocalDateTime.of(2026, 8, 11, 9, 0));
+
+        assertThat(member.isWithdrawn()).isTrue();
+        assertThat(member.isSuspended()).isFalse();
+        assertThat(member.getSuspendReason()).isNull();
+    }
 }

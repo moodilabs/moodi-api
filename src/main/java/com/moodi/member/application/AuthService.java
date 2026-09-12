@@ -54,6 +54,7 @@ public class AuthService {
         if (stored.isExpired(LocalDateTime.now())) {
             throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
+        rejectSuspended(memberId);
         refreshTokenRepository.deleteByToken(refreshToken);
         TokenPair tokens = issueTokens(memberId);
         return new LoginResult(tokens.accessToken(), tokens.refreshToken(), false);
@@ -62,6 +63,15 @@ public class AuthService {
     @Transactional
     public void logout(UUID memberId) {
         refreshTokenRepository.deleteByMemberId(memberId);
+    }
+
+    /** 정지된 회원은 재발급도 막는다. 액세스 토큰은 30분 내 자연 만료된다. */
+    private void rejectSuspended(UUID memberId) {
+        memberRepository.findById(memberId)
+                .filter(Member::isSuspended)
+                .ifPresent(member -> {
+                    throw new BusinessException(ErrorCode.MEMBER_SUSPENDED);
+                });
     }
 
     private MemberResolution resolveMember(OAuthProvider provider, OidcPayload payload) {
@@ -79,6 +89,9 @@ public class AuthService {
         if (member.isWithdrawn()) {
             member.restore(payload.email());
             return new MemberResolution(member, true);
+        }
+        if (member.isSuspended()) {
+            throw new BusinessException(ErrorCode.MEMBER_SUSPENDED);
         }
         return new MemberResolution(member, false);
     }

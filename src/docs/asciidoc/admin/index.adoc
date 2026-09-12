@@ -159,6 +159,8 @@ include::{snippets}/admin/accounts/change-role/request-fields.adoc[]
 .HTTP Response
 include::{snippets}/admin/accounts/change-role/http-response.adoc[]
 
+include::../member/admin-member.adoc[]
+
 include::../support/admin-notice.adoc[]
 
 include::../support/admin-faq.adoc[]

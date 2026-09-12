@@ -18,6 +18,16 @@ include::{snippets}/auth/login/http-response.adoc[]
 .Response Fields
 include::{snippets}/auth/login/response-fields.adoc[]
 
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `OAUTH_VERIFICATION_FAILED` | 401 | id_token 검증 실패
+| `DUPLICATE_EMAIL` | 409 | 다른 소셜 계정으로 이미 가입된 이메일
+| `MEMBER_SUSPENDED` | 403 | 어드민에 의해 정지된 계정. 고객센터 안내 화면으로 분기
+|===
+
 === 토큰 재발급
 
 refresh 토큰으로 새 토큰 쌍을 발급합니다(회전). 기존 refresh는 폐기됩니다.
@@ -33,6 +43,15 @@ include::{snippets}/auth/reissue/http-response.adoc[]
 
 .Response Fields
 include::{snippets}/auth/reissue/response-fields.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `INVALID_REFRESH_TOKEN` | 401 | 만료·폐기·위조된 refresh 토큰. 재로그인
+| `MEMBER_SUSPENDED` | 403 | 정지된 계정. 재로그인해도 같은 에러
+|===
 
 === 로그아웃
 
