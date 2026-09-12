@@ -49,6 +49,8 @@ public enum ErrorCode {
     PICK_FORBIDDEN(HttpStatus.FORBIDDEN, "PICK_FORBIDDEN", "해당 추천 결과에 대한 권한이 없습니다."),
     IMAGE_UPLOAD_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "IMAGE_UPLOAD_UNAVAILABLE", "사진 업로드를 잠시 사용할 수 없어요."),
 
+    NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTICE_NOT_FOUND", "공지사항을 찾을 수 없습니다."),
+
     INVALID_CURSOR_FORMAT(HttpStatus.BAD_REQUEST, "INVALID_CURSOR_FORMAT", "잘못된 커서 형식입니다.");
 
     private final HttpStatus status;

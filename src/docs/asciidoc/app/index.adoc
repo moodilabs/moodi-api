@@ -39,3 +39,4 @@ include::../route/copy.adoc[]
 
 include::../route/delete.adoc[]
 
+include::../support/notice.adoc[]
