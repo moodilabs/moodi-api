@@ -44,3 +44,5 @@ include::../support/notice.adoc[]
 include::../support/faq.adoc[]
 
 include::../support/policy.adoc[]
+
+include::../support/inquiry.adoc[]

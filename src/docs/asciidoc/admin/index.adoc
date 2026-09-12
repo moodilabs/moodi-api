@@ -164,3 +164,5 @@ include::../support/admin-notice.adoc[]
 include::../support/admin-faq.adoc[]
 
 include::../support/admin-policy.adoc[]
+
+include::../support/admin-inquiry.adoc[]
