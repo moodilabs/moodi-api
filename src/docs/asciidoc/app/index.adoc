@@ -42,3 +42,5 @@ include::../route/delete.adoc[]
 include::../support/notice.adoc[]
 
 include::../support/faq.adoc[]
+
+include::../support/policy.adoc[]
