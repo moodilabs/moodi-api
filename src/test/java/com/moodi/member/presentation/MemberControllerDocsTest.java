@@ -1,14 +1,19 @@
 package com.moodi.member.presentation;
 
 import com.moodi.member.application.MemberOnboardingService;
+import com.moodi.member.application.MemberProfileService;
 import com.moodi.member.application.MemberQueryService;
 import com.moodi.member.application.MemberWithdrawService;
 import com.moodi.member.application.dto.AgreementCommand;
 import com.moodi.member.application.dto.MemberInfo;
+import com.moodi.member.application.dto.MemberSummary;
 import com.moodi.member.application.dto.ProfileCommand;
 import com.moodi.member.domain.Gender;
 import com.moodi.member.domain.MemberStatus;
+import com.moodi.member.domain.OAuthProvider;
 import com.moodi.member.presentation.dto.AgreementRequest;
+import com.moodi.member.presentation.dto.CountryChangeRequest;
+import com.moodi.member.presentation.dto.NicknameChangeRequest;
 import com.moodi.member.presentation.dto.PreferredMoodRequest;
 import com.moodi.member.presentation.dto.ProfileRequest;
 import com.moodi.shared.mood.MoodTag;
@@ -29,6 +34,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
@@ -41,11 +47,70 @@ class MemberControllerDocsTest extends AuthenticatedRestDocsSupport {
 
     private final MemberOnboardingService memberOnboardingService = mock(MemberOnboardingService.class);
     private final MemberQueryService memberQueryService = mock(MemberQueryService.class);
+    private final MemberProfileService memberProfileService = mock(MemberProfileService.class);
     private final MemberWithdrawService memberWithdrawService = mock(MemberWithdrawService.class);
 
     @Override
     protected Object initController() {
-        return new MemberController(memberOnboardingService, memberQueryService, memberWithdrawService);
+        return new MemberController(memberOnboardingService, memberQueryService, memberProfileService,
+                memberWithdrawService);
+    }
+
+    @Test
+    @DisplayName("내 정보 요약 조회 성공")
+    void get_summary_success() throws Exception {
+        when(memberQueryService.getSummary(any()))
+                .thenReturn(new MemberSummary("moodi_user", "KR", OAuthProvider.GOOGLE, "user@moodi.kr", 36L, 6L));
+
+        mockMvc.perform(get("/api/v1/members/me/summary"))
+                .andExpect(status().isOk())
+                .andDo(document("member/summary",
+                        responseFields(
+                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("내 정보 요약"),
+                                fieldWithPath("data.nickname").type(JsonFieldType.STRING).description("닉네임"),
+                                fieldWithPath("data.country").type(JsonFieldType.STRING).description("국가 (ISO 3166-1 alpha-2)"),
+                                fieldWithPath("data.provider").type(JsonFieldType.STRING).description("연결된 소셜 계정 (GOOGLE, APPLE)"),
+                                fieldWithPath("data.email").type(JsonFieldType.STRING).optional().description("이메일 (소셜 계정이 제공하지 않으면 null)"),
+                                fieldWithPath("data.savedSpotCount").type(JsonFieldType.NUMBER).description("저장한 스팟(북마크) 수"),
+                                fieldWithPath("data.routeCount").type(JsonFieldType.NUMBER).description("생성한 루트 수 (삭제된 루트 제외)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("닉네임 변경 성공")
+    void change_nickname_success() throws Exception {
+        NicknameChangeRequest request = new NicknameChangeRequest("moiaaaa_4141");
+
+        mockMvc.perform(patch("/api/v1/members/me/nickname")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("member/change-nickname",
+                        requestFields(
+                                fieldWithPath("nickname").type(JsonFieldType.STRING).description("새 닉네임 (2~20자, 영문·숫자·'_'·'.')")
+                        )
+                ));
+
+        verify(memberProfileService).changeNickname(memberId, "moiaaaa_4141");
+    }
+
+    @Test
+    @DisplayName("국가 변경 성공")
+    void change_country_success() throws Exception {
+        CountryChangeRequest request = new CountryChangeRequest("CN");
+
+        mockMvc.perform(patch("/api/v1/members/me/country")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("member/change-country",
+                        requestFields(
+                                fieldWithPath("country").type(JsonFieldType.STRING).description("새 국가 (ISO 3166-1 alpha-2)")
+                        )
+                ));
+
+        verify(memberProfileService).changeCountry(memberId, "CN");
     }
 
     @Test

@@ -1,9 +1,12 @@
 package com.moodi.member.application;
 
 import com.moodi.member.application.dto.MemberInfo;
+import com.moodi.member.application.dto.MemberSummary;
+import com.moodi.member.domain.Member;
 import com.moodi.member.domain.MemberPreferredMoodRepository;
 import com.moodi.member.domain.MemberRepository;
 import com.moodi.member.domain.MemberStatus;
+import com.moodi.member.domain.OAuthProvider;
 import com.moodi.member.support.MemberFixture;
 import com.moodi.shared.error.BusinessException;
 import com.moodi.shared.error.ErrorCode;
@@ -14,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,6 +35,12 @@ class MemberQueryServiceTest {
 
     @Mock
     private MemberPreferredMoodRepository memberPreferredMoodRepository;
+
+    @Mock
+    private BookmarkCountReader bookmarkCountReader;
+
+    @Mock
+    private RouteCountReader routeCountReader;
 
     @InjectMocks
     private MemberQueryService memberQueryService;
@@ -91,6 +101,36 @@ class MemberQueryServiceTest {
         when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> memberQueryService.getMe(MEMBER_ID))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.MEMBER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("내 정보 요약은 프로필과 북마크·루트 수를 함께 돌려준다")
+    void get_summary_returns_profile_with_counts() {
+        when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(MemberFixture.active()));
+        when(bookmarkCountReader.countByMemberId(MEMBER_ID)).thenReturn(36L);
+        when(routeCountReader.countActiveByMemberId(MEMBER_ID)).thenReturn(6L);
+
+        MemberSummary summary = memberQueryService.getSummary(MEMBER_ID);
+
+        assertThat(summary.nickname()).isEqualTo("moodi_user");
+        assertThat(summary.country()).isEqualTo("KR");
+        assertThat(summary.provider()).isEqualTo(OAuthProvider.GOOGLE);
+        assertThat(summary.email()).isEqualTo("user@moodi.kr");
+        assertThat(summary.savedSpotCount()).isEqualTo(36L);
+        assertThat(summary.routeCount()).isEqualTo(6L);
+    }
+
+    @Test
+    @DisplayName("탈퇴한 회원의 요약은 조회할 수 없다")
+    void get_summary_with_withdrawn_member_throws() {
+        Member withdrawn = MemberFixture.active();
+        withdrawn.withdraw(LocalDateTime.of(2026, 8, 10, 0, 0));
+        when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(withdrawn));
+
+        assertThatThrownBy(() -> memberQueryService.getSummary(MEMBER_ID))
                 .isInstanceOf(BusinessException.class)
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.MEMBER_NOT_FOUND);

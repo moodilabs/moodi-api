@@ -1,11 +1,16 @@
 package com.moodi.member.presentation;
 
 import com.moodi.member.application.MemberOnboardingService;
+import com.moodi.member.application.MemberProfileService;
 import com.moodi.member.application.MemberQueryService;
 import com.moodi.member.application.MemberWithdrawService;
 import com.moodi.member.application.dto.MemberInfo;
+import com.moodi.member.application.dto.MemberSummary;
 import com.moodi.member.presentation.dto.AgreementRequest;
+import com.moodi.member.presentation.dto.CountryChangeRequest;
 import com.moodi.member.presentation.dto.MemberMeResponse;
+import com.moodi.member.presentation.dto.MemberSummaryResponse;
+import com.moodi.member.presentation.dto.NicknameChangeRequest;
 import com.moodi.member.presentation.dto.NicknameAvailabilityResponse;
 import com.moodi.member.presentation.dto.PreferredMoodRequest;
 import com.moodi.member.presentation.dto.ProfileRequest;
@@ -16,6 +21,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,15 +38,18 @@ public class MemberController {
 
     private final MemberOnboardingService memberOnboardingService;
     private final MemberQueryService memberQueryService;
+    private final MemberProfileService memberProfileService;
     private final MemberWithdrawService memberWithdrawService;
 
     public MemberController(
             MemberOnboardingService memberOnboardingService,
             MemberQueryService memberQueryService,
+            MemberProfileService memberProfileService,
             MemberWithdrawService memberWithdrawService
     ) {
         this.memberOnboardingService = memberOnboardingService;
         this.memberQueryService = memberQueryService;
+        this.memberProfileService = memberProfileService;
         this.memberWithdrawService = memberWithdrawService;
     }
 
@@ -48,6 +57,24 @@ public class MemberController {
     public SuccessResponse<MemberMeResponse> getMe(@AuthMember UUID memberId) {
         MemberInfo info = memberQueryService.getMe(memberId);
         return SuccessResponse.of(MemberMeResponse.from(info));
+    }
+
+    @GetMapping("/me/summary")
+    public SuccessResponse<MemberSummaryResponse> getSummary(@AuthMember UUID memberId) {
+        MemberSummary summary = memberQueryService.getSummary(memberId);
+        return SuccessResponse.of(MemberSummaryResponse.from(summary));
+    }
+
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PatchMapping("/me/nickname")
+    public void changeNickname(@AuthMember UUID memberId, @Valid @RequestBody NicknameChangeRequest request) {
+        memberProfileService.changeNickname(memberId, request.nickname());
+    }
+
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PatchMapping("/me/country")
+    public void changeCountry(@AuthMember UUID memberId, @Valid @RequestBody CountryChangeRequest request) {
+        memberProfileService.changeCountry(memberId, request.country());
     }
 
     @GetMapping("/nickname-availability")

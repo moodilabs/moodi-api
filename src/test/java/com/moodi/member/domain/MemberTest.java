@@ -157,4 +157,70 @@ class MemberTest {
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.ALREADY_ONBOARDED);
     }
+
+    @Test
+    @DisplayName("가입 완료 회원은 닉네임을 변경할 수 있다")
+    void change_nickname_updates_nickname_for_active_member() {
+        Member member = MemberFixture.active();
+
+        member.changeNickname("new_name");
+
+        assertThat(member.getNickname()).isEqualTo("new_name");
+    }
+
+    @Test
+    @DisplayName("온보딩 전 회원은 닉네임을 변경할 수 없다")
+    void change_nickname_rejects_pending_member() {
+        Member member = MemberFixture.withProfile();
+
+        assertThatThrownBy(() -> member.changeNickname("new_name"))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.INVALID_REQUEST);
+    }
+
+    @Test
+    @DisplayName("형식에 맞지 않는 닉네임으로는 변경할 수 없다")
+    void change_nickname_rejects_invalid_format() {
+        Member member = MemberFixture.active();
+
+        assertThatThrownBy(() -> member.changeNickname("한글닉네임"))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.INVALID_NICKNAME);
+        assertThat(member.getNickname()).isEqualTo("moodi_user");
+    }
+
+    @Test
+    @DisplayName("가입 완료 회원은 국가를 변경할 수 있다")
+    void change_country_updates_country_for_active_member() {
+        Member member = MemberFixture.active();
+
+        member.changeCountry("CN");
+
+        assertThat(member.getCountry()).isEqualTo("CN");
+    }
+
+    @Test
+    @DisplayName("온보딩 전 회원은 국가를 변경할 수 없다")
+    void change_country_rejects_pending_member() {
+        Member member = MemberFixture.withProfile();
+
+        assertThatThrownBy(() -> member.changeCountry("CN"))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.INVALID_REQUEST);
+    }
+
+    @Test
+    @DisplayName("ISO 국가 코드가 아니면 국가를 변경할 수 없다")
+    void change_country_rejects_invalid_code() {
+        Member member = MemberFixture.active();
+
+        assertThatThrownBy(() -> member.changeCountry("XX"))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.INVALID_COUNTRY);
+        assertThat(member.getCountry()).isEqualTo("KR");
+    }
 }
