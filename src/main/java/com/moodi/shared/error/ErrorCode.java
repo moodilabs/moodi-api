@@ -53,6 +53,9 @@ public enum ErrorCode {
     FAQ_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "FAQ_CATEGORY_NOT_FOUND", "FAQ 유형을 찾을 수 없습니다."),
     FAQ_NOT_FOUND(HttpStatus.NOT_FOUND, "FAQ_NOT_FOUND", "FAQ를 찾을 수 없습니다."),
     FAQ_CATEGORY_NOT_EMPTY(HttpStatus.CONFLICT, "FAQ_CATEGORY_NOT_EMPTY", "항목이 남아 있는 FAQ 유형은 삭제할 수 없습니다."),
+    POLICY_NOT_FOUND(HttpStatus.NOT_FOUND, "POLICY_NOT_FOUND", "약관을 찾을 수 없습니다."),
+    POLICY_VERSION_DUPLICATE(HttpStatus.CONFLICT, "POLICY_VERSION_DUPLICATE", "이미 등록된 약관 버전입니다."),
+    POLICY_ALREADY_EFFECTIVE(HttpStatus.CONFLICT, "POLICY_ALREADY_EFFECTIVE", "이미 시행된 약관은 수정·삭제할 수 없습니다. 새 버전으로 등록해주세요."),
 
     INVALID_CURSOR_FORMAT(HttpStatus.BAD_REQUEST, "INVALID_CURSOR_FORMAT", "잘못된 커서 형식입니다.");
 

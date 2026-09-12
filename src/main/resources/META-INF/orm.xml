@@ -604,4 +604,31 @@
         </attributes>
     </entity>
 
+    <entity class="com.moodi.support.domain.Policy" access="FIELD">
+        <table name="policy">
+            <unique-constraint>
+                <column-name>type</column-name>
+                <column-name>version</column-name>
+            </unique-constraint>
+        </table>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="type">
+                <column name="type" nullable="false" length="30"/>
+                <enumerated>STRING</enumerated>
+            </basic>
+            <basic name="version">
+                <column name="version" nullable="false" length="20"/>
+            </basic>
+            <basic name="content">
+                <column name="content" nullable="false" column-definition="TEXT"/>
+            </basic>
+            <basic name="effectiveAt">
+                <column name="effective_at" nullable="false"/>
+            </basic>
+        </attributes>
+    </entity>
+
 </entity-mappings>
