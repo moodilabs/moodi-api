@@ -56,6 +56,15 @@
 
 관리자 프론트는 `admin.moodi.kr` 서브도메인에 별도 배포하고 이 API(`/api/admin/**`)를 호출한다.
 
+### GCS 버킷 (비공개, 서명 URL)
+
+| 버킷 | 용도 | 활성 플래그 |
+|------|------|------------|
+| `moodi-pick-uploads` | Pick 사용자 사진 | `gcs.pick-image.enabled` |
+| `moodi-inquiry-uploads` | 1:1 문의 첨부 (사진·동영상·PDF) | `gcs.inquiry-upload.enabled` |
+
+둘 다 서비스 계정에 Service Account Token Creator(`iam.serviceAccounts.signBlob`)가 필요하며, 준비 전에는 플래그를 끈 채 배포한다(업로드 요청은 503).
+
 ## Artifact Registry
 
 | 항목 | 값 |

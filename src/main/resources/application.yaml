@@ -65,6 +65,12 @@ gcs:
     bucket: moodi-pick-uploads
     upload-url-ttl-seconds: 300
     read-url-ttl-seconds: 300
+  # 1:1 문의 첨부. 개인정보가 섞일 수 있어 Pick 버킷과도 분리한다. Pick과 같은 signBlob IAM 준비가 필요하다.
+  inquiry-upload:
+    enabled: false
+    bucket: moodi-inquiry-uploads
+    upload-url-ttl-seconds: 300
+    read-url-ttl-seconds: 300
 
 spot-tagging:
   enabled: false

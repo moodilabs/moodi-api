@@ -684,4 +684,59 @@
         </attributes>
     </entity>
 
+    <entity class="com.moodi.support.domain.Inquiry" access="FIELD">
+        <table name="inquiry"/>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="UUID"/>
+            </id>
+            <basic name="memberId">
+                <column name="member_id" nullable="false"/>
+            </basic>
+            <basic name="topic">
+                <column name="topic" nullable="false" length="30"/>
+                <enumerated>STRING</enumerated>
+            </basic>
+            <basic name="subject">
+                <column name="subject" nullable="false" length="60"/>
+            </basic>
+            <basic name="content">
+                <column name="content" nullable="false" length="1000"/>
+            </basic>
+            <basic name="status">
+                <column name="status" nullable="false" length="20"/>
+                <enumerated>STRING</enumerated>
+            </basic>
+            <basic name="answerContent">
+                <column name="answer_content" nullable="true" column-definition="TEXT"/>
+            </basic>
+            <basic name="answeredBy">
+                <column name="answered_by" nullable="true"/>
+            </basic>
+            <basic name="answeredAt">
+                <column name="answered_at" nullable="true"/>
+            </basic>
+            <element-collection name="attachments" fetch="EAGER">
+                <order-by>sortOrder ASC</order-by>
+                <collection-table name="inquiry_attachment">
+                    <join-column name="inquiry_id" nullable="false"/>
+                </collection-table>
+            </element-collection>
+        </attributes>
+    </entity>
+
+    <embeddable class="com.moodi.support.domain.InquiryAttachment" access="FIELD">
+        <attributes>
+            <basic name="objectKey">
+                <column name="object_key" nullable="false" length="500"/>
+            </basic>
+            <basic name="contentType">
+                <column name="content_type" nullable="false" length="100"/>
+            </basic>
+            <basic name="sortOrder">
+                <column name="sort_order" nullable="false"/>
+            </basic>
+        </attributes>
+    </embeddable>
+
 </entity-mappings>

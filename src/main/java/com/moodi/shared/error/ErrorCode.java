@@ -63,6 +63,12 @@ public enum ErrorCode {
     POLICY_NOT_FOUND(HttpStatus.NOT_FOUND, "POLICY_NOT_FOUND", "약관을 찾을 수 없습니다."),
     POLICY_VERSION_DUPLICATE(HttpStatus.CONFLICT, "POLICY_VERSION_DUPLICATE", "이미 등록된 약관 버전입니다."),
     POLICY_ALREADY_EFFECTIVE(HttpStatus.CONFLICT, "POLICY_ALREADY_EFFECTIVE", "이미 시행된 약관은 수정·삭제할 수 없습니다. 새 버전으로 등록해주세요."),
+    INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "INQUIRY_NOT_FOUND", "문의를 찾을 수 없습니다."),
+    INQUIRY_FORBIDDEN(HttpStatus.FORBIDDEN, "INQUIRY_FORBIDDEN", "해당 문의에 대한 권한이 없습니다."),
+    INQUIRY_TOO_MANY_ATTACHMENTS(HttpStatus.BAD_REQUEST, "INQUIRY_TOO_MANY_ATTACHMENTS", "첨부는 5개까지 올릴 수 있어요."),
+    INQUIRY_UNSUPPORTED_ATTACHMENT_TYPE(HttpStatus.BAD_REQUEST, "INQUIRY_UNSUPPORTED_ATTACHMENT_TYPE", "지원하지 않는 파일 형식이에요. 사진(JPG, PNG, HEIC), 동영상(MP4, MOV), PDF만 올릴 수 있어요."),
+    INQUIRY_ATTACHMENT_TOO_LARGE(HttpStatus.BAD_REQUEST, "INQUIRY_ATTACHMENT_TOO_LARGE", "파일 용량이 너무 커요. 사진·PDF는 10MB, 동영상은 50MB 이하로 올려주세요."),
+    INQUIRY_INVALID_ATTACHMENT_KEY(HttpStatus.BAD_REQUEST, "INQUIRY_INVALID_ATTACHMENT_KEY", "올바르지 않은 첨부 키입니다."),
 
     INVALID_CURSOR_FORMAT(HttpStatus.BAD_REQUEST, "INVALID_CURSOR_FORMAT", "잘못된 커서 형식입니다.");
 

@@ -1,0 +1,58 @@
+== 문의 관리
+
+앱 `MY-06`에서 회원이 등록한 1:1 문의입니다. 답변하면 회원 화면에 `Answered`로 표시됩니다.
+회원 정보는 문의 시점이 아닌 조회 시점 기준이며, 탈퇴 회원은 닉네임·이메일이 비어 있고 `withdrawn`이 `true`입니다.
+
+=== 목록
+
+.HTTP Request
+include::{snippets}/admin/inquiries/list/http-request.adoc[]
+
+.Query Parameters
+include::{snippets}/admin/inquiries/list/query-parameters.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/inquiries/list/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/admin/inquiries/list/response-fields.adoc[]
+
+=== 미답변 수
+
+.HTTP Request
+include::{snippets}/admin/inquiries/count/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/inquiries/count/http-response.adoc[]
+
+=== 상세
+
+.HTTP Request
+include::{snippets}/admin/inquiries/detail/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/inquiries/detail/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/admin/inquiries/detail/response-fields.adoc[]
+
+=== 답변 등록
+
+재호출하면 답변을 덮어씁니다(이력 없음). 답변 알림(푸시·이메일)은 아직 없어 회원은 앱 목록의 상태 배지로 확인합니다.
+
+.HTTP Request
+include::{snippets}/admin/inquiries/answer/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/admin/inquiries/answer/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/inquiries/answer/http-response.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `INQUIRY_NOT_FOUND` | 404 | 문의 없음
+|===
