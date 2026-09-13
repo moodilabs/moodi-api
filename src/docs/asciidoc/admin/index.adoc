@@ -193,6 +193,24 @@ include::{snippets}/admin/audit-logs/http-response.adoc[]
 .Response Fields
 include::{snippets}/admin/audit-logs/response-fields.adoc[]
 
+== 앱 API 요청 로그 (SUPER)
+
+앱 API(`/api/**`, 관리자 API 제외)의 모든 요청이 결과와 무관하게 한 줄씩 남습니다 — 비회원·인증 실패(401)도 회원 ID 없이 기록됩니다.
+요청 본문·헤더·쿼리스트링은 저장하지 않으며, 상세는 `requestId`로 앱 로그를 찾습니다.
+보관 기간(`admin.api-log.retention-days`, 기본 30일)이 지나면 매일 새벽 자동 삭제됩니다.
+
+.HTTP Request
+include::{snippets}/admin/api-logs/http-request.adoc[]
+
+.Query Parameters
+include::{snippets}/admin/api-logs/query-parameters.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/api-logs/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/admin/api-logs/response-fields.adoc[]
+
 include::../member/admin-member.adoc[]
 
 include::../spot/admin-spot.adoc[]

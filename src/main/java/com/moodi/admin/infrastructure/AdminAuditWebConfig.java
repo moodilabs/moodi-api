@@ -13,15 +13,23 @@ public class AdminAuditWebConfig implements WebMvcConfigurer {
 
     private final AdminAuditInterceptor adminAuditInterceptor;
     private final AdminPasswordChangeInterceptor adminPasswordChangeInterceptor;
+    private final ApiRequestLogInterceptor apiRequestLogInterceptor;
 
     public AdminAuditWebConfig(AdminAuditInterceptor adminAuditInterceptor,
-                               AdminPasswordChangeInterceptor adminPasswordChangeInterceptor) {
+                               AdminPasswordChangeInterceptor adminPasswordChangeInterceptor,
+                               ApiRequestLogInterceptor apiRequestLogInterceptor) {
         this.adminAuditInterceptor = adminAuditInterceptor;
         this.adminPasswordChangeInterceptor = adminPasswordChangeInterceptor;
+        this.apiRequestLogInterceptor = apiRequestLogInterceptor;
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+        // 앱 API 요청 로그는 인증 인터셉터(order 0)보다 앞에 두어 401로 끝난 요청도 남긴다.
+        registry.addInterceptor(apiRequestLogInterceptor)
+                .addPathPatterns("/api/**")
+                .excludePathPatterns("/api/admin/**")
+                .order(-10);
         registry.addInterceptor(adminPasswordChangeInterceptor).addPathPatterns("/api/admin/**").order(10);
         registry.addInterceptor(adminAuditInterceptor).addPathPatterns("/api/admin/**").order(20);
     }
