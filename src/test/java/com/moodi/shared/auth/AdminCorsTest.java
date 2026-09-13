@@ -13,7 +13,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** `admin.cors.allowed-origins`(테스트: https://admin.moodi.kr)에 맞춰 `/api/admin/**`만 CORS가 열리는지 확인한다. */
+/** `admin.cors.allowed-origins`(테스트: https://admin.moodi.kr, https://*.vercel.app)에 맞춰 `/api/admin/**`만 CORS가 열리는지 확인한다. */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -32,6 +32,17 @@ class AdminCorsTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "https://admin.moodi.kr"))
                 .andExpect(header().doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS));
+    }
+
+    @Test
+    @DisplayName("Vercel 프리뷰 배포 오리진의 preflight는 와일드카드 패턴으로 허용된다")
+    void preflight_from_vercel_preview_origin_is_allowed() throws Exception {
+        mockMvc.perform(options("/api/admin/auth/login")
+                        .header(HttpHeaders.ORIGIN, "https://moodi-admin-git-feature-moodilabs.vercel.app")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN,
+                        "https://moodi-admin-git-feature-moodilabs.vercel.app"));
     }
 
     @Test

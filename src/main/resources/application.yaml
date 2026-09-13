@@ -24,8 +24,8 @@ admin:
     access-token-expiry-ms: 1800000      # 30분
     refresh-token-expiry-ms: 43200000    # 12시간 (회원보다 짧게)
   cors:
-    # 관리자 프론트 오리진. 로컬 개발 포트는 쉼표로 덧붙인다.
-    allowed-origins: ${ADMIN_ALLOWED_ORIGINS:https://admin.moodi.kr,http://localhost:5173,http://localhost:3000}
+    # 관리자 프론트 오리진(와일드카드 패턴 허용). 운영 도메인 + Vercel 프리뷰 배포 + 로컬 개발 포트.
+    allowed-origins: ${ADMIN_ALLOWED_ORIGINS:https://admin.moodi.kr,https://*.vercel.app,http://localhost:5173,http://localhost:3000}
   login:
     max-failures: 5
     lock-minutes: 15
