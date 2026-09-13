@@ -2,10 +2,12 @@ package com.moodi.route.infrastructure.persistence;
 
 import com.moodi.route.domain.Route;
 import com.moodi.route.domain.RouteRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -35,4 +37,9 @@ public interface RouteJpaRepository extends RouteRepository, Repository<Route, L
 
     @Override
     void delete(Route route);
+
+    @Override
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Route r SET r.deletedAt = :deletedAt WHERE r.memberId = :memberId AND r.deletedAt IS NULL")
+    int softDeleteAllByMemberId(@Param("memberId") UUID memberId, @Param("deletedAt") LocalDateTime deletedAt);
 }

@@ -16,6 +16,9 @@ public interface ImageStorageClient {
      */
     String issueReadUrl(String objectName);
 
+    /** 회원 탈퇴 시 원본 사진 삭제. 없는 객체는 조용히 넘어간다. */
+    void delete(String objectName);
+
     /**
      * @param uploadUrl  클라이언트가 PUT할 서명 URL
      * @param imageKey   업로드 후 서버에 돌려줄 객체 키. 비공개 버킷이라 그대로는 열람할 수 없다

@@ -772,4 +772,26 @@
         </attributes>
     </entity>
 
+    <entity class="com.moodi.member.domain.MemberWithdrawal" access="FIELD">
+        <table name="member_withdrawal"/>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="UUID"/>
+            </id>
+            <basic name="memberId">
+                <column name="member_id" nullable="false"/>
+            </basic>
+            <basic name="detail">
+                <column name="detail" nullable="true" length="500"/>
+            </basic>
+            <element-collection name="reasons" fetch="EAGER">
+                <column name="reason" nullable="false" length="40"/>
+                <enumerated>STRING</enumerated>
+                <collection-table name="member_withdrawal_reason">
+                    <join-column name="withdrawal_id" nullable="false"/>
+                </collection-table>
+            </element-collection>
+        </attributes>
+    </entity>
+
 </entity-mappings>

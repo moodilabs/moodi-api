@@ -81,8 +81,8 @@ public class AuthService {
     }
 
     /**
-     * 탈퇴한 회원이 같은 소셜 계정으로 돌아오면 복구한다.
-     * 탈퇴 시 프로필을 비웠으므로 온보딩을 다시 밟아야 한다 → 신규 로그인과 같은 분기를 타도록
+     * 탈퇴한 회원이 같은 소셜 계정으로 돌아오면 회원 행을 재활용한다. 활동 데이터는 탈퇴 시 지워졌고
+     * 프로필도 비어 있으므로 온보딩을 다시 밟아야 한다 → 신규 로그인과 같은 분기를 타도록
      * {@code isNew = true}로 돌려준다(`AUT-F01`).
      */
     private MemberResolution resolveExisting(Member member, OidcPayload payload) {

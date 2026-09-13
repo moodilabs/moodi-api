@@ -66,4 +66,9 @@ public class GcsImageStorageClient implements ImageStorageClient {
 
         return url.toString();
     }
+
+    @Override
+    public void delete(String objectName) {
+        storage.delete(properties.bucket(), objectName);
+    }
 }

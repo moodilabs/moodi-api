@@ -6,12 +6,14 @@ import com.moodi.member.application.dto.MemberAdminFilter;
 import com.moodi.member.application.dto.MemberAdminRow;
 import com.moodi.member.application.dto.MemberAdminStatus;
 import com.moodi.member.application.dto.MemberDailyStat;
+import com.moodi.member.application.dto.WithdrawalCommand;
 import com.moodi.member.domain.Member;
 import com.moodi.member.domain.MemberAgreement;
 import com.moodi.member.domain.MemberAgreementRepository;
 import com.moodi.member.domain.MemberPreferredMood;
 import com.moodi.member.domain.MemberPreferredMoodRepository;
 import com.moodi.member.domain.MemberRepository;
+import com.moodi.member.domain.MemberWithdrawalRepository;
 import com.moodi.member.domain.RefreshTokenRepository;
 import com.moodi.shared.error.BusinessException;
 import com.moodi.shared.error.ErrorCode;
@@ -37,6 +39,7 @@ public class MemberAdminService {
     private final MemberAgreementRepository memberAgreementRepository;
     private final MemberPreferredMoodRepository memberPreferredMoodRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final MemberWithdrawalRepository memberWithdrawalRepository;
     private final BookmarkCountReader bookmarkCountReader;
     private final RouteCountReader routeCountReader;
     private final InquiryCountReader inquiryCountReader;
@@ -49,6 +52,7 @@ public class MemberAdminService {
             MemberAgreementRepository memberAgreementRepository,
             MemberPreferredMoodRepository memberPreferredMoodRepository,
             RefreshTokenRepository refreshTokenRepository,
+            MemberWithdrawalRepository memberWithdrawalRepository,
             BookmarkCountReader bookmarkCountReader,
             RouteCountReader routeCountReader,
             InquiryCountReader inquiryCountReader,
@@ -60,6 +64,7 @@ public class MemberAdminService {
         this.memberAgreementRepository = memberAgreementRepository;
         this.memberPreferredMoodRepository = memberPreferredMoodRepository;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.memberWithdrawalRepository = memberWithdrawalRepository;
         this.bookmarkCountReader = bookmarkCountReader;
         this.routeCountReader = routeCountReader;
         this.inquiryCountReader = inquiryCountReader;
@@ -88,10 +93,16 @@ public class MemberAdminService {
                 .map(agreement -> new MemberAdminDetail.Agreement(agreement.getType(), agreement.isAgreed(),
                         agreement.getAgreedAt()))
                 .toList();
+        MemberAdminDetail.Withdrawal withdrawal = member.isWithdrawn()
+                ? memberWithdrawalRepository.findFirstByMemberIdOrderByCreatedAtDesc(memberId)
+                .map(found -> new MemberAdminDetail.Withdrawal(found.getReasons(), found.getDetail(),
+                        found.getCreatedAt()))
+                .orElse(null)
+                : null;
         return new MemberAdminDetail(
                 member.getId(), member.getProvider(), member.getEmail(), member.getNickname(), member.getCountry(),
                 member.getBirthYear(), member.getGender(), MemberAdminStatus.of(member), member.getCreatedAt(),
-                member.getDeletedAt(), member.getSuspendedAt(), member.getSuspendReason(),
+                member.getDeletedAt(), member.getSuspendedAt(), member.getSuspendReason(), withdrawal,
                 agreements,
                 memberPreferredMoodRepository.findByMemberId(memberId).stream().map(MemberPreferredMood::getMood).toList(),
                 bookmarkCountReader.countByMemberId(memberId),
@@ -119,10 +130,10 @@ public class MemberAdminService {
         memberRepository.save(member);
     }
 
-    /** 강제 탈퇴는 회원 본인의 탈퇴와 같은 경로를 탄다 — 삭제 범위가 갈리지 않게. */
+    /** 강제 탈퇴는 회원 본인의 탈퇴와 같은 경로를 탄다 — 삭제 범위가 갈리지 않게. 사유는 `ADMIN_FORCED`. */
     @Transactional
     public void withdraw(UUID memberId) {
-        memberWithdrawService.withdraw(memberId);
+        memberWithdrawService.withdraw(memberId, WithdrawalCommand.adminForced());
     }
 
     public List<MemberDailyStat> getDailyStats(LocalDate from, LocalDate to) {

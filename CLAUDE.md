@@ -48,7 +48,9 @@ domain은 순수(의존 없음). 컨텍스트 간 참조는 ID(+필요 스냅샷
 (초기 마이그레이션에 남아 있던 FK는 `V16__drop_cross_context_fk.sql`로 제거).
 따라서 **물리 삭제를 추가할 때는 삭제 순서를 애플리케이션에서 직접 챙겨야 한다** — DB가 더 이상 막아주지 않아
 `bookmark`·`route`·`feed_impression`·`pick_result_spot`에 고아 행이 조용히 생길 수 있다.
-현재는 회원(`deleted_at`)·스팟(`status`) 모두 소프트 삭제라 하드 삭제 경로가 없다.
+회원(`deleted_at`)·스팟(`status`)·루트(`deleted_at`)는 소프트 삭제다. **회원 탈퇴는 `shared/event/MemberWithdrawnEvent`**로
+스팟(북마크 하드 삭제)·루트(소프트 삭제)·추천(Pick 하드 삭제 + GCS 사진)이 같은 트랜잭션에서 자기 데이터를 지운다 —
+경계를 넘는 유일한 쓰기 경로이며, 회원 데이터를 참조하는 테이블을 새로 만들면 리스너도 함께 추가한다.
 레이어 의존 규칙은 ArchUnit `LayeredArchitectureTest`로 강제한다.
 
 ## 패키지 · 네이밍

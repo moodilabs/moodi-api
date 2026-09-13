@@ -14,12 +14,12 @@ import com.moodi.member.presentation.dto.NicknameChangeRequest;
 import com.moodi.member.presentation.dto.NicknameAvailabilityResponse;
 import com.moodi.member.presentation.dto.PreferredMoodRequest;
 import com.moodi.member.presentation.dto.ProfileRequest;
+import com.moodi.member.presentation.dto.WithdrawalRequest;
 import com.moodi.shared.auth.AuthMember;
 import com.moodi.shared.auth.LoginRequired;
 import com.moodi.shared.response.SuccessResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -104,9 +104,10 @@ public class MemberController {
         memberOnboardingService.updatePreferredMoods(memberId, request.moods());
     }
 
+    /** 탈퇴 사유(`MY-03-02`)를 함께 받아야 해서 DELETE 대신 POST를 쓴다 — DELETE 본문을 버리는 클라이언트가 있다. */
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @DeleteMapping("/me")
-    public void withdraw(@AuthMember UUID memberId) {
-        memberWithdrawService.withdraw(memberId);
+    @PostMapping("/me/withdrawal")
+    public void withdraw(@AuthMember UUID memberId, @Valid @RequestBody WithdrawalRequest request) {
+        memberWithdrawService.withdraw(memberId, request.toCommand());
     }
 }

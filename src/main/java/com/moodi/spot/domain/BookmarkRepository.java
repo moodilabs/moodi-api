@@ -12,4 +12,7 @@ public interface BookmarkRepository {
     boolean existsByMemberIdAndSpotId(UUID memberId, Long spotId);
 
     void delete(Bookmark bookmark);
+
+    /** 회원 탈퇴 전용. */
+    void deleteByMemberId(UUID memberId);
 }
