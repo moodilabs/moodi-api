@@ -6,6 +6,9 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import com.moodi.discovery.application.ImageStorageClient;
 
+import com.moodi.shared.error.BusinessException;
+import com.moodi.shared.error.ErrorCode;
+
 import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -40,10 +43,9 @@ public class GcsImageStorageClient implements ImageStorageClient {
                 .build();
 
         // Content-Type을 서명에 포함하면 발급 시 확정한 형식으로만 업로드할 수 있다.
-        URL url = storage.signUrl(
+        URL url = sign(
                 blobInfo,
                 properties.uploadUrlTtlSeconds(),
-                TimeUnit.SECONDS,
                 Storage.SignUrlOption.httpMethod(HttpMethod.PUT),
                 Storage.SignUrlOption.withExtHeaders(Map.of("Content-Type", contentType)),
                 Storage.SignUrlOption.withV4Signature()
@@ -56,10 +58,9 @@ public class GcsImageStorageClient implements ImageStorageClient {
     public String issueReadUrl(String objectName) {
         BlobInfo blobInfo = BlobInfo.newBuilder(properties.bucket(), objectName).build();
 
-        URL url = storage.signUrl(
+        URL url = sign(
                 blobInfo,
                 properties.readUrlTtlSeconds(),
-                TimeUnit.SECONDS,
                 Storage.SignUrlOption.httpMethod(HttpMethod.GET),
                 Storage.SignUrlOption.withV4Signature()
         );
@@ -70,5 +71,17 @@ public class GcsImageStorageClient implements ImageStorageClient {
     @Override
     public void delete(String objectName) {
         storage.delete(properties.bucket(), objectName);
+    }
+
+    /**
+     * signBlob 권한(Service Account Token Creator)이 아직 없으면 서명 자체가 실패한다.
+     * 500 대신 503으로 돌려 "스토리지 준비 전"과 같은 상태로 보이게 한다 — 클라이언트 분기가 하나면 된다.
+     */
+    private URL sign(BlobInfo blobInfo, long ttlSeconds, Storage.SignUrlOption... options) {
+        try {
+            return storage.signUrl(blobInfo, ttlSeconds, TimeUnit.SECONDS, options);
+        } catch (RuntimeException e) {
+            throw new BusinessException(ErrorCode.IMAGE_UPLOAD_UNAVAILABLE, e);
+        }
     }
 }

@@ -6,6 +6,9 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import com.moodi.support.application.InquiryAttachmentStorage;
 
+import com.moodi.shared.error.BusinessException;
+import com.moodi.shared.error.ErrorCode;
+
 import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -33,10 +36,9 @@ public class GcsInquiryAttachmentStorage implements InquiryAttachmentStorage {
         BlobInfo blobInfo = BlobInfo.newBuilder(properties.bucket(), objectName)
                 .setContentType(contentType)
                 .build();
-        URL url = storage.signUrl(
+        URL url = sign(
                 blobInfo,
                 properties.uploadUrlTtlSeconds(),
-                TimeUnit.SECONDS,
                 Storage.SignUrlOption.httpMethod(HttpMethod.PUT),
                 Storage.SignUrlOption.withExtHeaders(Map.of("Content-Type", contentType)),
                 Storage.SignUrlOption.withV4Signature()
@@ -47,13 +49,24 @@ public class GcsInquiryAttachmentStorage implements InquiryAttachmentStorage {
     @Override
     public String issueReadUrl(String objectName) {
         BlobInfo blobInfo = BlobInfo.newBuilder(properties.bucket(), objectName).build();
-        URL url = storage.signUrl(
+        URL url = sign(
                 blobInfo,
                 properties.readUrlTtlSeconds(),
-                TimeUnit.SECONDS,
                 Storage.SignUrlOption.httpMethod(HttpMethod.GET),
                 Storage.SignUrlOption.withV4Signature()
         );
         return url.toString();
+    }
+
+    /**
+     * signBlob 권한(Service Account Token Creator)이 아직 없으면 서명 자체가 실패한다.
+     * 500 대신 503으로 돌려 "스토리지 준비 전"과 같은 상태로 보이게 한다 — 클라이언트 분기가 하나면 된다.
+     */
+    private URL sign(BlobInfo blobInfo, long ttlSeconds, Storage.SignUrlOption... options) {
+        try {
+            return storage.signUrl(blobInfo, ttlSeconds, TimeUnit.SECONDS, options);
+        } catch (RuntimeException e) {
+            throw new BusinessException(ErrorCode.IMAGE_UPLOAD_UNAVAILABLE, e);
+        }
     }
 }

@@ -8,3 +8,10 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+
+# 비공개 업로드 버킷 (서명 URL). 서비스 계정에 roles/iam.serviceAccountTokenCreator(signBlob)가 필요하다.
+gcs:
+  pick-image:
+    enabled: true
+  inquiry-upload:
+    enabled: true
