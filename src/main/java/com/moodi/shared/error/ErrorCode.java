@@ -39,6 +39,7 @@ public enum ErrorCode {
 
     SPOT_NOT_FOUND(HttpStatus.NOT_FOUND, "SPOT_NOT_FOUND", "스팟을 찾을 수 없습니다."),
     SPOT_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "SPOT_NOT_AVAILABLE", "북마크할 수 없는 스팟입니다."),
+    SPOT_MOOD_NOT_FOUND(HttpStatus.NOT_FOUND, "SPOT_MOOD_NOT_FOUND", "아직 무드 태깅이 되지 않은 스팟입니다."),
 
     ROUTE_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUTE_NOT_FOUND", "루트를 찾을 수 없습니다."),
     ROUTE_INVALID_DATE_RANGE(HttpStatus.UNPROCESSABLE_ENTITY, "ROUTE_INVALID_DATE_RANGE", "여행 기간은 1~5일이어야 합니다."),

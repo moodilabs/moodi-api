@@ -177,7 +177,7 @@ CREATE INDEX idx_member_created ON member (created_at DESC, id DESC);
 - 답변 등록 시 회원에게 알림(푸시/이메일)은 알림 기능 자체가 범위 밖 → 앱 진입 시 목록 상태 배지로만 확인.
 - 회원 닉네임·이메일은 `support/infrastructure/member/MemberSummaryReaderAdapter`(네이티브 SQL, `member_id IN (...)`)로 읽는다.
 
-## 8. 스팟 관리 (spot 컨텍스트 · 개발자 B) — 요구사항만
+## 8. 스팟 관리 (spot 컨텍스트 · `ADM-F06` 적용됨)
 
 COM-01-02/03 "This spot is no longer available"을 만들려면 어드민이 스팟을 비노출/삭제 처리할 수 있어야 한다.
 기존 `SpotStatus`가 있으므로 상태 전이 API가 핵심.
@@ -189,10 +189,11 @@ COM-01-02/03 "This spot is no longer available"을 만들려면 어드민이 스
 | `PATCH` | `/api/admin/spots/{id}/status` | `{ status: HIDDEN \| ACTIVE \| DELETED, reason }` |
 | `PUT` | `/api/admin/spots/{id}/moods` | 무드 태그 수동 보정 |
 | `PUT` | `/api/admin/spots/{id}/description` | AI 설명 수동 수정 |
-| `POST` | `/api/admin/spots/{id}/regenerate` | 설명·번역 재생성(배치 큐) |
-| `POST` | `/api/admin/spots/sync` | TourAPI 재동기화 트리거 (현재 `spot-pipeline` 프로필 배치를 API로) |
+| `PATCH` | `/api/admin/spots/{id}/route-exclusion` | 루트 생성 후보 제외/포함 |
 
-숨김/삭제된 스팟이 들어 있는 루트·북마크의 앱 표시 정책(COM-01-03 "삭제된 스팟" 화면)은 B와 확인.
+적용: `SpotStatus.HIDDEN/DELETED` 추가(앱은 PUBLISHED만 읽으므로 즉시 미노출), `V25__add_spot_status_reason.sql`,
+`spot/presentation/admin/AdminSpotController`, `SpotAdminService`, `SpotAdminQueryRepositoryImpl`.
+재생성·재동기화 트리거는 배치 프로필로 유지(후순위).
 
 ## 9. 대시보드 (admin 컨텍스트, 읽기 전용)
 
@@ -343,7 +344,7 @@ JWT secret은 회원과 같은 `jwt.secret`을 쓰되 `type` 클레임으로 구
 3. `ADM-F03` 문의 관리
 4. `ADM-F04` 회원 관리 + 정지
 5. `ADM-F05` 대시보드 · 감사 로그 조회
-6. 스팟 관리는 B가 `ADM-F06`으로 별도 진행
+6. `ADM-F06` 스팟 관리 — 적용됨
 
 ## 16. 열린 질문 (합의 필요)
 

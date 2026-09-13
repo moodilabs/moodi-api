@@ -1,0 +1,103 @@
+== 스팟 관리
+
+앱은 `PUBLISHED` 상태의 스팟만 봅니다. 숨기거나 삭제하면 검색·피드·상세·추천에서 즉시 빠지고,
+루트·북마크·공유 링크로 진입하면 앱이 "This spot is no longer available"(`COM-01-02/03`)을 띄웁니다.
+
+|===
+| 상태 | 의미
+
+| `TAGGING_PENDING` | 수집됐지만 무드 태깅 전. 배치가 태깅을 마치면 `PUBLISHED`로 (어드민은 이 상태로 되돌릴 수 없음)
+| `PUBLISHED` | 앱 노출
+| `HIDDEN` | 어드민이 잠시 내림. 다시 `PUBLISHED`로 돌릴 수 있음
+| `DELETED` | 어드민 삭제 처리. 되돌릴 수 없음. 원본 행은 남음(루트·북마크가 ID로 참조)
+|===
+
+조회·무드 보정·설명 수정은 `OPERATOR`, 노출 상태 변경은 `SUPER`입니다.
+TourAPI 재동기화와 설명·번역 재생성은 배치 프로필(`spot-pipeline` 등)로 돌리며 여기서 트리거하지 않습니다.
+
+=== 목록
+
+.HTTP Request
+include::{snippets}/admin/spots/list/http-request.adoc[]
+
+.Query Parameters
+include::{snippets}/admin/spots/list/query-parameters.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/spots/list/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/admin/spots/list/response-fields.adoc[]
+
+=== 상세
+
+.HTTP Request
+include::{snippets}/admin/spots/detail/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/spots/detail/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/admin/spots/detail/response-fields.adoc[]
+
+=== 노출 상태 변경 (SUPER)
+
+.HTTP Request
+include::{snippets}/admin/spots/change-status/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/admin/spots/change-status/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/spots/change-status/http-response.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `SPOT_NOT_FOUND` | 404 | 스팟 없음
+| `INVALID_REQUEST` | 400 | 전이 불가 (태깅 전 숨김, 삭제된 스팟 복구, 재삭제, `TAGGING_PENDING` 지정) 또는 사유 누락
+|===
+
+=== 루트 제외 전환
+
+노출과 별개로 AI 루트 생성 후보에서만 뺍니다 (예: 숙박·대형 시설).
+
+.HTTP Request
+include::{snippets}/admin/spots/route-exclusion/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/spots/route-exclusion/http-response.adoc[]
+
+=== 무드 태그 보정
+
+태그만 바꾸고 유사도용 무드 벡터는 유지합니다. 사람이 정한 값이므로 `confidence`는 1.0이 됩니다.
+
+.HTTP Request
+include::{snippets}/admin/spots/override-moods/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/admin/spots/override-moods/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/spots/override-moods/http-response.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `SPOT_MOOD_NOT_FOUND` | 404 | 아직 무드 태깅이 되지 않은 스팟
+|===
+
+=== AI 설명 수정
+
+.HTTP Request
+include::{snippets}/admin/spots/update-description/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/admin/spots/update-description/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/spots/update-description/http-response.adoc[]
