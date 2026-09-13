@@ -37,11 +37,13 @@ public class WebConfig implements WebMvcConfigurer {
      * 관리자 프론트(`admin.moodi.kr`)는 API와 다른 오리진이라 `/api/admin/**`만 CORS를 연다.
      * 앱 API는 네이티브 클라이언트가 호출하므로 열지 않는다.
      * 토큰은 Authorization 헤더로만 다루므로 쿠키(credentials)는 허용하지 않는다.
+     * Vercel 프리뷰 배포(`https://*.vercel.app`)처럼 오리진이 매번 바뀌는 경우를 위해 와일드카드 패턴을 받는다
+     * — `allowedOriginPatterns`는 `allowCredentials(false)`일 때만 안전하게 쓸 수 있다.
      */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/admin/**")
-                .allowedOrigins(adminAllowedOrigins.toArray(String[]::new))
+                .allowedOriginPatterns(adminAllowedOrigins.toArray(String[]::new))
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("Authorization", "Content-Type", "X-Request-Id")
                 .exposedHeaders("X-Request-Id")

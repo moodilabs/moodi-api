@@ -22,7 +22,7 @@
 | 관리자 계정 | 회원(`member`)과 **완전히 분리된 `admin_account`** (이메일 + 비밀번호). 회원 테이블에 role 추가하지 않음 |
 | 인증 | 관리자 전용 JWT (`type=ADMIN_ACCESS`), `@AdminRequired` + `AdminAuthInterceptor`. Spring Security 미도입(현 구조 유지) |
 | 코드 위치 | 관리자 **인증·감사·대시보드**만 새 컨텍스트 `admin`. 각 도메인의 관리 API는 **해당 컨텍스트 `presentation/admin/`** 에 둔다 (스팟은 B, 나머지 A) |
-| 프론트 | `admin.moodi.kr` 서브도메인에 별도 배포. `/api/admin/**`만 CORS 허용(`admin.cors.allowed-origins`), 쿠키 미사용 |
+| 프론트 | Vercel 배포 + `admin.moodi.kr` 커스텀 도메인. `/api/admin/**`만 CORS 허용(`admin.cors.allowed-origins`, Vercel 프리뷰 `*.vercel.app` 포함), 쿠키 미사용 |
 
 ## 1. 아키텍처
 
@@ -305,7 +305,7 @@ admin:
     access-token-expiry-ms: 1800000      # 30분
     refresh-token-expiry-ms: 43200000    # 12시간
   cors:
-    allowed-origins: ${ADMIN_ALLOWED_ORIGINS:https://admin.moodi.kr,http://localhost:5173,http://localhost:3000}
+    allowed-origins: ${ADMIN_ALLOWED_ORIGINS:https://admin.moodi.kr,https://*.vercel.app,http://localhost:5173,http://localhost:3000}
   bootstrap:
     email: ${ADMIN_BOOTSTRAP_EMAIL:}
     password: ${ADMIN_BOOTSTRAP_PASSWORD:}
