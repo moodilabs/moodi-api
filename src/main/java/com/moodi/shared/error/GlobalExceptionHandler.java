@@ -21,7 +21,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ProblemDetail> handleBusinessException(BusinessException e, HttpServletRequest request) {
-        log.warn("BusinessException: {}", e.getMessage());
+        // 외부 시스템 실패를 감싼 경우(예: GCS 서명 실패 → 503) 원인이 없으면 운영에서 진단할 수 없다.
+        if (e.getCause() != null) {
+            log.warn("BusinessException: {} (cause: {})", e.getMessage(), e.getCause().toString(), e.getCause());
+        } else {
+            log.warn("BusinessException: {}", e.getMessage());
+        }
         ErrorCode errorCode = e.getErrorCode();
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(errorCode.getStatus(), e.getMessage());
         problem.setInstance(URI.create(request.getRequestURI()));
