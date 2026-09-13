@@ -25,6 +25,7 @@ public enum ErrorCode {
     DUPLICATE_ADMIN_EMAIL(HttpStatus.CONFLICT, "DUPLICATE_ADMIN_EMAIL", "이미 등록된 관리자 이메일입니다."),
 
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER_NOT_FOUND", "회원을 찾을 수 없습니다."),
+    WITHDRAWAL_REASON_REQUIRED(HttpStatus.BAD_REQUEST, "WITHDRAWAL_REASON_REQUIRED", "탈퇴 사유를 1개 이상 선택해주세요."),
     MEMBER_SUSPENDED(HttpStatus.FORBIDDEN, "MEMBER_SUSPENDED", "이용이 정지된 계정입니다. 고객센터로 문의해주세요."),
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "DUPLICATE_NICKNAME", "이미 사용 중인 닉네임이에요."),
     INVALID_NICKNAME(HttpStatus.BAD_REQUEST, "INVALID_NICKNAME", "닉네임은 2~20자의 영문·숫자·'_'·'.'만 사용할 수 있어요."),

@@ -21,4 +21,9 @@ public class UnavailableImageStorageClient implements ImageStorageClient {
     public String issueReadUrl(String objectName) {
         throw new BusinessException(ErrorCode.IMAGE_UPLOAD_UNAVAILABLE);
     }
+
+    /** 스토리지가 없으면 지울 사진도 없다 — 탈퇴를 막지 않는다. */
+    @Override
+    public void delete(String objectName) {
+    }
 }

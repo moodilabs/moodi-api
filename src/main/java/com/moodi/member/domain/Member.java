@@ -92,14 +92,11 @@ public class Member extends BaseEntity {
     }
 
     /**
-     * 탈퇴(소프트 삭제). 개인정보 컬럼을 비우고 `deletedAt`을 찍는다.
+     * 탈퇴. 개인정보 컬럼을 비우고 `deletedAt`을 찍는다. 행을 남기는 이유는 통계·탈퇴 사유 보존이며,
+     * 북마크·루트·Pick 같은 활동 데이터는 화면 정책대로 각 컨텍스트가 지운다({@code MemberWithdrawnEvent}).
      * <p>
-     * 행을 지우지 않는 것은 **복구 가능하게 하려는 설계 선택**이다. 탈퇴 후 같은 소셜 계정으로
-     * 돌아온 사용자에게 이전 북마크·루트를 돌려주려면 회원 행이 남아 있어야 한다.
-     * <p>
-     * `provider`·`providerId`는 **의도적으로 남긴다** — 같은 소셜 계정으로 다시 로그인했을 때
-     * {@link #restore(String)}로 이전 북마크·루트를 되찾게 하기 위한 유일한 식별 수단이다.
-     * 프로필이 비워지므로 상태는 `PENDING`으로 되돌려 온보딩을 다시 밟게 한다.
+     * `provider`·`providerId`는 남긴다 — 같은 소셜 계정으로 다시 로그인하면 {@link #restore(String)}로
+     * 이 행을 재활용해 온보딩을 처음부터 밟는다(사실상 신규 가입). 프로필이 비워지므로 상태는 `PENDING`.
      */
     public void withdraw(LocalDateTime now) {
         if (isWithdrawn()) {
@@ -117,8 +114,8 @@ public class Member extends BaseEntity {
     }
 
     /**
-     * 탈퇴한 회원이 같은 소셜 계정으로 다시 로그인했을 때의 복구.
-     * 프로필은 탈퇴 시 비워졌으므로 `PENDING` 상태로 온보딩을 다시 진행한다.
+     * 탈퇴한 회원이 같은 소셜 계정으로 다시 로그인했을 때. 되찾을 활동 데이터는 없고(탈퇴 시 삭제),
+     * 회원 행만 재활용해 `PENDING` 상태로 온보딩을 다시 진행한다.
      */
     public void restore(String email) {
         this.deletedAt = null;

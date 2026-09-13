@@ -10,7 +10,9 @@ import com.moodi.member.domain.MemberAgreement;
 import com.moodi.member.domain.MemberAgreementRepository;
 import com.moodi.member.domain.MemberPreferredMood;
 import com.moodi.member.domain.MemberPreferredMoodRepository;
+import com.moodi.member.application.dto.WithdrawalCommand;
 import com.moodi.member.domain.MemberRepository;
+import com.moodi.member.domain.MemberWithdrawalRepository;
 import com.moodi.member.domain.OAuthProvider;
 import com.moodi.member.domain.RefreshTokenRepository;
 import com.moodi.member.support.MemberFixture;
@@ -62,6 +64,8 @@ class MemberAdminServiceTest {
     @Mock
     private RefreshTokenRepository refreshTokenRepository;
     @Mock
+    private MemberWithdrawalRepository memberWithdrawalRepository;
+    @Mock
     private BookmarkCountReader bookmarkCountReader;
     @Mock
     private RouteCountReader routeCountReader;
@@ -76,7 +80,7 @@ class MemberAdminServiceTest {
     void setUp() {
         memberAdminService = new MemberAdminService(memberRepository, memberAdminQueryRepository,
                 memberAgreementRepository, memberPreferredMoodRepository, refreshTokenRepository,
-                bookmarkCountReader, routeCountReader, inquiryCountReader, memberWithdrawService, FIXED_CLOCK);
+                memberWithdrawalRepository, bookmarkCountReader, routeCountReader, inquiryCountReader, memberWithdrawService, FIXED_CLOCK);
     }
 
     @Test
@@ -175,11 +179,11 @@ class MemberAdminServiceTest {
     }
 
     @Test
-    @DisplayName("강제 탈퇴는 회원 탈퇴 서비스에 위임한다")
+    @DisplayName("강제 탈퇴는 ADMIN_FORCED 사유로 회원 탈퇴 서비스에 위임한다")
     void withdraw_delegates() {
         memberAdminService.withdraw(MEMBER_ID);
 
-        verify(memberWithdrawService).withdraw(MEMBER_ID);
+        verify(memberWithdrawService).withdraw(MEMBER_ID, WithdrawalCommand.adminForced());
     }
 
     @Test

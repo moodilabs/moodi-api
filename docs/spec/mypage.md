@@ -132,7 +132,7 @@ route/application/RouteWithdrawalListener         @EventListener → routeReposi
 discovery/application/PickWithdrawalListener      @EventListener → pickRequest 삭제 + @TransactionalEventListener(AFTER_COMMIT)로 GCS 삭제
 ```
 - 같은 트랜잭션에서 실행(`@EventListener`)해 하나라도 실패하면 탈퇴 전체가 롤백된다. GCS 객체 삭제만 커밋 후, 실패 허용(재시도 배치는 후순위).
-- spot·route 리스너는 B 소유 코드. B가 리스너를 넣기 전까지는 탈퇴 API를 배포하지 않는다(정책 문구와 다른 동작으로 나가면 안 됨).
+- spot·route 리스너까지 A가 함께 구현함(`BookmarkWithdrawalListener`, `RouteWithdrawalListener`, `PickWithdrawalListener`). `MemberWithdrawalIntegrationTest`로 이벤트 체인 검증.
 
 ### API
 
@@ -156,7 +156,7 @@ class MemberWithdrawal { UUID id; UUID memberId; Set<WithdrawalReason> reasons; 
 ```
 
 ```sql
--- V{next}__create_member_withdrawal.sql  (번호는 작업 시점의 다음 번호)
+-- V24__create_member_withdrawal.sql (적용됨)
 CREATE TABLE member_withdrawal (
     id         UUID PRIMARY KEY,
     member_id  UUID          NOT NULL,

@@ -16,6 +16,9 @@ import com.moodi.member.presentation.dto.CountryChangeRequest;
 import com.moodi.member.presentation.dto.NicknameChangeRequest;
 import com.moodi.member.presentation.dto.PreferredMoodRequest;
 import com.moodi.member.presentation.dto.ProfileRequest;
+import com.moodi.member.presentation.dto.WithdrawalRequest;
+import com.moodi.member.application.dto.WithdrawalCommand;
+import com.moodi.member.domain.WithdrawalReason;
 import com.moodi.shared.mood.MoodTag;
 import com.moodi.shared.support.AuthenticatedRestDocsSupport;
 import org.junit.jupiter.api.DisplayName;
@@ -24,6 +27,7 @@ import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.JsonFieldType;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -32,7 +36,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
-import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
@@ -220,10 +223,22 @@ class MemberControllerDocsTest extends AuthenticatedRestDocsSupport {
     @Test
     @DisplayName("회원 탈퇴 성공")
     void withdraw_success() throws Exception {
-        mockMvc.perform(delete("/api/v1/members/me"))
-                .andExpect(status().isNoContent())
-                .andDo(document("member/withdraw"));
+        WithdrawalRequest request = new WithdrawalRequest(
+                Set.of(WithdrawalReason.HARD_TO_USE, WithdrawalReason.OTHER), "Too many taps to build a route.");
 
-        verify(memberWithdrawService).withdraw(any());
+        mockMvc.perform(post("/api/v1/members/me/withdrawal")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("member/withdrawal",
+                        requestFields(
+                                fieldWithPath("reasons").type(JsonFieldType.ARRAY)
+                                        .description("탈퇴 사유 1개 이상 — NOT_USED_MUCH, RECOMMENDATION_MISMATCH, HARD_TO_USE, FOUND_ANOTHER_APP, OTHER"),
+                                fieldWithPath("detail").type(JsonFieldType.STRING).optional()
+                                        .description("기타 사유 자유 입력 (≤500자, OTHER가 아니어도 허용)")
+                        )
+                ));
+
+        verify(memberWithdrawService).withdraw(any(), any(WithdrawalCommand.class));
     }
 }

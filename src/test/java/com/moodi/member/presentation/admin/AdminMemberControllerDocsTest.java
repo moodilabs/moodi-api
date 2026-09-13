@@ -95,7 +95,7 @@ class AdminMemberControllerDocsTest extends AdminRestDocsSupport {
     void get_member_success() throws Exception {
         when(memberAdminService.getMember(MEMBER_ID)).thenReturn(new MemberAdminDetail(MEMBER_ID, OAuthProvider.GOOGLE,
                 "moi1234@naver.com", "moi", "US", 1996, Gender.FEMALE, MemberAdminStatus.ACTIVE, CREATED_AT, null, null,
-                null, List.of(new MemberAdminDetail.Agreement(AgreementType.TERMS_OF_SERVICE, true, CREATED_AT),
+                null, null, List.of(new MemberAdminDetail.Agreement(AgreementType.TERMS_OF_SERVICE, true, CREATED_AT),
                 new MemberAdminDetail.Agreement(AgreementType.MARKETING, false, null)),
                 List.of(MoodTag.RETRO, MoodTag.COZY, MoodTag.LOCAL), 36L, 6L, 2L));
 
@@ -117,6 +117,8 @@ class AdminMemberControllerDocsTest extends AdminRestDocsSupport {
                                 fieldWithPath("data.deletedAt").type(JsonFieldType.STRING).optional().description("탈퇴 시각"),
                                 fieldWithPath("data.suspendedAt").type(JsonFieldType.STRING).optional().description("정지 시각"),
                                 fieldWithPath("data.suspendReason").type(JsonFieldType.STRING).optional().description("정지 사유"),
+                                fieldWithPath("data.withdrawal").type(JsonFieldType.OBJECT).optional()
+                                        .description("최근 탈퇴 사유 (탈퇴 회원만). reasons[]·detail·withdrawnAt"),
                                 fieldWithPath("data.agreements").type(JsonFieldType.ARRAY).description("약관 동의 (탈퇴 시 비어 있음)"),
                                 fieldWithPath("data.agreements[].type").type(JsonFieldType.STRING).description("약관 종류"),
                                 fieldWithPath("data.agreements[].agreed").type(JsonFieldType.BOOLEAN).description("동의 여부"),
