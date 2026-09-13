@@ -781,6 +781,36 @@
         </attributes>
     </entity>
 
+    <entity class="com.moodi.admin.domain.ApiRequestLog" access="FIELD">
+        <table name="api_request_log"/>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="memberId">
+                <column name="member_id"/>
+            </basic>
+            <basic name="method">
+                <column name="method" nullable="false" length="10"/>
+            </basic>
+            <basic name="path">
+                <column name="path" nullable="false" length="300"/>
+            </basic>
+            <basic name="statusCode">
+                <column name="status_code" nullable="false"/>
+            </basic>
+            <basic name="durationMs">
+                <column name="duration_ms" nullable="false"/>
+            </basic>
+            <basic name="requestId">
+                <column name="request_id" length="64"/>
+            </basic>
+            <basic name="createdAt">
+                <column name="created_at" nullable="false"/>
+            </basic>
+        </attributes>
+    </entity>
+
     <entity class="com.moodi.member.domain.MemberWithdrawal" access="FIELD">
         <table name="member_withdrawal"/>
         <attributes>

@@ -198,6 +198,14 @@ COM-01-02/03 "This spot is no longer available"을 만들려면 어드민이 스
 `spot/presentation/admin/AdminSpotController`, `SpotAdminService`, `SpotAdminQueryRepositoryImpl`.
 재생성·재동기화 트리거는 배치 프로필로 유지(후순위).
 
+## 8.1 앱 API 요청 로그 (admin 컨텍스트)
+
+`GET /api/admin/api-logs?memberId=&method=&path=&statusClass=&cursor=&size=` (SUPER). 앱 API(`/api/**`, 관리자 제외) 요청을
+`admin/infrastructure/ApiRequestLogInterceptor`(order -10, 인증 인터셉터보다 앞이라 401도 남는다)가 결과와 무관하게 `api_request_log`(V27)에
+한 줄씩 기록한다. 회원 ID는 `AuthInterceptor`가 남긴 속성을 완료 시점에 읽고, 본문·헤더·쿼리스트링은 저장하지 않는다.
+조회는 `ApiRequestLogQueryRepositoryImpl`(네이티브 SQL, member LEFT JOIN으로 닉네임·이메일)로 ID 커서 페이징.
+`admin.api-log.retention-days`(기본 30) 지난 행은 `ApiRequestLogPurgeScheduler`가 매일 04:30 KST 벌크 삭제.
+
 ## 9. 대시보드 (admin 컨텍스트, 읽기 전용)
 
 `GET /api/admin/dashboard`
