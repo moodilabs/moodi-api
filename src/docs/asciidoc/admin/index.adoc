@@ -191,6 +191,8 @@ include::{snippets}/admin/audit-logs/response-fields.adoc[]
 
 include::../member/admin-member.adoc[]
 
+include::../spot/admin-spot.adoc[]
+
 include::../support/admin-notice.adoc[]
 
 include::../support/admin-faq.adoc[]

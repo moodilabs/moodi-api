@@ -214,6 +214,12 @@
             <basic name="homepage">
                 <column name="homepage" length="1000"/>
             </basic>
+            <basic name="statusReason">
+                <column name="status_reason" length="200"/>
+            </basic>
+            <basic name="statusChangedAt">
+                <column name="status_changed_at"/>
+            </basic>
         </attributes>
     </entity>
 

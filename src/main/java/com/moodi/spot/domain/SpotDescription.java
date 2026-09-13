@@ -23,4 +23,12 @@ public class SpotDescription extends BaseEntity {
     public static SpotDescription create(Long spotId, String locale, String content) {
         return new SpotDescription(spotId, locale, content);
     }
+
+    /** 어드민 수동 수정. AI 생성 설명을 사람이 고친다. */
+    public void updateContent(String content) {
+        if (content == null || content.isBlank()) {
+            throw new com.moodi.shared.error.BusinessException(com.moodi.shared.error.ErrorCode.INVALID_REQUEST);
+        }
+        this.content = content.trim();
+    }
 }
