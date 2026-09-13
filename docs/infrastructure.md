@@ -74,7 +74,8 @@ gcloud iam service-accounts add-iam-policy-binding 954020560650-compute@develope
   --role="roles/iam.serviceAccountTokenCreator" --project=moodi-app-2026
 ```
 
-권한이 붙기 전에는 업로드 URL 요청이 503(`IMAGE_UPLOAD_UNAVAILABLE`)으로 떨어지며, 권한이 붙으면 재배포 없이 바로 동작한다.
+권한이 붙기 전에는 업로드 URL 요청이 503(`IMAGE_UPLOAD_UNAVAILABLE`)으로 떨어지며, 권한이 붙으면 재배포 없이 바로 동작한다
+(바인딩 후 전파에 수 분 걸릴 수 있음). 2026-09-13 바인딩 완료, Pick·문의 upload-url → PUT → 객체 생성까지 확인됨.
 
 ## Artifact Registry
 
