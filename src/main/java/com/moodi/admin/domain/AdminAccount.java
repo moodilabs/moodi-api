@@ -22,10 +22,11 @@ public class AdminAccount extends BaseEntity {
 
     public static final int MAX_NAME_LENGTH = 50;
 
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
+    /** 영문 소문자·숫자·밑줄 4~20자. 대문자는 소문자로 정규화해 저장한다. */
+    public static final Pattern LOGIN_ID_PATTERN = Pattern.compile("^[a-z0-9_]{4,20}$");
 
     private UUID id;
-    private String email;
+    private String loginId;
     private String passwordHash;
     private String name;
     private AdminRole role;
@@ -33,23 +34,27 @@ public class AdminAccount extends BaseEntity {
     private int failedLoginCount;
     private LocalDateTime lockedUntil;
     private LocalDateTime lastLoginAt;
+    /** 초기 비밀번호로 로그인한 상태. 본인이 비밀번호를 바꾸면 풀린다 — 그 전엔 비밀번호 변경 외 API를 막는다. */
+    private boolean passwordChangeRequired;
 
-    private AdminAccount(String email, String passwordHash, String name, AdminRole role) {
-        validateEmail(email);
+    private AdminAccount(String loginId, String passwordHash, String name, AdminRole role) {
+        validateLoginId(loginId);
         validateName(name);
         if (passwordHash == null || passwordHash.isBlank() || role == null) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
-        this.email = email.toLowerCase();
+        this.loginId = loginId;
         this.passwordHash = passwordHash;
         this.name = name;
         this.role = role;
         this.status = AdminAccountStatus.ACTIVE;
         this.failedLoginCount = 0;
+        this.passwordChangeRequired = true;
     }
 
-    public static AdminAccount create(String email, String passwordHash, String name, AdminRole role) {
-        return new AdminAccount(email, passwordHash, name, role);
+    /** 새 계정은 항상 초기 비밀번호 상태로 시작한다 — 발급자(SUPER)가 아는 비밀번호를 본인이 바꿔야 쓸 수 있다. */
+    public static AdminAccount create(String loginId, String passwordHash, String name, AdminRole role) {
+        return new AdminAccount(loginId, passwordHash, name, role);
     }
 
     public boolean isActive() {
@@ -99,10 +104,11 @@ public class AdminAccount extends BaseEntity {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
         this.passwordHash = passwordHash;
+        this.passwordChangeRequired = false;
     }
 
-    private static void validateEmail(String email) {
-        if (email == null || !EMAIL_PATTERN.matcher(email).matches()) {
+    private static void validateLoginId(String loginId) {
+        if (loginId == null || !LOGIN_ID_PATTERN.matcher(loginId).matches()) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
     }

@@ -37,7 +37,7 @@ public class AdminAuthController {
     @PostMapping("/auth/login")
     public SuccessResponse<AdminTokenResponse> login(@Valid @RequestBody AdminLoginRequest request) {
         return SuccessResponse.of(AdminTokenResponse.from(
-                adminAuthService.login(request.email(), request.password())));
+                adminAuthService.login(request.loginId(), request.password())));
     }
 
     @PostMapping("/auth/reissue")

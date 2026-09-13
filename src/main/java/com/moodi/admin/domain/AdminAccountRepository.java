@@ -10,9 +10,9 @@ public interface AdminAccountRepository {
 
     Optional<AdminAccount> findById(UUID id);
 
-    Optional<AdminAccount> findByEmail(String email);
+    Optional<AdminAccount> findByLoginId(String loginId);
 
-    boolean existsByEmail(String email);
+    boolean existsByLoginId(String loginId);
 
     List<AdminAccount> findAllByOrderByCreatedAtAsc();
 

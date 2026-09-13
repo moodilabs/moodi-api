@@ -19,7 +19,7 @@
 | 항목 | 결정 |
 |---|---|
 | 배포 단위 | **같은 Cloud Run 앱**, 경로 `/api/admin/**`. 별도 모듈 분리는 트래픽·인원상 과함 |
-| 관리자 계정 | 회원(`member`)과 **완전히 분리된 `admin_account`** (이메일 + 비밀번호). 회원 테이블에 role 추가하지 않음 |
+| 관리자 계정 | 회원(`member`)과 **완전히 분리된 `admin_account`** (아이디 `login_id` + 비밀번호). 회원 테이블에 role 추가하지 않음 |
 | 인증 | 관리자 전용 JWT (`type=ADMIN_ACCESS`), `@AdminRequired` + `AdminAuthInterceptor`. Spring Security 미도입(현 구조 유지) |
 | 코드 위치 | 관리자 **인증·감사·대시보드**만 새 컨텍스트 `admin`. 각 도메인의 관리 API는 **해당 컨텍스트 `presentation/admin/`** 에 둔다 (스팟은 B, 나머지 A) |
 | 프론트 | Vercel 배포 + `admin.moodi.kr` 커스텀 도메인. `/api/admin/**`만 CORS 허용(`admin.cors.allowed-origins`, Vercel 프리뷰 `*.vercel.app` 포함), 쿠키 미사용 |
@@ -66,7 +66,10 @@ shared/auth/
 - `WebConfig`에 `AdminAuthInterceptor`를 `/api/admin/**` 패턴으로 등록. 관리자 토큰 검증 실패는 인터셉터에서 바로 401.
 
 ### 1.3 최초 관리자
-Flyway로 비밀번호를 심지 않는다. 앱 기동 시 `admin.bootstrap.email` / `admin.bootstrap.password`(env)가 설정돼 있고 `admin_account`가 비어 있으면 1명 생성(`AdminBootstrapRunner`, `ApplicationRunner`). 이후 관리자는 `SUPER`가 API로 추가.
+Flyway로 비밀번호를 심지 않는다. 앱 기동 시 `admin.bootstrap.login-id` / `admin.bootstrap.password`(env)가 설정돼 있고 `admin_account`가 비어 있으면 1명 생성(`AdminBootstrapRunner`, `ApplicationRunner`). 이후 관리자는 `SUPER`가 API로 추가.
+
+### 1.3.1 초기 비밀번호 강제 변경 (V26)
+아이디는 영문 소문자·숫자·밑줄 4~20자(`login_id`, V26에서 `email`을 rename — 기존 값은 `@` 앞부분). 새 계정(부트스트랩 포함)은 `password_change_required = true`로 시작하고 본인이 `PATCH /me/password`로 바꾸면(현재 비밀번호와 같은 값은 거부) `false`가 된다. `true`인 동안은 `admin/infrastructure/AdminPasswordChangeInterceptor`가 `/me`·`/me/password`·`/auth/logout` 외 요청을 `ADMIN_PASSWORD_CHANGE_REQUIRED` 403으로 막는다. 로그인·재발급·`/me` 응답에 `passwordChangeRequired`가 실려 프론트가 변경 모달을 강제한다.
 
 ### 1.4 권한
 | Role | 범위 |
@@ -96,10 +99,10 @@ Flyway로 비밀번호를 심지 않는다. 앱 기동 시 `admin.bootstrap.emai
 | `POST` | `/api/admin/auth/logout` | – | 204 |
 | `GET` | `/api/admin/me` | – | `{ id, email, name, role }` |
 | `GET` | `/api/admin/accounts` (SUPER) | – | 목록 |
-| `POST` | `/api/admin/accounts` (SUPER) | `{ email, name, role, password }` | 201 |
+| `POST` | `/api/admin/accounts` (SUPER) | `{ loginId, name, role, password }` | 201 |
 | `PATCH` | `/api/admin/accounts/{id}/status` (SUPER) | `{ status: ACTIVE\|DISABLED }` | 204 |
 
-에러: `ADMIN_LOGIN_FAILED` 401 (이메일/비밀번호 불일치 — 어느 쪽인지 알려주지 않음), `ADMIN_ACCOUNT_LOCKED` 423, `ADMIN_FORBIDDEN` 403 (role 부족), `INVALID_REFRESH_TOKEN` 401 (기존).
+에러: `ADMIN_LOGIN_FAILED` 401 (아이디/비밀번호 불일치 — 어느 쪽인지 알려주지 않음), `ADMIN_PASSWORD_CHANGE_REQUIRED` 403 (초기 비밀번호 미변경), `ADMIN_ACCOUNT_LOCKED` 423, `ADMIN_FORBIDDEN` 403 (role 부족), `INVALID_REFRESH_TOKEN` 401 (기존).
 
 ## 3. 회원 관리 (member 컨텍스트)
 
@@ -307,7 +310,7 @@ admin:
   cors:
     allowed-origins: ${ADMIN_ALLOWED_ORIGINS:https://admin.moodi.kr,https://*.vercel.app,http://localhost:5173,http://localhost:3000}
   bootstrap:
-    email: ${ADMIN_BOOTSTRAP_EMAIL:}
+    login-id: ${ADMIN_BOOTSTRAP_LOGIN_ID:}
     password: ${ADMIN_BOOTSTRAP_PASSWORD:}
   login:
     max-failures: 5

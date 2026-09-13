@@ -42,23 +42,25 @@ class AdminAuthControllerDocsTest extends AdminRestDocsSupport {
     @Test
     @DisplayName("관리자 로그인 성공")
     void login_success() throws Exception {
-        when(adminAuthService.login("ops@moodi.kr", "strong-password"))
-                .thenReturn(new AdminLoginResult("admin-access-token", "admin-refresh-token", AdminRole.OPERATOR));
+        when(adminAuthService.login("ops01", "strong-password"))
+                .thenReturn(new AdminLoginResult("admin-access-token", "admin-refresh-token", AdminRole.OPERATOR,
+                        true));
 
         mockMvc.perform(post("/api/admin/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new AdminLoginRequest("ops@moodi.kr", "strong-password"))))
+                        .content(objectMapper.writeValueAsString(new AdminLoginRequest("ops01", "strong-password"))))
                 .andExpect(status().isOk())
                 .andDo(document("admin/auth/login",
                         requestFields(
-                                fieldWithPath("email").type(JsonFieldType.STRING).description("관리자 이메일"),
+                                fieldWithPath("loginId").type(JsonFieldType.STRING).description("관리자 아이디"),
                                 fieldWithPath("password").type(JsonFieldType.STRING).description("비밀번호")
                         ),
                         responseFields(
                                 fieldWithPath("data").type(JsonFieldType.OBJECT).description("토큰"),
                                 fieldWithPath("data.accessToken").type(JsonFieldType.STRING).description("관리자 액세스 토큰 (30분)"),
                                 fieldWithPath("data.refreshToken").type(JsonFieldType.STRING).description("관리자 리프레시 토큰 (12시간)"),
-                                fieldWithPath("data.role").type(JsonFieldType.STRING).description("권한 (SUPER, OPERATOR)")
+                                fieldWithPath("data.role").type(JsonFieldType.STRING).description("권한 (SUPER, OPERATOR)"),
+                                fieldWithPath("data.passwordChangeRequired").type(JsonFieldType.BOOLEAN).description("초기 비밀번호 변경 필요 여부 — true면 비밀번호 변경 전까지 다른 관리자 API가 403(ADMIN_PASSWORD_CHANGE_REQUIRED)")
                         )
                 ));
     }
@@ -67,7 +69,7 @@ class AdminAuthControllerDocsTest extends AdminRestDocsSupport {
     @DisplayName("관리자 토큰 재발급 성공")
     void reissue_success() throws Exception {
         when(adminAuthService.reissue("admin-refresh-token"))
-                .thenReturn(new AdminLoginResult("new-access", "new-refresh", AdminRole.OPERATOR));
+                .thenReturn(new AdminLoginResult("new-access", "new-refresh", AdminRole.OPERATOR, false));
 
         mockMvc.perform(post("/api/admin/auth/reissue")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -81,7 +83,8 @@ class AdminAuthControllerDocsTest extends AdminRestDocsSupport {
                                 fieldWithPath("data").type(JsonFieldType.OBJECT).description("토큰"),
                                 fieldWithPath("data.accessToken").type(JsonFieldType.STRING).description("새 액세스 토큰"),
                                 fieldWithPath("data.refreshToken").type(JsonFieldType.STRING).description("새 리프레시 토큰 (이전 토큰은 폐기)"),
-                                fieldWithPath("data.role").type(JsonFieldType.STRING).description("현재 권한 (DB 기준으로 갱신)")
+                                fieldWithPath("data.role").type(JsonFieldType.STRING).description("현재 권한 (DB 기준으로 갱신)"),
+                                fieldWithPath("data.passwordChangeRequired").type(JsonFieldType.BOOLEAN).description("초기 비밀번호 변경 필요 여부")
                         )
                 ));
     }
@@ -99,8 +102,8 @@ class AdminAuthControllerDocsTest extends AdminRestDocsSupport {
     @Test
     @DisplayName("내 관리자 정보 조회 성공")
     void get_me_success() throws Exception {
-        when(adminAccountService.getMe(adminId)).thenReturn(new AdminAccountInfo(adminId, "ops@moodi.kr", "운영자",
-                AdminRole.OPERATOR, AdminAccountStatus.ACTIVE, LocalDateTime.of(2026, 8, 10, 9, 0),
+        when(adminAccountService.getMe(adminId)).thenReturn(new AdminAccountInfo(adminId, "ops01", "운영자",
+                AdminRole.OPERATOR, AdminAccountStatus.ACTIVE, false, LocalDateTime.of(2026, 8, 10, 9, 0),
                 LocalDateTime.of(2026, 8, 1, 0, 0)));
 
         mockMvc.perform(get("/api/admin/me"))
@@ -109,10 +112,11 @@ class AdminAuthControllerDocsTest extends AdminRestDocsSupport {
                         responseFields(
                                 fieldWithPath("data").type(JsonFieldType.OBJECT).description("관리자 정보"),
                                 fieldWithPath("data.id").type(JsonFieldType.STRING).description("관리자 ID"),
-                                fieldWithPath("data.email").type(JsonFieldType.STRING).description("이메일"),
+                                fieldWithPath("data.loginId").type(JsonFieldType.STRING).description("아이디"),
                                 fieldWithPath("data.name").type(JsonFieldType.STRING).description("이름"),
                                 fieldWithPath("data.role").type(JsonFieldType.STRING).description("권한"),
                                 fieldWithPath("data.status").type(JsonFieldType.STRING).description("상태 (ACTIVE, DISABLED)"),
+                                fieldWithPath("data.passwordChangeRequired").type(JsonFieldType.BOOLEAN).description("초기 비밀번호 변경 필요 여부 — true면 비밀번호 변경 전까지 다른 관리자 API가 403(ADMIN_PASSWORD_CHANGE_REQUIRED)"),
                                 fieldWithPath("data.lastLoginAt").type(JsonFieldType.STRING).optional().description("마지막 로그인"),
                                 fieldWithPath("data.createdAt").type(JsonFieldType.STRING).optional().description("생성일")
                         )

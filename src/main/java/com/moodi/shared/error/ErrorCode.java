@@ -17,12 +17,13 @@ public enum ErrorCode {
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "INVALID_REFRESH_TOKEN", "유효하지 않은 리프레시 토큰입니다."),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "DUPLICATE_EMAIL", "이미 가입된 이메일입니다."),
 
-    ADMIN_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "ADMIN_LOGIN_FAILED", "이메일 또는 비밀번호가 올바르지 않습니다."),
+    ADMIN_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "ADMIN_LOGIN_FAILED", "아이디 또는 비밀번호가 올바르지 않습니다."),
     ADMIN_ACCOUNT_LOCKED(HttpStatus.LOCKED, "ADMIN_ACCOUNT_LOCKED", "로그인 실패가 반복되어 잠시 잠긴 계정입니다."),
     ADMIN_ACCOUNT_DISABLED(HttpStatus.FORBIDDEN, "ADMIN_ACCOUNT_DISABLED", "비활성화된 관리자 계정입니다."),
     ADMIN_FORBIDDEN(HttpStatus.FORBIDDEN, "ADMIN_FORBIDDEN", "이 작업을 수행할 권한이 없습니다."),
     ADMIN_ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "ADMIN_ACCOUNT_NOT_FOUND", "관리자 계정을 찾을 수 없습니다."),
-    DUPLICATE_ADMIN_EMAIL(HttpStatus.CONFLICT, "DUPLICATE_ADMIN_EMAIL", "이미 등록된 관리자 이메일입니다."),
+    DUPLICATE_ADMIN_LOGIN_ID(HttpStatus.CONFLICT, "DUPLICATE_ADMIN_LOGIN_ID", "이미 사용 중인 관리자 아이디입니다."),
+    ADMIN_PASSWORD_CHANGE_REQUIRED(HttpStatus.FORBIDDEN, "ADMIN_PASSWORD_CHANGE_REQUIRED", "초기 비밀번호를 변경한 뒤 이용할 수 있습니다."),
 
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER_NOT_FOUND", "회원을 찾을 수 없습니다."),
     WITHDRAWAL_REASON_REQUIRED(HttpStatus.BAD_REQUEST, "WITHDRAWAL_REASON_REQUIRED", "탈퇴 사유를 1개 이상 선택해주세요."),

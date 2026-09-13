@@ -9,7 +9,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
 /**
- * 최초 관리자 생성. Flyway에 비밀번호를 심지 않으려고 환경변수(`ADMIN_BOOTSTRAP_EMAIL`/`PASSWORD`)로 받는다.
+ * 최초 관리자 생성. Flyway에 비밀번호를 심지 않으려고 환경변수(`ADMIN_BOOTSTRAP_LOGIN_ID`/`PASSWORD`)로 받는다.
  * 계정이 하나라도 있으면 아무것도 하지 않으므로 이후 배포에서 값이 남아 있어도 무해하다.
  */
 @Component
@@ -18,26 +18,26 @@ public class AdminBootstrapRunner implements ApplicationRunner {
     private static final Logger log = LoggerFactory.getLogger(AdminBootstrapRunner.class);
 
     private final AdminAccountService adminAccountService;
-    private final String email;
+    private final String loginId;
     private final String password;
 
     public AdminBootstrapRunner(
             AdminAccountService adminAccountService,
-            @Value("${admin.bootstrap.email:}") String email,
+            @Value("${admin.bootstrap.login-id:}") String loginId,
             @Value("${admin.bootstrap.password:}") String password
     ) {
         this.adminAccountService = adminAccountService;
-        this.email = email;
+        this.loginId = loginId;
         this.password = password;
     }
 
     @Override
     public void run(ApplicationArguments args) {
-        if (email == null || email.isBlank() || password == null || password.isBlank()) {
+        if (loginId == null || loginId.isBlank() || password == null || password.isBlank()) {
             return;
         }
-        if (adminAccountService.bootstrap(email, password)) {
-            log.info("최초 관리자 계정을 생성했습니다: {}", email);
+        if (adminAccountService.bootstrap(loginId, password)) {
+            log.info("최초 관리자 계정을 생성했습니다: {}", loginId);
         }
     }
 }
