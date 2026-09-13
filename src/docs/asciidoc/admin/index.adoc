@@ -159,6 +159,36 @@ include::{snippets}/admin/accounts/change-role/request-fields.adoc[]
 .HTTP Response
 include::{snippets}/admin/accounts/change-role/http-response.adoc[]
 
+== 대시보드
+
+여러 컨텍스트 테이블을 읽기 전용으로 센 값입니다. "오늘"·"최근 7일"은 서버 시각(KST) 기준 0시 경계입니다.
+
+.HTTP Request
+include::{snippets}/admin/dashboard/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/dashboard/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/admin/dashboard/response-fields.adoc[]
+
+== 감사 로그 (SUPER)
+
+`/api/admin/**`의 변경 요청(POST/PUT/PATCH/DELETE)이 2xx로 끝나면 자동으로 한 줄 남습니다.
+요청 본문은 저장하지 않으며, 상세가 필요하면 `requestId`로 앱 로그를 찾습니다. 로그인·재발급은 인증 전이라 남지 않습니다.
+
+.HTTP Request
+include::{snippets}/admin/audit-logs/http-request.adoc[]
+
+.Query Parameters
+include::{snippets}/admin/audit-logs/query-parameters.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/audit-logs/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/admin/audit-logs/response-fields.adoc[]
+
 include::../member/admin-member.adoc[]
 
 include::../support/admin-notice.adoc[]
