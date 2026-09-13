@@ -93,7 +93,7 @@ public class FeedSpotReaderAdapter implements FeedSpotReader {
                 + "     AND fi.shown_at <= :sessionAt\n"
                 + "LEFT JOIN bookmark bm ON bm.spot_id = s.id AND bm.member_id = :memberId\n"
                 + "WHERE s.status = 'PUBLISHED'\n"
-                + "  AND (s.content_type NOT IN ('SHOPPING', 'ACCOMMODATION', 'RESTAURANT') OR (s.content_type = 'SHOPPING' AND s.lcls_systm2 = 'SH06'))\n"
+                + "  AND (s.route_excluded = false OR (s.content_type = 'SHOPPING' AND s.lcls_systm2 = 'SH06'))\n"
                 + moodFilter(query.moodTagKeys())
                 + "), page AS (\n"
                 + "SELECT * FROM candidate\n"
@@ -126,7 +126,7 @@ public class FeedSpotReaderAdapter implements FeedSpotReader {
                 + "    SELECT spot_id, COUNT(*) AS bookmark_count FROM bookmark GROUP BY spot_id\n"
                 + ") bc ON bc.spot_id = s.id\n"
                 + "WHERE s.status = 'PUBLISHED'\n"
-                + "  AND (s.content_type NOT IN ('SHOPPING', 'ACCOMMODATION', 'RESTAURANT') OR (s.content_type = 'SHOPPING' AND s.lcls_systm2 = 'SH06'))\n"
+                + "  AND (s.route_excluded = false OR (s.content_type = 'SHOPPING' AND s.lcls_systm2 = 'SH06'))\n"
                 + "), page AS (\n"
                 + "SELECT * FROM candidate\n"
                 + guestCursorPredicate(query.cursor(), params)

@@ -11,7 +11,7 @@ public enum SpotContentType {
     FESTIVAL("축제공연행사", false),
     LEISURE_SPORTS("레포츠", false),
     ACCOMMODATION("숙박", true),
-    SHOPPING("쇼핑", false),
+    SHOPPING("쇼핑", true),
     RESTAURANT("음식점", true);
 
     private static final Map<String, SpotContentType> LABEL_MAP =
