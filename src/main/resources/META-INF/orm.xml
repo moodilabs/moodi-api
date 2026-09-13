@@ -745,4 +745,31 @@
         </attributes>
     </embeddable>
 
+    <entity class="com.moodi.admin.domain.AdminAuditLog" access="FIELD">
+        <table name="admin_audit_log"/>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="adminId">
+                <column name="admin_id" nullable="false"/>
+            </basic>
+            <basic name="method">
+                <column name="method" nullable="false" length="10"/>
+            </basic>
+            <basic name="path">
+                <column name="path" nullable="false" length="300"/>
+            </basic>
+            <basic name="statusCode">
+                <column name="status_code" nullable="false"/>
+            </basic>
+            <basic name="requestId">
+                <column name="request_id" nullable="true" length="64"/>
+            </basic>
+            <basic name="createdAt">
+                <column name="created_at" nullable="false" updatable="false"/>
+            </basic>
+        </attributes>
+    </entity>
+
 </entity-mappings>

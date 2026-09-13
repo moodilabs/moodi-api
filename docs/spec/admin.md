@@ -79,12 +79,13 @@ Flyway로 비밀번호를 심지 않는다. 앱 기동 시 `admin.bootstrap.emai
 ### 1.5 감사 로그
 `/api/admin/**`의 `POST/PUT/PATCH/DELETE` 성공 시 `admin_audit_log`에 기록. `AdminAuditInterceptor`(`afterCompletion`)에서 경로·메서드·adminId·응답 상태 저장. 요청 본문은 저장하지 않는다(개인정보). **`ADM-F05`(대시보드)와 함께 진행** — `ADM-F01`에서는 제외됨.
 
-### 1.6 적용 현황 (ADM-F01)
+### 1.6 적용 현황 (ADM-F01 · F04 · F05)
 - `shared/auth`: `TokenType.ADMIN_ACCESS/ADMIN_REFRESH`, `AdminRole`, `AdminPrincipal`, `@AdminRequired(role)`, `@AuthAdmin`, `AdminAuthInterceptor`, `AuthAdminArgumentResolver`, `JwtProvider` 관리자 토큰 발급/파싱. 회원 인터셉터는 `/api/admin/**`를 제외.
 - CORS: `WebConfig.addCorsMappings` — `/api/admin/**`만, `ADMIN_ALLOWED_ORIGINS` env.
 - `admin` 컨텍스트: 계정·로그인·재발급·로그아웃·내 정보·비밀번호 변경·계정 관리(SUPER). `V20__create_admin.sql`.
 - `support/presentation/admin`: 공지·FAQ·약관 어드민 컨트롤러 3종.
 - 문서: `src/docs/asciidoc/admin/index.adoc`, `./gradlew asciidoctorAdmin`.
+- `ADM-F05`: `GET /api/admin/dashboard`(`DashboardReadModelAdapter` 네이티브 COUNT), `admin_audit_log` + `AdminAuditInterceptor`(`AdminAuditWebConfig`로 등록), `GET /api/admin/audit-logs`(SUPER). 탈퇴 사유 집계는 `MY-F02` 이후.
 
 ## 2. 관리자 인증 API
 
@@ -256,7 +257,7 @@ ArchUnit: `presentation/admin`은 `..presentation..` 패턴에 이미 포함되�
 ## 11. DB 마이그레이션
 
 ```sql
--- V20__create_admin.sql (적용됨 — admin_audit_log는 ADM-F05에서)
+-- V20__create_admin.sql · V23__create_admin_audit_log.sql (적용됨)
 CREATE TABLE admin_account (
     id                 UUID         PRIMARY KEY,
     email              VARCHAR(255) NOT NULL,
