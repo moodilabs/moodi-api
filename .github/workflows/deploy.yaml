@@ -72,10 +72,11 @@ jobs:
           ADMIN_BOOTSTRAP_PASSWORD: ${{ secrets.ADMIN_BOOTSTRAP_PASSWORD }}
           ADMIN_ALLOWED_ORIGINS: ${{ secrets.ADMIN_ALLOWED_ORIGINS }}
         run: |
-          env_vars="^@^SPRING_PROFILES_ACTIVE=prod@JWT_SECRET=${JWT_SECRET}@GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}@APPLE_CLIENT_ID=${APPLE_CLIENT_ID}"
-          env_vars="${env_vars}@ADMIN_BOOTSTRAP_EMAIL=${ADMIN_BOOTSTRAP_EMAIL}@ADMIN_BOOTSTRAP_PASSWORD=${ADMIN_BOOTSTRAP_PASSWORD}"
+          # 구분자는 '|' — '@'는 이메일, ','는 ADMIN_ALLOWED_ORIGINS 값에 들어간다. 시크릿 값에 '|'를 넣지 말 것.
+          env_vars="^|^SPRING_PROFILES_ACTIVE=prod|JWT_SECRET=${JWT_SECRET}|GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}|APPLE_CLIENT_ID=${APPLE_CLIENT_ID}"
+          env_vars="${env_vars}|ADMIN_BOOTSTRAP_EMAIL=${ADMIN_BOOTSTRAP_EMAIL}|ADMIN_BOOTSTRAP_PASSWORD=${ADMIN_BOOTSTRAP_PASSWORD}"
           if [ -n "${ADMIN_ALLOWED_ORIGINS}" ]; then
-            env_vars="${env_vars}@ADMIN_ALLOWED_ORIGINS=${ADMIN_ALLOWED_ORIGINS}"
+            env_vars="${env_vars}|ADMIN_ALLOWED_ORIGINS=${ADMIN_ALLOWED_ORIGINS}"
           fi
           gcloud run deploy ${{ env.SERVICE }} \
             --image=${{ env.IMAGE }}:${{ github.sha }} \
