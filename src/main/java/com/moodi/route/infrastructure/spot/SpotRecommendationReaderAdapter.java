@@ -60,8 +60,7 @@ public class SpotRecommendationReaderAdapter implements SpotRecommendationReader
                 LIMIT 1
             ) si ON true
             WHERE s.status = 'PUBLISHED'
-              AND s.route_excluded = false
-              AND (s.content_type != 'SHOPPING' OR s.lcls_systm2 = 'SH06')
+              AND (s.route_excluded = false OR (s.content_type = 'SHOPPING' AND s.lcls_systm2 = 'SH06'))
               AND s.id NOT IN (:excludeIds)
             """;
 

@@ -33,11 +33,11 @@ class SpotContentTypeTest {
     }
 
     @Test
-    @DisplayName("숙박과 음식점만 routeExcluded가 true이다")
-    void route_excluded_only_for_accommodation_and_restaurant() {
+    @DisplayName("숙박, 음식점, 쇼핑은 routeExcluded가 true이다")
+    void route_excluded_for_accommodation_restaurant_and_shopping() {
         assertThat(SpotContentType.ACCOMMODATION.isRouteExcluded()).isTrue();
         assertThat(SpotContentType.RESTAURANT.isRouteExcluded()).isTrue();
+        assertThat(SpotContentType.SHOPPING.isRouteExcluded()).isTrue();
         assertThat(SpotContentType.TOURIST_ATTRACTION.isRouteExcluded()).isFalse();
-        assertThat(SpotContentType.SHOPPING.isRouteExcluded()).isFalse();
     }
 }
