@@ -61,12 +61,22 @@ jobs:
           done
           [ "$missing" -eq 0 ]
 
+      # 관리자 부트스트랩 값은 admin_account 가 비어 있을 때 최초 1회만 쓰이므로 필수 검증에 넣지 않는다.
+      # ADMIN_ALLOWED_ORIGINS 는 비어 있으면 application.yaml 기본값(https://admin.moodi.kr + 로컬)을 쓴다.
       - name: Deploy to Cloud Run
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           APPLE_CLIENT_ID: ${{ secrets.APPLE_CLIENT_ID }}
+          ADMIN_BOOTSTRAP_EMAIL: ${{ secrets.ADMIN_BOOTSTRAP_EMAIL }}
+          ADMIN_BOOTSTRAP_PASSWORD: ${{ secrets.ADMIN_BOOTSTRAP_PASSWORD }}
+          ADMIN_ALLOWED_ORIGINS: ${{ secrets.ADMIN_ALLOWED_ORIGINS }}
         run: |
+          env_vars="^@^SPRING_PROFILES_ACTIVE=prod@JWT_SECRET=${JWT_SECRET}@GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}@APPLE_CLIENT_ID=${APPLE_CLIENT_ID}"
+          env_vars="${env_vars}@ADMIN_BOOTSTRAP_EMAIL=${ADMIN_BOOTSTRAP_EMAIL}@ADMIN_BOOTSTRAP_PASSWORD=${ADMIN_BOOTSTRAP_PASSWORD}"
+          if [ -n "${ADMIN_ALLOWED_ORIGINS}" ]; then
+            env_vars="${env_vars}@ADMIN_ALLOWED_ORIGINS=${ADMIN_ALLOWED_ORIGINS}"
+          fi
           gcloud run deploy ${{ env.SERVICE }} \
             --image=${{ env.IMAGE }}:${{ github.sha }} \
             --region=${{ env.REGION }} \
@@ -75,4 +85,4 @@ jobs:
             --port=8080 \
             --memory=1Gi \
             --add-cloudsql-instances=moodi-app-2026:asia-northeast3:moodi-db \
-            --update-env-vars="^@^SPRING_PROFILES_ACTIVE=prod@JWT_SECRET=${JWT_SECRET}@GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}@APPLE_CLIENT_ID=${APPLE_CLIENT_ID}"
+            --update-env-vars="${env_vars}"

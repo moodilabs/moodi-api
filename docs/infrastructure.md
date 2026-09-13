@@ -51,8 +51,8 @@
 | `SPRING_PROFILES_ACTIVE` | `prod` |
 | `DB_USERNAME` | Cloud SQL 사용자명 |
 | `DB_PASSWORD` | Cloud SQL 비밀번호 |
-| `ADMIN_ALLOWED_ORIGINS` | 관리자 프론트 CORS 오리진 (쉼표 구분). 기본 `https://admin.moodi.kr,http://localhost:5173,http://localhost:3000` |
-| `ADMIN_BOOTSTRAP_EMAIL` / `ADMIN_BOOTSTRAP_PASSWORD` | 최초 관리자(SUPER) 생성용. `admin_account`가 비어 있을 때만 기동 시 1회 사용되며, 이후에는 남아 있어도 무해 |
+| `ADMIN_ALLOWED_ORIGINS` | 관리자 프론트 CORS 오리진 (쉼표 구분). GitHub Secret이 비어 있으면 기본 `https://admin.moodi.kr,http://localhost:5173,http://localhost:3000` |
+| `ADMIN_BOOTSTRAP_EMAIL` / `ADMIN_BOOTSTRAP_PASSWORD` | 최초 관리자(SUPER) 생성용 GitHub Secret. `admin_account`가 비어 있을 때만 기동 시 1회 사용되며, 이후에는 남아 있어도 무해. 첫 로그인 후 `PATCH /api/admin/me/password`로 비밀번호를 바꾼다 |
 
 관리자 프론트는 `admin.moodi.kr` 서브도메인에 별도 배포하고 이 API(`/api/admin/**`)를 호출한다.
 
