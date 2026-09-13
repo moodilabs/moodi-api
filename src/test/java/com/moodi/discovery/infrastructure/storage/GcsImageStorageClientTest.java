@@ -104,4 +104,16 @@ class GcsImageStorageClientTest {
                         + "=" + ReflectionTestUtils.getField(option, "value"))
                 .toList();
     }
+
+    @Test
+    @DisplayName("서명 권한이 없어 signUrl이 실패하면 503으로 감싼다")
+    void issue_upload_url_wraps_signing_failure_as_unavailable() {
+        when(storage.signUrl(any(BlobInfo.class), anyLong(), any(TimeUnit.class), any(Storage.SignUrlOption[].class)))
+                .thenThrow(new IllegalStateException("signBlob permission denied"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> client.issueUploadUrl(OBJECT_NAME, "image/jpeg", 1024))
+                .isInstanceOf(com.moodi.shared.error.BusinessException.class)
+                .extracting(exception -> ((com.moodi.shared.error.BusinessException) exception).getErrorCode())
+                .isEqualTo(com.moodi.shared.error.ErrorCode.IMAGE_UPLOAD_UNAVAILABLE);
+    }
 }

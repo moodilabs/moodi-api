@@ -63,7 +63,18 @@
 | `moodi-pick-uploads` | Pick 사용자 사진 | `gcs.pick-image.enabled` |
 | `moodi-inquiry-uploads` | 1:1 문의 첨부 (사진·동영상·PDF) | `gcs.inquiry-upload.enabled` |
 
-둘 다 서비스 계정에 Service Account Token Creator(`iam.serviceAccounts.signBlob`)가 필요하며, 준비 전에는 플래그를 끈 채 배포한다(업로드 요청은 503).
+둘 다 `asia-northeast3`, uniform access, public access prevention으로 생성됨(2026-09-13). `prod` 프로필에서 두 플래그 모두 켜져 있다.
+
+서명 URL을 만들려면 Cloud Run 서비스 계정(`954020560650-compute@developer.gserviceaccount.com`)이 **자기 자신에 대해**
+`roles/iam.serviceAccountTokenCreator`(signBlob)를 가져야 한다. 이 바인딩은 프로젝트 Owner(`moodikr.2026@gmail.com`)만 걸 수 있다:
+
+```bash
+gcloud iam service-accounts add-iam-policy-binding 954020560650-compute@developer.gserviceaccount.com \
+  --member="serviceAccount:954020560650-compute@developer.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountTokenCreator" --project=moodi-app-2026
+```
+
+권한이 붙기 전에는 업로드 URL 요청이 503(`IMAGE_UPLOAD_UNAVAILABLE`)으로 떨어지며, 권한이 붙으면 재배포 없이 바로 동작한다.
 
 ## Artifact Registry
 
