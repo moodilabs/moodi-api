@@ -17,22 +17,37 @@ class AdminAccountTest {
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 8, 10, 10, 0);
 
     @Test
-    @DisplayName("생성 시 ACTIVE이고 이메일은 소문자로 저장된다")
-    void create_normalizes_email_and_activates() {
-        AdminAccount account = AdminAccount.create("Ops@Moodi.KR", "hash", "운영자", AdminRole.OPERATOR);
+    @DisplayName("생성 시 ACTIVE이고 초기 비밀번호 변경 대상이다")
+    void create_activates_and_requires_password_change() {
+        AdminAccount account = AdminAccount.create("ops_01", "hash", "운영자", AdminRole.OPERATOR);
 
-        assertThat(account.getEmail()).isEqualTo("ops@moodi.kr");
+        assertThat(account.getLoginId()).isEqualTo("ops_01");
         assertThat(account.isActive()).isTrue();
+        assertThat(account.isPasswordChangeRequired()).isTrue();
         assertThat(account.getFailedLoginCount()).isZero();
     }
 
     @Test
-    @DisplayName("이메일 형식이 아니면 생성할 수 없다")
-    void create_rejects_invalid_email() {
-        assertThatThrownBy(() -> AdminAccount.create("not-an-email", "hash", "운영자", AdminRole.OPERATOR))
-                .isInstanceOf(BusinessException.class)
-                .extracting(exception -> ((BusinessException) exception).getErrorCode())
-                .isEqualTo(ErrorCode.INVALID_REQUEST);
+    @DisplayName("아이디가 영문·숫자·밑줄 4~20자가 아니면 생성할 수 없다")
+    void create_rejects_invalid_login_id() {
+        for (String invalid : new String[]{"ab", "ops@moodi.kr", "Ops", "한글아이디", "a".repeat(21)}) {
+            assertThatThrownBy(() -> AdminAccount.create(invalid, "hash", "운영자", AdminRole.OPERATOR))
+                    .as(invalid)
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                    .isEqualTo(ErrorCode.INVALID_REQUEST);
+        }
+    }
+
+    @Test
+    @DisplayName("비밀번호를 바꾸면 초기 비밀번호 변경 대상에서 풀린다")
+    void change_password_clears_required_flag() {
+        AdminAccount account = AdminAccountFixture.create();
+
+        account.changePassword("new-hash");
+
+        assertThat(account.getPasswordHash()).isEqualTo("new-hash");
+        assertThat(account.isPasswordChangeRequired()).isFalse();
     }
 
     @Test

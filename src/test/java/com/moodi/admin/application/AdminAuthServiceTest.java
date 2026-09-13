@@ -65,14 +65,15 @@ class AdminAuthServiceTest {
     @DisplayName("로그인 성공 시 토큰과 권한을 돌려주고 리프레시 토큰을 저장한다")
     void login_success_issues_tokens() {
         AdminAccount account = AdminAccountFixture.createWithId(ADMIN_ID, AdminRole.OPERATOR);
-        when(adminAccountRepository.findByEmail("ops@moodi.kr")).thenReturn(Optional.of(account));
+        when(adminAccountRepository.findByLoginId("ops01")).thenReturn(Optional.of(account));
         when(passwordEncoder.matches("correct-password", account.getPasswordHash())).thenReturn(true);
         when(adminTokenProvider.issue(ADMIN_ID, AdminRole.OPERATOR)).thenReturn(TOKENS);
 
-        AdminLoginResult result = adminAuthService.login("Ops@Moodi.kr", "correct-password");
+        AdminLoginResult result = adminAuthService.login(" OPS01 ", "correct-password");
 
         assertThat(result.accessToken()).isEqualTo("access");
         assertThat(result.role()).isEqualTo(AdminRole.OPERATOR);
+        assertThat(result.passwordChangeRequired()).isTrue();
         assertThat(account.getLastLoginAt()).isEqualTo(NOW);
         verify(adminRefreshTokenRepository).save(any(AdminRefreshToken.class));
     }
@@ -81,15 +82,15 @@ class AdminAuthServiceTest {
     @DisplayName("없는 이메일과 틀린 비밀번호는 같은 에러를 돌려준다")
     void login_failure_does_not_reveal_account_existence() {
         AdminAccount account = AdminAccountFixture.createWithId(ADMIN_ID, AdminRole.OPERATOR);
-        when(adminAccountRepository.findByEmail("ops@moodi.kr")).thenReturn(Optional.of(account));
-        when(adminAccountRepository.findByEmail("nobody@moodi.kr")).thenReturn(Optional.empty());
+        when(adminAccountRepository.findByLoginId("ops01")).thenReturn(Optional.of(account));
+        when(adminAccountRepository.findByLoginId("nobody")).thenReturn(Optional.empty());
         when(passwordEncoder.matches("wrong", account.getPasswordHash())).thenReturn(false);
 
-        assertThatThrownBy(() -> adminAuthService.login("ops@moodi.kr", "wrong"))
+        assertThatThrownBy(() -> adminAuthService.login("ops01", "wrong"))
                 .isInstanceOf(BusinessException.class)
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.ADMIN_LOGIN_FAILED);
-        assertThatThrownBy(() -> adminAuthService.login("nobody@moodi.kr", "wrong"))
+        assertThatThrownBy(() -> adminAuthService.login("nobody", "wrong"))
                 .isInstanceOf(BusinessException.class)
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.ADMIN_LOGIN_FAILED);
@@ -102,9 +103,9 @@ class AdminAuthServiceTest {
     void login_locked_account_throws() {
         AdminAccount account = AdminAccountFixture.createWithId(ADMIN_ID, AdminRole.OPERATOR);
         account.recordLoginFailure(NOW, 1, 15);
-        when(adminAccountRepository.findByEmail("ops@moodi.kr")).thenReturn(Optional.of(account));
+        when(adminAccountRepository.findByLoginId("ops01")).thenReturn(Optional.of(account));
 
-        assertThatThrownBy(() -> adminAuthService.login("ops@moodi.kr", "correct-password"))
+        assertThatThrownBy(() -> adminAuthService.login("ops01", "correct-password"))
                 .isInstanceOf(BusinessException.class)
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.ADMIN_ACCOUNT_LOCKED);
@@ -116,10 +117,10 @@ class AdminAuthServiceTest {
     void login_disabled_account_throws() {
         AdminAccount account = AdminAccountFixture.createWithId(ADMIN_ID, AdminRole.OPERATOR);
         account.changeStatus(AdminAccountStatus.DISABLED);
-        when(adminAccountRepository.findByEmail("ops@moodi.kr")).thenReturn(Optional.of(account));
+        when(adminAccountRepository.findByLoginId("ops01")).thenReturn(Optional.of(account));
         when(passwordEncoder.matches("correct-password", account.getPasswordHash())).thenReturn(true);
 
-        assertThatThrownBy(() -> adminAuthService.login("ops@moodi.kr", "correct-password"))
+        assertThatThrownBy(() -> adminAuthService.login("ops01", "correct-password"))
                 .isInstanceOf(BusinessException.class)
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.ADMIN_ACCOUNT_DISABLED);

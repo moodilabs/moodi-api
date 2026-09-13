@@ -51,13 +51,13 @@ public class AdminAccountService {
 
     public UUID create(AdminAccountCommand command) {
         validatePassword(command.password());
-        String email = normalize(command.email());
-        if (adminAccountRepository.existsByEmail(email)) {
-            throw new BusinessException(ErrorCode.DUPLICATE_ADMIN_EMAIL);
+        String loginId = normalize(command.loginId());
+        if (adminAccountRepository.existsByLoginId(loginId)) {
+            throw new BusinessException(ErrorCode.DUPLICATE_ADMIN_LOGIN_ID);
         }
-        AdminAccount account = AdminAccount.create(email, passwordEncoder.encode(command.password()),
+        AdminAccount account = AdminAccount.create(loginId, passwordEncoder.encode(command.password()),
                 command.name(), command.role());
-        return saveWithEmailConflictCheck(account).getId();
+        return saveWithLoginIdConflictCheck(account).getId();
     }
 
     /**
@@ -87,11 +87,15 @@ public class AdminAccountService {
         adminRefreshTokenRepository.deleteByAdminId(targetId);
     }
 
+    /** 새 비밀번호는 현재 것과 달라야 한다 — 초기 비밀번호를 그대로 다시 넣어 강제 변경을 우회하지 못하게. */
     public void changePassword(UUID adminId, String currentPassword, String newPassword) {
         validatePassword(newPassword);
         AdminAccount account = findAccount(adminId);
         if (!passwordEncoder.matches(currentPassword, account.getPasswordHash())) {
             throw new BusinessException(ErrorCode.ADMIN_LOGIN_FAILED);
+        }
+        if (currentPassword.equals(newPassword)) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
         account.changePassword(passwordEncoder.encode(newPassword));
         adminAccountRepository.save(account);
@@ -101,12 +105,12 @@ public class AdminAccountService {
     /**
      * 기동 시 최초 SUPER 생성. 계정이 하나라도 있으면 아무것도 하지 않는다.
      */
-    public boolean bootstrap(String email, String password) {
+    public boolean bootstrap(String loginId, String password) {
         if (adminAccountRepository.count() > 0) {
             return false;
         }
         validatePassword(password);
-        AdminAccount account = AdminAccount.create(normalize(email), passwordEncoder.encode(password),
+        AdminAccount account = AdminAccount.create(normalize(loginId), passwordEncoder.encode(password),
                 "bootstrap", AdminRole.SUPER);
         adminAccountRepository.save(account);
         return true;
@@ -117,11 +121,11 @@ public class AdminAccountService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.ADMIN_ACCOUNT_NOT_FOUND));
     }
 
-    private String normalize(String email) {
-        if (email == null) {
+    private String normalize(String loginId) {
+        if (loginId == null) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
-        return email.trim().toLowerCase();
+        return loginId.trim().toLowerCase();
     }
 
     private void validatePassword(String password) {
@@ -130,13 +134,13 @@ public class AdminAccountService {
         }
     }
 
-    private AdminAccount saveWithEmailConflictCheck(AdminAccount account) {
+    private AdminAccount saveWithLoginIdConflictCheck(AdminAccount account) {
         try {
             AdminAccount saved = adminAccountRepository.save(account);
             adminAccountRepository.flush();
             return saved;
         } catch (DataIntegrityViolationException e) {
-            throw new BusinessException(ErrorCode.DUPLICATE_ADMIN_EMAIL);
+            throw new BusinessException(ErrorCode.DUPLICATE_ADMIN_LOGIN_ID);
         }
     }
 }

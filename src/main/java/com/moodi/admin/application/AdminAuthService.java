@@ -43,12 +43,12 @@ public class AdminAuthService {
     }
 
     /**
-     * 이메일이 없어도, 비밀번호가 틀려도 같은 {@code ADMIN_LOGIN_FAILED}를 돌려준다 — 계정 존재 여부를 노출하지 않기 위해.
+     * 아이디가 없어도, 비밀번호가 틀려도 같은 {@code ADMIN_LOGIN_FAILED}를 돌려준다 — 계정 존재 여부를 노출하지 않기 위해.
      * 실패 기록은 계정이 있을 때만 남는다.
      */
-    public AdminLoginResult login(String email, String password) {
+    public AdminLoginResult login(String loginId, String password) {
         LocalDateTime now = LocalDateTime.now(clock);
-        AdminAccount account = adminAccountRepository.findByEmail(email == null ? null : email.toLowerCase())
+        AdminAccount account = adminAccountRepository.findByLoginId(loginId == null ? null : loginId.trim().toLowerCase())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ADMIN_LOGIN_FAILED));
 
         if (account.isLocked(now)) {
@@ -66,7 +66,8 @@ public class AdminAuthService {
         account.recordLoginSuccess(now);
         adminAccountRepository.save(account);
         AdminTokenPair tokens = issueTokens(account);
-        return new AdminLoginResult(tokens.accessToken(), tokens.refreshToken(), account.getRole());
+        return new AdminLoginResult(tokens.accessToken(), tokens.refreshToken(), account.getRole(),
+                account.isPasswordChangeRequired());
     }
 
     /**
@@ -88,7 +89,8 @@ public class AdminAuthService {
 
         adminRefreshTokenRepository.deleteByToken(refreshToken);
         AdminTokenPair tokens = issueTokens(account);
-        return new AdminLoginResult(tokens.accessToken(), tokens.refreshToken(), account.getRole());
+        return new AdminLoginResult(tokens.accessToken(), tokens.refreshToken(), account.getRole(),
+                account.isPasswordChangeRequired());
     }
 
     public void logout(UUID adminId) {

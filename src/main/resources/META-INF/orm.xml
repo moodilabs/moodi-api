@@ -649,11 +649,14 @@
             <id name="id">
                 <generated-value strategy="UUID"/>
             </id>
-            <basic name="email">
-                <column name="email" nullable="false" unique="true" length="255"/>
+            <basic name="loginId">
+                <column name="login_id" nullable="false" unique="true" length="20"/>
             </basic>
             <basic name="passwordHash">
                 <column name="password_hash" nullable="false" length="100"/>
+            </basic>
+            <basic name="passwordChangeRequired">
+                <column name="password_change_required" nullable="false"/>
             </basic>
             <basic name="name">
                 <column name="name" nullable="false" length="50"/>

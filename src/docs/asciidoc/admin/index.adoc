@@ -46,7 +46,8 @@ include::{snippets}/admin/auth/login/response-fields.adoc[]
 |===
 | 코드 | HTTP | 설명
 
-| `ADMIN_LOGIN_FAILED` | 401 | 이메일 또는 비밀번호 불일치 (어느 쪽인지 알려주지 않음)
+| `ADMIN_LOGIN_FAILED` | 401 | 아이디 또는 비밀번호 불일치 (어느 쪽인지 알려주지 않음)
+| `ADMIN_PASSWORD_CHANGE_REQUIRED` | 403 | 초기 비밀번호 상태 — `PATCH /api/admin/me/password`로 바꾸기 전까지 `/me`·비밀번호 변경·로그아웃 외 모든 관리자 API가 이 코드로 거절됩니다
 | `ADMIN_ACCOUNT_LOCKED` | 423 | 실패 누적으로 잠김
 | `ADMIN_ACCOUNT_DISABLED` | 403 | 비활성 계정
 |===
@@ -98,8 +99,11 @@ include::{snippets}/admin/auth/change-password/http-response.adoc[]
 
 == 관리자 계정 (SUPER)
 
-최초 계정은 배포 환경변수 `ADMIN_BOOTSTRAP_EMAIL` / `ADMIN_BOOTSTRAP_PASSWORD`로 기동 시 한 번 생성됩니다.
+최초 계정은 배포 환경변수 `ADMIN_BOOTSTRAP_LOGIN_ID` / `ADMIN_BOOTSTRAP_PASSWORD`로 기동 시 한 번 생성됩니다.
 이후 계정은 여기서 추가합니다. 자기 자신의 상태·권한은 바꿀 수 없습니다.
+
+새 계정은 항상 **초기 비밀번호 상태**(`passwordChangeRequired = true`)로 만들어집니다. 발급받은 관리자가 첫 로그인 후
+본인이 비밀번호를 바꿔야(현재 것과 다른 값으로) 다른 API를 쓸 수 있습니다.
 
 === 목록
 
@@ -128,7 +132,7 @@ include::{snippets}/admin/accounts/create/http-response.adoc[]
 |===
 | 코드 | HTTP | 설명
 
-| `DUPLICATE_ADMIN_EMAIL` | 409 | 이미 등록된 이메일
+| `DUPLICATE_ADMIN_LOGIN_ID` | 409 | 이미 사용 중인 아이디
 | `INVALID_REQUEST` | 400 | 비밀번호 10자 미만 등
 |===
 

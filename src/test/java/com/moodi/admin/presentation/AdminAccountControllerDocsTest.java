@@ -45,8 +45,8 @@ class AdminAccountControllerDocsTest extends AdminRestDocsSupport {
     @Test
     @DisplayName("관리자 계정 목록 조회 성공")
     void get_accounts_success() throws Exception {
-        when(adminAccountService.getAll()).thenReturn(List.of(new AdminAccountInfo(UUID.randomUUID(), "root@moodi.kr",
-                "bootstrap", AdminRole.SUPER, AdminAccountStatus.ACTIVE, LocalDateTime.of(2026, 8, 10, 9, 0),
+        when(adminAccountService.getAll()).thenReturn(List.of(new AdminAccountInfo(UUID.randomUUID(), "root",
+                "bootstrap", AdminRole.SUPER, AdminAccountStatus.ACTIVE, false, LocalDateTime.of(2026, 8, 10, 9, 0),
                 LocalDateTime.of(2026, 8, 1, 0, 0))));
 
         mockMvc.perform(get("/api/admin/accounts"))
@@ -55,10 +55,11 @@ class AdminAccountControllerDocsTest extends AdminRestDocsSupport {
                         responseFields(
                                 fieldWithPath("data").type(JsonFieldType.ARRAY).description("관리자 계정 (생성순)"),
                                 fieldWithPath("data[].id").type(JsonFieldType.STRING).description("관리자 ID"),
-                                fieldWithPath("data[].email").type(JsonFieldType.STRING).description("이메일"),
+                                fieldWithPath("data[].loginId").type(JsonFieldType.STRING).description("아이디"),
                                 fieldWithPath("data[].name").type(JsonFieldType.STRING).description("이름"),
                                 fieldWithPath("data[].role").type(JsonFieldType.STRING).description("권한"),
                                 fieldWithPath("data[].status").type(JsonFieldType.STRING).description("상태"),
+                                fieldWithPath("data[].passwordChangeRequired").type(JsonFieldType.BOOLEAN).description("초기 비밀번호 변경 필요 여부"),
                                 fieldWithPath("data[].lastLoginAt").type(JsonFieldType.STRING).optional().description("마지막 로그인"),
                                 fieldWithPath("data[].createdAt").type(JsonFieldType.STRING).optional().description("생성일")
                         )
@@ -73,13 +74,13 @@ class AdminAccountControllerDocsTest extends AdminRestDocsSupport {
 
         mockMvc.perform(post("/api/admin/accounts")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new AdminAccountCreateRequest("ops@moodi.kr",
+                        .content(objectMapper.writeValueAsString(new AdminAccountCreateRequest("ops01",
                                 "strong-password", "운영자", AdminRole.OPERATOR))))
                 .andExpect(status().isCreated())
                 .andDo(document("admin/accounts/create",
                         requestFields(
-                                fieldWithPath("email").type(JsonFieldType.STRING).description("이메일 (중복 불가)"),
-                                fieldWithPath("password").type(JsonFieldType.STRING).description("초기 비밀번호 (10자 이상)"),
+                                fieldWithPath("loginId").type(JsonFieldType.STRING).description("아이디 (영문·숫자·밑줄 4~20자, 중복 불가)"),
+                                fieldWithPath("password").type(JsonFieldType.STRING).description("초기 비밀번호 (10자 이상) — 첫 로그인 후 본인이 변경해야 다른 API를 쓸 수 있다"),
                                 fieldWithPath("name").type(JsonFieldType.STRING).description("이름"),
                                 fieldWithPath("role").type(JsonFieldType.STRING).description("권한 (SUPER, OPERATOR)")
                         ),
