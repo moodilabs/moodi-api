@@ -78,6 +78,32 @@ public class RouteDay {
         legs.add(leg);
     }
 
+    /**
+     * 영속 Day의 일정을 통째로 갈아끼운다. Day 자체는 그대로 두므로
+     * {@code uk_route_day_route_day_number}(route_id, day_number)에 걸리지 않는다.
+     * <p>
+     * 스팟은 {@code uk_route_spot_day_sequence}(route_day_id, sequence)가 있어 비우는 것만으로는 부족하다 —
+     * 호출부가 {@link #clearSchedule()} 뒤에 flush 로 DELETE 를 먼저 내보내고 이 메서드를 부른다.
+     */
+    public void replaceSchedule(List<RouteSpot> newSpots, List<RouteLeg> newLegs) {
+        validateSpotSequences(newSpots);
+        spots.clear();
+        spots.addAll(newSpots);
+        legs.clear();
+        legs.addAll(newLegs);
+    }
+
+    /** 스팟·구간을 비운다. flush 하면 이 Day의 자식 행이 먼저 삭제된다. */
+    public void clearSchedule() {
+        spots.clear();
+        legs.clear();
+    }
+
+    /** 기간을 옮겨 저장하면 같은 day_number 라도 날짜가 달라진다. */
+    public void changeDate(LocalDate newDate) {
+        this.date = newDate;
+    }
+
     private void validateSpotSequences(List<RouteSpot> spots) {
         Set<Integer> sequences = new HashSet<>();
         for (RouteSpot spot : spots) {

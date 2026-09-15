@@ -39,6 +39,9 @@ public interface RouteJpaRepository extends RouteRepository, Repository<Route, L
     void delete(Route route);
 
     @Override
+    void flush();
+
+    @Override
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Route r SET r.deletedAt = :deletedAt WHERE r.memberId = :memberId AND r.deletedAt IS NULL")
     int softDeleteAllByMemberId(@Param("memberId") UUID memberId, @Param("deletedAt") LocalDateTime deletedAt);
