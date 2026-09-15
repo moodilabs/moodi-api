@@ -56,9 +56,46 @@ public class RouteSaveService {
         List<Long> changedSpotIds = collectChangedSpotIds(command.days(), existingDayMap);
         Map<Long, SpotSnapshot> snapshotMap = loadSnapshots(changedSpotIds);
 
-        List<RouteDay> newDays = buildDaysForUpdate(command.days(), existingDayMap, snapshotMap);
+        /*
+         * 바뀐 Day 도 영속 엔티티를 그대로 쓰고 안의 일정만 갈아끼운다. 새 RouteDay 로 교체하면
+         * 같은 day_number 행이 삭제 전에 삽입되어 uk_route_day_route_day_number 에 걸린다
+         * (스팟 추가에서 이미 겪은 것과 같은 함정 — RouteDay.addSpot 주석 참고).
+         */
+        List<RouteDay> newDays = new ArrayList<>();
+        List<DayCommand> changedCommands = new ArrayList<>();
+        List<RouteDay> changedDays = new ArrayList<>();
+        for (DayCommand dayCommand : command.days()) {
+            RouteDay existingDay = existingDayMap.get(dayCommand.dayNumber());
+            if (existingDay == null) {
+                newDays.add(RouteDay.create(
+                        dayCommand.dayNumber(), dayCommand.date(),
+                        buildSpots(dayCommand.spotIds(), snapshotMap),
+                        calculateLegs(dayCommand.spotIds(), snapshotMap)
+                ));
+                continue;
+            }
+            existingDay.changeDate(dayCommand.date());
+            newDays.add(existingDay);
+            if (isDayChanged(dayCommand, existingDay)) {
+                existingDay.clearSchedule();
+                changedCommands.add(dayCommand);
+                changedDays.add(existingDay);
+            }
+        }
 
         route.update(command.title(), command.startDate(), command.endDate(), newDays);
+
+        if (!changedDays.isEmpty()) {
+            // 비운 스팟·구간의 DELETE 를 먼저 내보낸다 — 같은 (route_day_id, sequence) 로 다시 넣기 때문이다.
+            routeRepository.flush();
+            for (int i = 0; i < changedDays.size(); i++) {
+                DayCommand dayCommand = changedCommands.get(i);
+                changedDays.get(i).replaceSchedule(
+                        buildSpots(dayCommand.spotIds(), snapshotMap),
+                        calculateLegs(dayCommand.spotIds(), snapshotMap)
+                );
+            }
+        }
 
         return initializeDays(route);
     }
@@ -158,24 +195,6 @@ public class RouteSaveService {
                 .map(RouteSpot::getSpotId)
                 .toList();
         return !existingSpotIds.equals(dayCommand.spotIds());
-    }
-
-    private List<RouteDay> buildDaysForUpdate(List<DayCommand> dayCommands,
-                                               Map<Integer, RouteDay> existingDayMap,
-                                               Map<Long, SpotSnapshot> snapshotMap) {
-        List<RouteDay> days = new ArrayList<>();
-        for (DayCommand dayCommand : dayCommands) {
-            RouteDay existingDay = existingDayMap.get(dayCommand.dayNumber());
-
-            if (!isDayChanged(dayCommand, existingDay)) {
-                days.add(existingDay);
-            } else {
-                List<RouteSpot> spots = buildSpots(dayCommand.spotIds(), snapshotMap);
-                List<RouteLeg> legs = calculateLegs(dayCommand.spotIds(), snapshotMap);
-                days.add(RouteDay.create(dayCommand.dayNumber(), dayCommand.date(), spots, legs));
-            }
-        }
-        return days;
     }
 
     private List<Long> extractAllSpotIds(List<DayCommand> days) {
