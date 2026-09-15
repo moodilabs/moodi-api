@@ -25,6 +25,12 @@ import java.util.UUID;
 @RestController
 public class SpotController {
 
+    /**
+     * 공개 엔드포인트라 상한이 없으면 size=5000 한 번에 1.8MB·3초짜리 응답이 나간다(실측).
+     * 앱이 쓰는 한 페이지는 20~50 이므로 100 이면 충분하다.
+     */
+    private static final int MAX_SEARCH_SIZE = 100;
+
     private final SpotDetailService spotDetailService;
     private final SpotSearchService spotSearchService;
 
@@ -45,7 +51,7 @@ public class SpotController {
             @RequestParam(defaultValue = "20") int size,
             @OptionalAuthMember UUID memberId) {
         SpotSearchRequest request = SpotSearchRequest.of(keyword, area, moodTags, saved, sort,
-                routePublicId, cursor, size);
+                routePublicId, cursor, Math.clamp(size, 1, MAX_SEARCH_SIZE));
         CursorResponse<SpotSearchItem> result = spotSearchService.search(memberId, request);
         return SuccessResponse.of(result.map(SpotSearchResponse::from));
     }
