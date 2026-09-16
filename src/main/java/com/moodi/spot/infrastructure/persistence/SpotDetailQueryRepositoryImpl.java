@@ -40,6 +40,7 @@ public class SpotDetailQueryRepositoryImpl implements SpotDetailQueryRepository 
                 JOIN spot_translation st ON st.spot_id = s.id AND st.locale = 'en-US'
                 WHERE s.id != :spotId
                   AND s.status = 'PUBLISHED'
+                  AND (s.route_excluded = false OR (s.content_type = 'SHOPPING' AND s.lcls_systm2 = 'SH06'))
                   AND jsonb_exists_any(sm.mood_tags, CAST(:moodTags AS text[]))
                 ORDER BY (
                              SELECT COUNT(*)
@@ -86,6 +87,7 @@ public class SpotDetailQueryRepositoryImpl implements SpotDetailQueryRepository 
                 LEFT JOIN spot_mood sm ON sm.spot_id = s.id
                 WHERE s.id != :spotId
                   AND s.status = 'PUBLISHED'
+                  AND (s.route_excluded = false OR (s.content_type = 'SHOPPING' AND s.lcls_systm2 = 'SH06'))
                   AND s.area = :area
                   AND s.district = :district
                 ORDER BY (SELECT COUNT(*) FROM bookmark b WHERE b.spot_id = s.id) DESC, s.id ASC
