@@ -15,3 +15,15 @@ include::{snippets}/spot/search/http-response.adoc[]
 
 .Response Fields
 include::{snippets}/spot/search/response-fields.adoc[]
+
+==== 에러
+
+|===
+| 코드 | HTTP | 설명
+
+| `UNAUTHORIZED` | 401 | `saved=true` 를 토큰 없이 보낸 경우
+| `INVALID_REQUEST` | 400 | `sort`·`cursor` 등 파라미터 형식 오류
+|===
+
+NOTE: `size` 는 1~100 으로 제한됩니다. 범위를 벗어난 값은 오류가 아니라 잘려서 처리됩니다
+(`size=-1` → 1, `size=5000` → 100).

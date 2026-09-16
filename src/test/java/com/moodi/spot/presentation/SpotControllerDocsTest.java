@@ -186,11 +186,11 @@ class SpotControllerDocsTest extends RestDocsSupport {
                                 parameterWithName("keyword").description("검색어").optional(),
                                 parameterWithName("area").description("지역 필터 (시·도)").optional(),
                                 parameterWithName("moodTags").description("무드 태그 키 목록 (예: riverside, modern)").optional(),
-                                parameterWithName("saved").description("북마크한 스팟만 조회 (기본: false)").optional(),
+                                parameterWithName("saved").description("북마크한 스팟만 조회 (기본: false). true 는 로그인 필수 — 토큰 없이 보내면 401 UNAUTHORIZED").optional(),
                                 parameterWithName("sort").description("정렬 기준 (BEST_MATCH, MOST_SAVED / 기본: BEST_MATCH)").optional(),
                                 parameterWithName("routePublicId").description("루트 공개 ID — 전달 시 해당 루트에 포함된 스팟 여부(inRoute) 표시").optional(),
                                 parameterWithName("cursor").description("커서 (이전 응답의 nextCursor)").optional(),
-                                parameterWithName("size").description("페이지 크기 (기본: 20)").optional()
+                                parameterWithName("size").description("페이지 크기 (기본: 20). 1~100 으로 제한되며 범위를 벗어난 값은 오류가 아니라 잘려서 처리됨").optional()
                         ),
                         responseFields(
                                 fieldWithPath("data").type(JsonFieldType.OBJECT).description("검색 결과"),

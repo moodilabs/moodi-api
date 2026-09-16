@@ -62,3 +62,16 @@ include::{snippets}/overview/server-error/http-response.adoc[]
 .Response Fields
 include::{snippets}/overview/server-error/response-fields.adoc[]
 
+==== 잘못된 형식의 요청
+
+파라미터 타입 불일치, 필수 파라미터 누락, 본문 파싱 실패, 없는 경로, 허용되지 않은 메서드는
+아래 코드로 내려갑니다. **서버 오류(500)와 구분해서 처리하세요** — 클라이언트가 고칠 수 있는 요청입니다.
+
+|===
+| 코드 | HTTP | 설명
+
+| `INVALID_REQUEST` | 400 | 파라미터 타입 불일치 · 필수 파라미터 누락 · 본문 파싱 실패
+| `NOT_FOUND` | 404 | 존재하지 않는 경로
+| `METHOD_NOT_ALLOWED` | 405 | 해당 경로가 지원하지 않는 HTTP 메서드
+|===
+
