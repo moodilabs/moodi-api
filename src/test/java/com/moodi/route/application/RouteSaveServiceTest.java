@@ -344,7 +344,8 @@ class RouteSaveServiceTest {
         given(spotSnapshotReader.readBySpotIds(List.of(newSpotId)))
                 .willReturn(List.of(new SpotSnapshot(
                         newSpotId, "좌표 없는 스팟", null, "서울", "성동구",
-                        null, null, RouteSpotType.TOURIST_ATTRACTION, null
+                        null, null, RouteSpotType.TOURIST_ATTRACTION, null,
+                        List.of()
                 )));
 
         // when
@@ -426,7 +427,8 @@ class RouteSaveServiceTest {
         return new SpotSnapshot(
                 spotId, "스팟 " + spotId, "https://img.example.com/" + spotId + ".jpg",
                 "서울", "성동구", lat, lng,
-                RouteSpotType.TOURIST_ATTRACTION, null
+                RouteSpotType.TOURIST_ATTRACTION, null,
+                List.of()
         );
     }
 }

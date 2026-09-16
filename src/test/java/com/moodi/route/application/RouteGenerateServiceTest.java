@@ -75,7 +75,7 @@ class RouteGenerateServiceTest {
         given(legCalculator.calculate(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
                 .willReturn(Optional.of(new LegResult(TravelMode.WALK, 600, 800, null)));
         given(dayScheduleValidator.calculateDayMinutes(anyList(), anyList())).willReturn(200);
-        given(titleGenerator.generate(List.of("서울"), 2)).willReturn("서울 1박 2일 코스");
+        given(titleGenerator.generate(any(), any(), anyInt())).willReturn("서울 1박 2일 코스");
 
         // when
         RouteGenerateResult result = routeGenerateService.generate(command);
@@ -179,7 +179,7 @@ class RouteGenerateServiceTest {
         given(legCalculator.calculate(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
                 .willReturn(Optional.of(new LegResult(TravelMode.WALK, 600, 800, null)));
         given(dayScheduleValidator.calculateDayMinutes(anyList(), anyList())).willReturn(200);
-        given(titleGenerator.generate(List.of("Seoul"), 2)).willReturn("Seoul 1박 2일");
+        given(titleGenerator.generate(any(), any(), anyInt())).willReturn("Seoul 1박 2일");
 
         // when
         RouteGenerateResult result = routeGenerateService.generate(command);
@@ -208,7 +208,7 @@ class RouteGenerateServiceTest {
         given(legCalculator.calculate(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
                 .willReturn(Optional.of(new LegResult(TravelMode.WALK, 600, 800, null)));
         given(dayScheduleValidator.calculateDayMinutes(anyList(), anyList())).willReturn(200);
-        given(titleGenerator.generate(any(), anyInt())).willReturn("제목");
+        given(titleGenerator.generate(any(), any(), anyInt())).willReturn("제목");
 
         // when
         RouteGenerateResult result = routeGenerateService.generate(command);
@@ -230,7 +230,7 @@ class RouteGenerateServiceTest {
 
         given(spotSnapshotReader.readBySpotIds(command.spotIds()))
                 .willReturn(List.of(createSnapshot(1L, 37.55, 127.05)));
-        given(titleGenerator.generate(any(), anyInt())).willReturn("제목");
+        given(titleGenerator.generate(any(), any(), anyInt())).willReturn("제목");
 
         // when
         routeGenerateService.generate(command);
@@ -243,7 +243,8 @@ class RouteGenerateServiceTest {
         return new SpotSnapshot(
                 spotId, "스팟 " + spotId, "https://img.example.com/" + spotId + ".jpg",
                 "서울", "성동구", lat, lng,
-                RouteSpotType.TOURIST_ATTRACTION, null
+                RouteSpotType.TOURIST_ATTRACTION, null,
+                List.of("nature", "serene")
         );
     }
 }
