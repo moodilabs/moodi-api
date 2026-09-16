@@ -105,4 +105,28 @@ class NoticeQueryServiceTest {
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.NOTICE_NOT_FOUND);
     }
+
+    @Test
+    @DisplayName("발행일이 아직 오지 않은 공지는 id를 알아도 열리지 않는다")
+    void get_visible_notice_hides_scheduled_notice() {
+        // 목록에서 감춘 예약 공지가 상세로는 열리면 발행 전 내용이 그대로 새 나간다.
+        when(noticeRepository.findById(1L))
+                .thenReturn(Optional.of(NoticeFixture.createWithId(1L, LocalDate.now().plusDays(1))));
+
+        assertThatThrownBy(() -> noticeQueryService.getVisibleNotice(1L))
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.NOTICE_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("오늘 발행된 공지는 열린다")
+    void get_visible_notice_allows_today() {
+        when(noticeRepository.findById(1L))
+                .thenReturn(Optional.of(NoticeFixture.createWithId(1L, LocalDate.now())));
+
+        NoticeDetail detail = noticeQueryService.getVisibleNotice(1L);
+
+        assertThat(detail.id()).isEqualTo(1L);
+    }
 }

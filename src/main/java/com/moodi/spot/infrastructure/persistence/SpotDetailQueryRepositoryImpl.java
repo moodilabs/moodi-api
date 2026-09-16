@@ -26,6 +26,10 @@ public class SpotDetailQueryRepositoryImpl implements SpotDetailQueryRepository 
             return List.of();
         }
 
+        // "비슷한 무드의 스팟"은 겹치는 무드 태그가 많은 순이다. 예전에는 태그가
+        // 하나라도 겹치면 되는 후보를 ORDER BY RANDOM() 으로 뽑아, 같은 스팟을 네 번
+        // 열면 네 번 다 다른 목록이 나왔다(제주 해수욕장의 "비슷한 무드"로 인천 시장,
+        // 서울역 아울렛 매장이 떴다). 추천이라고 내놓는 자리가 무작위여서는 안 된다.
         String sql = """
                 SELECT s.id, st.title,
                        (SELECT si.image_url FROM spot_image si WHERE si.spot_id = s.id AND si.is_primary = true LIMIT 1),
@@ -37,7 +41,13 @@ public class SpotDetailQueryRepositoryImpl implements SpotDetailQueryRepository 
                 WHERE s.id != :spotId
                   AND s.status = 'PUBLISHED'
                   AND jsonb_exists_any(sm.mood_tags, CAST(:moodTags AS text[]))
-                ORDER BY RANDOM()
+                ORDER BY (
+                             SELECT COUNT(*)
+                             FROM jsonb_array_elements_text(sm.mood_tags) AS t(tag)
+                             WHERE t.tag = ANY(CAST(:moodTags AS text[]))
+                         ) DESC,
+                         bookmark_count DESC,
+                         s.id ASC
                 LIMIT :limit
                 """;
 
