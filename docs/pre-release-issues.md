@@ -404,7 +404,54 @@ ios.bundleIdentifier : kr.moodi.app
 
 ---
 
-## 12. 권장 처리 순서
+## 12. 3차 독립 검증 — **NOT COMPLETE**
+
+병합된 상태를 기준으로 세 번째 검증을 돌렸다. 2차에서 고친 두 건은 **독립적으로 PASS** 확인됐고, 회귀도 없었다. 판정을 뒤집은 것은 **새로 드러난 지도 문제**다.
+
+### 2차 수정 재확인 (되돌리지 말 것)
+
+지역 제안 탭은 `AreaSearchField` 를 쓰는 네 호스트 전부에서, 라이트·다크 모두 정상이다. 검증자는 `click()` 대신 **실제 `mouse.down` → 대기 → `mouse.up`** 으로 눌러(원래 버그를 가리지 않도록) 행이 mousedown 중에도 살아 있는지와 칩이 실제로 붙는지를 함께 확인했다. 칩 추가에서 멈추지 않고 Apply 까지 몰아 `keyword=cafe&area=부산` 요청 → 결과 3건이 **전부 부산**(비부산 유출 0)임을 네트워크로 확인했다. 검색 자동완성도 적중 시 요청 1회, 0건일 때만 2회로 정상이다.
+
+화면 23개 × 라이트·다크 46회 로드: 페이지 에러 0, 콘솔 에러 0, 실패 요청 0, 깨진 이미지 0, 렌더된 DOM 텍스트에 한국어 0.
+
+### [N5] 지도 기본 배경이 전부 한국어다 — 결정 필요
+
+영어 전용 앱인데 모든 지도의 지명 라벨이 한글이다(평양·인천·대전·대구·부산·제주특별자치도·강원도·남해). 스팟 상세에서는 영문 주소 바로 아래 지도에 `파리바게뜨` 가 찍힌다.
+
+**앞선 두 라운드가 이걸 놓친 이유가 중요하다.** 지도 라벨은 DOM 텍스트가 아니라 **래스터 타일**이라, 지금까지 돌린 한글 스윕이 전부 `hangul=0` 으로 통과시켰다. 텍스트 기반 점검으로는 구조적으로 볼 수 없는 영역이다.
+
+Kakao JS SDK 에는 영문 배경지도 옵션이 없다. 선택지는 ① 라벨이 있는 다른 제공자(Google·Naver 등 `language` 옵션 지원) ② 라벨 억제 ③ 현행 유지다. **이 항목은 지금까지 한 번도 결정권자에게 올라간 적이 없다.**
+
+### [N6] 출시 빌드의 지도가 `http://localhost:8081/` 을 문서 origin 으로 쓴다 — 결정 필요
+
+```ts
+// src/config/kakao.ts:26
+export const KAKAO_WEBVIEW_BASE_URL =
+  process.env.EXPO_PUBLIC_KAKAO_WEBVIEW_ORIGIN ?? "http://localhost:8081/";
+```
+
+같은 파일 주석이 이유를 밝힌다 — 2026-09-09 기준 이 Kakao JS 키에 **등록된 도메인이 `http://localhost:8081` 하나뿐**이고 `dev-api.moodi.kr`·`moodi.kr`·vercel 은 "domain mismatched" 401 이다. 부주의한 폴백이 아니라 지금 동작하는 유일한 origin 이다. 그리고 `eas.json` production 에 `env` 가 없으니 이 값이 그대로 스토어 빌드에 실린다 — [B2] 와 **같은 원인의 세 번째 결과**다.
+
+실측(스팟 상세 지도 화면, 외부 요청 26건):
+
+| 프로토콜 | 건수 | 호스트 |
+|---|---|---|
+| **평문 http** | **11** | `t1.daumcdn.net` 5, `mts.daumcdn.net` 6 |
+| https | 15 | `storage.googleapis.com` 14, `dapi.kakao.com` 1 |
+
+타일만이 아니라 **지도 런타임 스크립트 자체**가 평문이다(`http://t1.daumcdn.net/mapjsapi/js/main/4.5.26/kakao.js`). `app.json` 에는 `ios.infoPlist` 가 **아예 없어** ATS 예외도 없다. 따라서 iOS 에서는 타일이 빠지는 정도가 아니라 **지도가 초기화되지 못할 가능성이 크다.**
+
+선택지: ① Kakao Developers 에 HTTPS 도메인을 등록하고 `EXPO_PUBLIC_KAKAO_WEBVIEW_ORIGIN` 을 production `env` 에 넣는다 ② `app.json` 에 `NSAllowsArbitraryLoadsInWebContent` 를 추가한다. **①만으로 충분한지는 확실하지 않다** — origin 이 https 가 돼도 SDK 가 계속 `http://t1.daumcdn.net` 을 부르면 혼합 콘텐츠로 막힌다. 실기기 확인이 가르는 지점이다.
+
+**미검증**: 위 관측은 Chrome(웹 빌드, 문서 origin 이 http) 기준이다. 실기기 WKWebView 에서의 동작은 확인하지 못했다 — **남은 확인 항목 중 가치가 가장 높다.**
+
+### [N7] 로마자 표기가 스스로 어긋난다 — 콘텐츠
+
+스팟 상세 제목은 `Hyupjae Beach` 인데 같은 화면의 AI 설명은 `Hyeopjae Beach` 라고 쓴다. [N1]·[C2] 와 같은 계열이다.
+
+---
+
+## 13. 권장 처리 순서
 
 1. **[B1]** 웹 페이지 2곳 + `member/CLAUDE.md` 정정 — 제품 결정이 선행되어야 한다.
 2. **[B2]** 출시 빌드가 바라볼 API 호스트 확정 및 `eas.json` 주입 — 인프라 결정이 선행되어야 한다.
