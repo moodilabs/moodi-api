@@ -204,7 +204,18 @@ GET /api/v1/faqs    → 카테고리 1개, 항목 1개
 
 ### [C2] 스팟 카탈로그의 70%가 소매·체인 매장
 
-표본 100개 중 70개가 `ZARA 서면점`, `올리브영…`, `NBA 롯데아울렛…` 같은 매장이다. [S2]의 무작위 추천과 겹치면 "여행 앱이 편의점을 무드 추천으로 내놓는" 화면이 된다. [S2]는 고쳤으므로 남은 것은 시드 데이터 정제다.
+**2026-09-16 재측정 — 상태가 두 갈래로 갈렸다.**
+
+| 표면 | 체인계 비율 | 상태 |
+|---|---|---|
+| 스팟 상세의 추천(`similarMoodSpots`) | **0 / 40건** | 해결됨 (PR #99 + [S2]) |
+| 검색·탐색 카탈로그 | **271 / 395건 = 68.6%** | 그대로 |
+
+검색 쪽 세부: 기본 정렬(`MOST_SAVED`) 100건 중 **87건(87%)**, 서울 56%, 부산 69%, 제주 61%. 예시는 `Fendi Shinsegae Department Store Gangnam`, `NBA Lotte Outlet Gwangju Suwan Branch`, `Homeplus Gwangju Hanam Branch`, `Kolon Sport Lotte Outlet…` 이다.
+
+**첫 사용자가 보는 기본 탐색 정렬이 87%** 라는 점이 가장 나쁘다 — 심사자가 검색을 열면 여행지가 아니라 매장 목록을 본다.
+
+추천 화면이 해결된 이유는 PR #99 가 상세 추천 쿼리에 `route_excluded` 필터를 넣었기 때문이다. **같은 필터를 검색 쿼리(`SpotSearchQueryRepositoryImpl`)에도 적용하면 같은 효과를 얻을 수 있다** — 메커니즘은 이미 동작이 검증됐다. 다만 "검색에서 매장을 아예 감출 것인가"는 제품 결정이라 임의로 적용하지 않았다. 감추지 않기로 한다면 남은 해법은 시드 데이터 정제다.
 
 ### [C3] 지역 자동완성 목록이 실제 데이터와 어긋난다
 
@@ -386,7 +397,19 @@ android.package      : com.mudi
 ios.bundleIdentifier : kr.moodi.app
 ```
 
-`com.mudi` 는 오타로 보인다. **스토어에 한 번 게시되면 영구히 고정**되며 바꾸려면 새 앱으로 올려야 한다. 참고로 `Play Store release` 워크플로 실행 이력은 **전부 실패**라 실제로 게시된 적이 없을 가능성이 높다 — 그렇다면 지금이 바꿀 수 있는 마지막 시점이다. Play Console 에서 게시 여부를 확인해야 한다.
+`com.mudi` 는 오타로 보인다. **스토어에 한 번 게시되면 영구히 고정**되며 바꾸려면 새 앱으로 올려야 한다.
+
+**이 워크플로로는 게시된 적이 없다** (2026-09-16 실행 로그 확인). `Play Store release` 6회 실행이 전부 같은 지점에서 멈췄다.
+
+```
+Looking up credentials configuration for com.mudi...
+Google Service Account Keys cannot be set up in --non-interactive mode.
+Error: build command failed.
+```
+
+자격증명 조회 단계에서 실패해 **빌드가 시작조차 못 했다** — AAB 가 만들어진 적이 없으니 제출도 없었다. 같은 로그에 `No environment variables with visibility "Plain text" and "Sensitive" found for the "production" environment on EAS` 도 찍혀 [B2]·[N6] 의 전제(production `env` 부재)가 함께 확인됐다.
+
+따라서 **지금 바꾸면 비용이 거의 없다.** 다만 이 근거는 "이 워크플로로는 게시된 적 없음"까지이고, 누군가 로컬에서 `eas submit` 을 수동으로 돌렸을 가능성까지 배제하지는 못한다. Play Console 에 앱 레코드가 있는지만 확인하면 결론이 난다.
 
 덧붙여 `eas.json` 의 `submit.production.ios.language` 가 `"ko"` 인데 앱 UI 는 전부 영어다.
 
@@ -443,9 +466,25 @@ export const KAKAO_WEBVIEW_BASE_URL =
 
 타일만이 아니라 **지도 런타임 스크립트 자체**가 평문이다(`http://t1.daumcdn.net/mapjsapi/js/main/4.5.26/kakao.js`). `app.json` 에는 `ios.infoPlist` 가 **아예 없어** ATS 예외도 없다. 따라서 iOS 에서는 타일이 빠지는 정도가 아니라 **지도가 초기화되지 못할 가능성이 크다.**
 
-선택지: ① Kakao Developers 에 HTTPS 도메인을 등록하고 `EXPO_PUBLIC_KAKAO_WEBVIEW_ORIGIN` 을 production `env` 에 넣는다 ② `app.json` 에 `NSAllowsArbitraryLoadsInWebContent` 를 추가한다. **①만으로 충분한지는 확실하지 않다** — origin 이 https 가 돼도 SDK 가 계속 `http://t1.daumcdn.net` 을 부르면 혼합 콘텐츠로 막힌다. 실기기 확인이 가르는 지점이다.
+**해결 방법이 확정됐다 — ATS 예외는 필요 없다.** (2026-09-16 실측)
 
-**미검증**: 위 관측은 Chrome(웹 빌드, 문서 origin 이 http) 기준이다. 실기기 WKWebView 에서의 동작은 확인하지 못했다 — **남은 확인 항목 중 가치가 가장 높다.**
+Kakao 자원이 HTTPS 로도 모두 제공되는지 직접 확인했다.
+
+| 자원 | HTTPS 응답 |
+|---|---|
+| SDK 로더 `dapi.kakao.com/v2/maps/sdk.js` | 200 |
+| 런타임 스크립트 `t1.daumcdn.net/mapjsapi/js/main/4.5.26/kakao.js` | 200 |
+| 타일 `mts.daumcdn.net/api/v1/tile/...` | 200 |
+| 이미지 자원 `t1.daumcdn.net/mapjsapi/images/...` | 200 |
+
+결정적으로 **로더 스크립트에는 하드코딩된 `http://` 참조가 하나도 없다.** `"//t1.daumcdn.net"` 처럼 **프로토콜 상대** 경로를 쓰므로 SDK 는 문서의 프로토콜을 그대로 따라간다. 즉 평문으로 내려받던 것은 순전히 문서 origin 이 `http://localhost:8081/` 이었기 때문이다.
+
+따라서 **`EXPO_PUBLIC_KAKAO_WEBVIEW_ORIGIN` 에 HTTPS 도메인을 넣으면 모든 자원이 HTTPS 로 따라온다.** `NSAllowsArbitraryLoadsInWebContent` 같은 보안 완화는 필요 없다. 남은 작업은 두 가지뿐이다.
+
+1. Kakao Developers 에 HTTPS 도메인을 등록한다(콘솔 작업).
+2. 그 도메인을 `eas.json` production 의 `env` 에 넣는다 — [B2] 와 같은 자리다.
+
+**미검증**: 실기기 WKWebView 동작은 확인하지 못했다. 다만 위 실측으로 원인과 해법이 특정됐으므로, 실기기 확인은 "고친 뒤 확인"의 성격이 됐다.
 
 ### [N7] 로마자 표기가 스스로 어긋난다 — 콘텐츠
 
@@ -485,7 +524,24 @@ export const KAKAO_WEBVIEW_BASE_URL =
 
 ---
 
-## 14. 권장 처리 순서
+## 14. PR #99 이후 추천 실측 (2026-09-16)
+
+다른 개발자의 PR #99("스팟 상세 추천에서 숙박·음식점·쇼핑 카테고리 제외")가 `develop` 에 머지됐다. **[S2] 를 고친 것과 같은 파일**이라 조합과 회귀를 확인했다.
+
+**코드 조합은 정상이다.** #99 는 `WHERE` 절에 필터를 더했고(`s.route_excluded = false OR (content_type='SHOPPING' AND lcls_systm2='SH06')`), [S2] 의 정렬(겹치는 무드 태그 수 → 저장 수 → id)은 `ORDER BY` 에 그대로 남아 있다. 필터와 정렬이라 서로 간섭하지 않는다. 같은 필터가 `findPopularSpotsByArea` 에도 함께 적용됐다.
+
+**배포 후 실측(스팟 40개):** 오류 응답 0, 정렬 불안정 0, **추천에 섞인 체인 매장 0건**, 추천이 있는 스팟 39/40(1건은 무드 태그가 없어 빈 배열 — 정상).
+
+이로써 두 가지가 동시에 확인됐다.
+
+1. 3차 검증이 지적한 "제주 스팟의 비슷한 무드가 전부 부산 매장" 류의 문제가 **추천 화면에서는 해소**됐다.
+2. [S2] 의 결정적 정렬이 #99 이후에도 **회귀하지 않았다**.
+
+단, 이는 추천 표면에 한정된다. 검색·탐색 카탈로그는 여전히 68.6% 가 체인계다 — [C2] 참조.
+
+---
+
+## 15. 권장 처리 순서
 
 1. **[B1]** 웹 페이지 2곳 + `member/CLAUDE.md` 정정 — 제품 결정이 선행되어야 한다.
 2. **[B2]** 출시 빌드가 바라볼 API 호스트 확정 및 `eas.json` 주입 — 인프라 결정이 선행되어야 한다.
