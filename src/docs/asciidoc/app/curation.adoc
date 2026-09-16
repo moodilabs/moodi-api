@@ -22,4 +22,3 @@ include::{snippets}/curation/recommended-areas/http-response.adoc[]
 include::{snippets}/curation/survey-images/http-request.adoc[]
 
 include::{snippets}/curation/survey-images/http-response.adoc[]
-

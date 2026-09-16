@@ -129,4 +129,3 @@ include::{snippets}/admin/survey-images/order/http-response.adoc[]
 include::{snippets}/admin/survey-images/delete/http-request.adoc[]
 
 include::{snippets}/admin/survey-images/delete/http-response.adoc[]
-
