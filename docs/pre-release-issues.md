@@ -256,7 +256,42 @@ GET /api/v1/faqs    → 카테고리 1개, 항목 1개
 
 ---
 
-## 8. 권장 처리 순서
+## 8. 조사했으나 결함이 아니라고 판정한 것
+
+감사에서 지적됐지만 근거를 확인한 결과 고치지 않기로 한 항목이다. 나중에 같은 지적이 다시 올라올 수 있어 판정 근거를 남긴다.
+
+### 코어 `Clipboard` import — 동작한다
+
+`SpotDetailScreen.tsx:4,187` 이 `react-native` 에서 `Clipboard` 를 가져와 주소 복사에 쓴다. "제거된 API 를 쓰고 있어 복사가 조용히 실패한다"는 의심이 있었으나, 설치된 react-native 0.86 을 직접 확인한 결과 **여전히 동작한다**.
+
+- `node_modules/react-native/index.js` 에 `get Clipboard()` 게터가 남아 있고, `'clipboard-moved'` deprecation 경고를 찍은 뒤 `./Libraries/Components/Clipboard/Clipboard` 를 require 한다.
+- 그 디렉터리도 실제로 존재한다.
+
+즉 경고만 나올 뿐 기능은 멀쩡하다. 권장 대체제인 `expo-clipboard` 는 **설치되어 있지 않다**. 경고 하나를 없애려고 출시 직전에 네이티브 의존성을 추가하는 것은 이득보다 위험이 크다고 판단해 그대로 둔다. RN 이 실제로 제거하는 버전으로 올릴 때 함께 옮기는 것이 맞다.
+
+### 선택 모드의 "보이지 않는 흰 체크" — 의도된 표현
+
+`SavedSpotGrid.tsx:166` 이 미선택 원(`rgba(255,255,255,0.7)`) 위에 `palette.white`(#FFFFFF) 체크를 그려 사실상 보이지 않는다. 그러나 이는 이 코드베이스의 일관된 규칙이다 — `Checkbox.tsx:81-85` 도 라이트 테마의 미체크 틱을 `neutralWhite` 로 그린다. **미선택은 빈 원으로 보이게 하는 것**이 표준적인 표현이고, 선택 시에는 보라색 원 + `#FCFCFC` 체크로 분명히 바뀐다. 해당 Figma 프레임 없이 뒤집을 근거가 없어 그대로 둔다.
+
+---
+
+## 9. 남은 사소 항목 (결함이지만 출시 차단은 아님)
+
+### 단수 표기가 없다 — "1 spots"
+
+개수가 1일 때도 복수형이 그대로 나간다. 화면에 보이는 곳:
+
+| 위치 | 문구 |
+|---|---|
+| `SavedScreen.tsx:380` | `{route.spotCount} spots` |
+| `SearchResultsScreen.tsx:270` | `There are {n} spots` |
+| `RouteListCard` | `{days} days · {spots} spots` |
+
+접근성 라벨에도 같은 문제가 있다(`SavedSpotsMap.tsx:300`, `RouteSuggestionCard.tsx:46`). 반면 `RouteCreateScreen.tsx:873-885` 는 이미 단수/복수를 삼항으로 갈라 쓰고 있어, 공용 헬퍼 하나로 정리하는 것이 맞다.
+
+---
+
+## 10. 권장 처리 순서
 
 1. **[B1]** 웹 페이지 2곳 + `member/CLAUDE.md` 정정 — 제품 결정이 선행되어야 한다.
 2. **[B2]** 출시 빌드가 바라볼 API 호스트 확정 및 `eas.json` 주입 — 인프라 결정이 선행되어야 한다.
