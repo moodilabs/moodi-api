@@ -13,6 +13,8 @@ import com.moodi.support.domain.InquiryAttachment;
 import com.moodi.support.domain.InquiryAttachmentFile;
 import com.moodi.support.domain.InquiryAttachmentType;
 import com.moodi.support.domain.InquiryRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,8 @@ import java.util.UUID;
 @Service
 @Transactional(readOnly = true)
 public class InquiryService {
+
+    private static final Logger log = LoggerFactory.getLogger(InquiryService.class);
 
     private final InquiryRepository inquiryRepository;
     private final InquiryQueryRepository inquiryQueryRepository;
@@ -95,10 +99,28 @@ public class InquiryService {
                         : null);
     }
 
+    /**
+     * 첨부 읽기 URL 발급이 실패하면 그 첨부만 빼고 상세를 내려보낸다.
+     *
+     * 예전에는 실패가 그대로 올라가 <b>첨부 한 건 때문에 문의 상세 전체가 503</b>이 됐다. 버킷이
+     * 준비되지 않은 환경에서는 {@code UnavailableInquiryAttachmentStorage}가 읽기에도
+     * {@code IMAGE_UPLOAD_UNAVAILABLE}을 던지므로, 첨부를 붙인 문의는 본문과 답변까지 통째로
+     * 읽을 수 없었다. 답변을 받으려고 문의한 사람이 정작 답변을 못 보는 셈이다.
+     *
+     * 첨부는 본문의 곁가지이므로 없는 채로 보여 주는 편이 아무것도 못 보는 것보다 낫다. 대신
+     * 조용히 넘기지 않고 경고로 남겨 스토리지 장애가 묻히지 않게 한다.
+     */
     List<InquiryAttachmentView> toViews(Inquiry inquiry) {
-        return inquiry.getAttachments().stream()
-                .map(attachment -> new InquiryAttachmentView(attachmentStorage.issueReadUrl(attachment.getObjectKey()),
-                        attachment.getContentType()))
-                .toList();
+        List<InquiryAttachmentView> views = new java.util.ArrayList<>();
+        for (InquiryAttachment attachment : inquiry.getAttachments()) {
+            try {
+                views.add(new InquiryAttachmentView(attachmentStorage.issueReadUrl(attachment.getObjectKey()),
+                        attachment.getContentType()));
+            } catch (RuntimeException exception) {
+                log.warn("문의 첨부 읽기 URL 발급 실패 — 이 첨부만 빼고 상세를 내려보낸다. inquiryId={}, key={}",
+                        inquiry.getId(), attachment.getObjectKey(), exception);
+            }
+        }
+        return views;
     }
 }

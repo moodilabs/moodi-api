@@ -139,6 +139,25 @@ class InquiryServiceTest {
     }
 
     @Test
+    @DisplayName("첨부 읽기 URL 발급이 실패해도 본문과 답변은 내려보낸다")
+    void get_mine_detail_degrades_when_attachment_url_fails() {
+        Inquiry inquiry = InquiryFixture.createWithAttachment(MEMBER_ID);
+        inquiry.answer("Thanks!", UUID.randomUUID(), CREATED_AT.plusDays(1));
+        when(inquiryRepository.findById(INQUIRY_ID)).thenReturn(Optional.of(inquiry));
+        // 버킷이 준비되지 않은 환경에서는 읽기 URL 발급도 503을 던진다.
+        when(attachmentStorage.issueReadUrl(anyString()))
+                .thenThrow(new BusinessException(ErrorCode.IMAGE_UPLOAD_UNAVAILABLE));
+
+        InquiryDetail detail = inquiryService.getMine(MEMBER_ID, INQUIRY_ID);
+
+        // 첨부 하나 때문에 상세 전체가 503이 되면, 답변을 받으려고 문의한 사람이
+        // 정작 답변을 못 본다.
+        assertThat(detail.attachments()).isEmpty();
+        assertThat(detail.content()).isNotBlank();
+        assertThat(detail.answer().content()).isEqualTo("Thanks!");
+    }
+
+    @Test
     @DisplayName("스토리지가 꺼져 있으면 업로드 URL 발급이 503으로 실패한다")
     void issue_upload_url_fails_when_storage_unavailable() {
         when(attachmentStorage.issueUploadUrl(anyString(), anyString(), anyLong()))
