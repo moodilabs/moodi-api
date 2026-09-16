@@ -196,6 +196,49 @@ class RouteSaveServiceTest {
     }
 
     @Test
+    @DisplayName("루트 수정 — 바뀐 Day는 기존 엔티티를 재사용하고 flush 뒤 다시 채운다")
+    void update_route_reuses_changed_day_entity() {
+        // given
+        UUID publicId = UUID.randomUUID();
+        Route existingRoute = RouteFixture.createRoute(
+                MEMBER_ID, "기존 제목", START, END,
+                List.of(
+                        RouteFixture.createDay(1, START, 2),
+                        RouteFixture.createDay(2, END, 1)
+                )
+        );
+        RouteDay day1Before = existingRoute.getDays().get(0);
+
+        given(routeRepository.findByPublicId(publicId))
+                .willReturn(Optional.of(existingRoute));
+        given(spotSnapshotReader.readBySpotIds(List.of(7L)))
+                .willReturn(List.of(createSnapshot(7L, 37.59, 127.09)));
+
+        List<Long> day2SpotIds = existingRoute.getDays().get(1).getSpots().stream()
+                .map(s -> s.getSpotId()).toList();
+
+        RouteSaveCommand command = new RouteSaveCommand(
+                MEMBER_ID, "기존 제목", START, END,
+                List.of(
+                        new DayCommand(1, START, List.of(7L)),
+                        new DayCommand(2, END, day2SpotIds)
+                )
+        );
+
+        // when
+        Route result = routeSaveService.update(publicId, command);
+
+        // then: 같은 day_number 를 새 Day 로 갈아끼우면 uk_route_day_route_day_number 에 걸린다 —
+        // 엔티티는 그대로 두고 안의 일정만 바뀌어야 한다.
+        assertThat(result.getDays().get(0)).isSameAs(day1Before);
+        assertThat(result.getDays().get(0).getSpots()).hasSize(1);
+        assertThat(result.getDays().get(0).getSpots().get(0).getSpotId()).isEqualTo(7L);
+        assertThat(result.getDays().get(0).getSpots().get(0).getSequence()).isEqualTo(1);
+        // 비운 스팟의 DELETE 가 새 INSERT 보다 먼저 나가야 uk_route_spot_day_sequence 를 피한다.
+        verify(routeRepository).flush();
+    }
+
+    @Test
     @DisplayName("루트 수정 — 존재하지 않는 루트")
     void update_route_not_found() {
         // given
