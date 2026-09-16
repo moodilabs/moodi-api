@@ -3,7 +3,7 @@ name: Deploy
 on:
   push:
     branches: [develop]
-  # 시크릿(GOOGLE_CLIENT_ID 등)만 바뀐 경우 코드 푸시 없이 재배포하기 위한 수동 트리거
+  # 설정만 바뀐 경우 코드 푸시 없이 재배포하기 위한 수동 트리거
   workflow_dispatch:
 
 permissions:
@@ -46,35 +46,14 @@ jobs:
 
       - run: docker push --all-tags ${{ env.IMAGE }}
 
-      - name: Verify required secrets
-        env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
-        run: |
-          missing=0
-          for name in JWT_SECRET GOOGLE_CLIENT_ID KAKAO_REST_API_KEY; do
-            if [ -z "${!name}" ]; then
-              echo "::error::Required secret $name is not set"
-              missing=1
-            fi
-          done
-          [ "$missing" -eq 0 ]
-
-      # 관리자 부트스트랩 값은 admin_account 가 비어 있을 때 최초 1회만 쓰이므로 필수 검증에 넣지 않는다.
+      # JWT_SECRET, GOOGLE_CLIENT_ID, KAKAO_REST_API_KEY, ADMIN_BOOTSTRAP_PASSWORD 는
+      # Cloud Run → Secret Manager 참조로 관리한다. 값 변경은 GCP 콘솔에서.
       # ADMIN_ALLOWED_ORIGINS 는 비어 있으면 application.yaml 기본값(https://admin.moodi.kr + 로컬)을 쓴다.
       - name: Deploy to Cloud Run
         env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
-          ADMIN_BOOTSTRAP_LOGIN_ID: ${{ secrets.ADMIN_BOOTSTRAP_LOGIN_ID }}
-          ADMIN_BOOTSTRAP_PASSWORD: ${{ secrets.ADMIN_BOOTSTRAP_PASSWORD }}
           ADMIN_ALLOWED_ORIGINS: ${{ secrets.ADMIN_ALLOWED_ORIGINS }}
         run: |
-          # 구분자는 '|' — ','는 ADMIN_ALLOWED_ORIGINS 값에 들어간다. 시크릿 값에 '|'를 넣지 말 것.
-          env_vars="^|^SPRING_PROFILES_ACTIVE=prod|JWT_SECRET=${JWT_SECRET}|GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}|APPLE_CLIENT_ID=kr.moodi.app"
-          env_vars="${env_vars}|ADMIN_BOOTSTRAP_LOGIN_ID=${ADMIN_BOOTSTRAP_LOGIN_ID}|ADMIN_BOOTSTRAP_PASSWORD=${ADMIN_BOOTSTRAP_PASSWORD}"
+          env_vars="^|^SPRING_PROFILES_ACTIVE=prod|APPLE_CLIENT_ID=kr.moodi.app"
           if [ -n "${ADMIN_ALLOWED_ORIGINS}" ]; then
             env_vars="${env_vars}|ADMIN_ALLOWED_ORIGINS=${ADMIN_ALLOWED_ORIGINS}"
           fi
@@ -86,5 +65,4 @@ jobs:
             --port=8080 \
             --memory=1Gi \
             --add-cloudsql-instances=moodi-app-2026:asia-northeast3:moodi-db \
-            --update-env-vars="${env_vars}" \
-            --remove-env-vars=ADMIN_BOOTSTRAP_EMAIL
+            --update-env-vars="${env_vars}"
