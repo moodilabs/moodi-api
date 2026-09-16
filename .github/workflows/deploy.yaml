@@ -53,7 +53,7 @@ jobs:
         env:
           ADMIN_ALLOWED_ORIGINS: ${{ secrets.ADMIN_ALLOWED_ORIGINS }}
         run: |
-          env_vars="^|^SPRING_PROFILES_ACTIVE=prod|APPLE_CLIENT_ID=kr.moodi.app"
+          env_vars="^|^SPRING_PROFILES_ACTIVE=prod|APPLE_CLIENT_ID=kr.moodi.app,moodi.test"
           if [ -n "${ADMIN_ALLOWED_ORIGINS}" ]; then
             env_vars="${env_vars}|ADMIN_ALLOWED_ORIGINS=${ADMIN_ALLOWED_ORIGINS}"
           fi

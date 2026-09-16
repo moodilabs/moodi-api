@@ -44,7 +44,7 @@ oauth:
     jwks-uri: https://www.googleapis.com/oauth2/v3/certs
   apple:
     issuer: https://appleid.apple.com
-    audiences: ${APPLE_CLIENT_ID:kr.moodi.app}
+    audiences: ${APPLE_CLIENT_ID:kr.moodi.app,moodi.test}
     jwks-uri: https://appleid.apple.com/auth/keys
 
 spot-import:
