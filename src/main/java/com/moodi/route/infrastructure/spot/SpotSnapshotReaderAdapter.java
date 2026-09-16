@@ -4,10 +4,13 @@ import com.moodi.route.application.SpotSnapshot;
 import com.moodi.route.application.SpotSnapshotReader;
 import com.moodi.route.domain.RouteSpotType;
 import com.moodi.spot.application.RegionDictionary;
+import com.moodi.shared.mood.MoodTag;
 import com.moodi.spot.domain.Spot;
 import com.moodi.spot.domain.SpotDescription;
 import com.moodi.spot.domain.SpotDescriptionRepository;
 import com.moodi.spot.domain.SpotImage;
+import com.moodi.spot.domain.SpotMood;
+import com.moodi.spot.domain.SpotMoodRepository;
 import com.moodi.spot.domain.SpotRepository;
 import com.moodi.spot.domain.SpotStatus;
 import com.moodi.spot.domain.SpotTranslation;
@@ -32,15 +35,18 @@ public class SpotSnapshotReaderAdapter implements SpotSnapshotReader {
     private final SpotTranslationRepository translationRepository;
     private final SpotImageRepository imageRepository;
     private final SpotDescriptionRepository descriptionRepository;
+    private final SpotMoodRepository spotMoodRepository;
 
     public SpotSnapshotReaderAdapter(SpotRepository spotRepository,
                                      SpotTranslationRepository translationRepository,
                                      SpotImageRepository imageRepository,
-                                     SpotDescriptionRepository descriptionRepository) {
+                                     SpotDescriptionRepository descriptionRepository,
+                                     SpotMoodRepository spotMoodRepository) {
         this.spotRepository = spotRepository;
         this.translationRepository = translationRepository;
         this.imageRepository = imageRepository;
         this.descriptionRepository = descriptionRepository;
+        this.spotMoodRepository = spotMoodRepository;
     }
 
     @Override
@@ -65,11 +71,18 @@ public class SpotSnapshotReaderAdapter implements SpotSnapshotReader {
                 .findBySpotIdInAndLocale(filteredIds, DESCRIPTION_LOCALE).stream()
                 .collect(Collectors.toMap(SpotDescription::getSpotId, SpotDescription::getContent, (a, b) -> a));
 
+        Map<Long, List<String>> moodTagMap = spotMoodRepository.findBySpotIdIn(filteredIds).stream()
+                .collect(Collectors.toMap(
+                        SpotMood::getSpotId,
+                        sm -> sm.getMoodTags().stream().map(MoodTag::getKey).toList(),
+                        (a, b) -> a));
+
         return spots.stream()
                 .map(spot -> {
                     SpotTranslation translation = translationMap.get(spot.getId());
                     SpotImage primaryImage = primaryImageMap.get(spot.getId());
                     String description = descriptionMap.get(spot.getId());
+                    List<String> moodTags = moodTagMap.getOrDefault(spot.getId(), List.of());
                     return new SpotSnapshot(
                             spot.getId(),
                             translation != null ? translation.getTitle() : null,
@@ -79,7 +92,8 @@ public class SpotSnapshotReaderAdapter implements SpotSnapshotReader {
                             spot.getLatitude(),
                             spot.getLongitude(),
                             RouteSpotType.valueOf(spot.getContentType().name()),
-                            description
+                            description,
+                            moodTags
                     );
                 })
                 .toList();

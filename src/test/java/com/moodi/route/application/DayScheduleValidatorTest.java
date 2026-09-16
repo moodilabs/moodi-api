@@ -156,7 +156,8 @@ class DayScheduleValidatorTest {
         return new SpotSnapshot(
                 spotId, "스팟 " + spotId, null,
                 "서울", "성동구", 37.55, 127.05,
-                contentType, null
+                contentType, null,
+                java.util.List.of()
         );
     }
 }

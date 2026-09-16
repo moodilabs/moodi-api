@@ -177,7 +177,8 @@ public class SpotRecommendationReaderAdapter implements SpotRecommendationReader
                     spotId, title, imageUrl, area, district,
                     latitude, longitude,
                     RouteSpotType.valueOf(contentType),
-                    description
+                    description,
+                    java.util.List.of()
             );
         }
     }

@@ -160,6 +160,9 @@ public class SpotSearchQueryRepositoryImpl implements SpotSearchQueryRepository 
 
     private void appendMoodTagFilter(StringBuilder sql, Map<String, Object> params, List<String> moodTagKeys) {
         if (moodTagKeys != null && !moodTagKeys.isEmpty()) {
+            // 태그 검색은 "이 무드에 맞는 스팟 보여줘"이므로 피드·루트 추천과 같은 기준으로
+            // 숙박·음식점·쇼핑(전통시장 제외)을 걸러낸다.
+            sql.append(" AND (s.route_excluded = false OR (s.content_type = 'SHOPPING' AND s.lcls_systm2 = 'SH06'))");
             sql.append(" AND EXISTS (");
             sql.append("   SELECT 1 FROM spot_mood sm WHERE sm.spot_id = s.id");
             sql.append("   AND (");

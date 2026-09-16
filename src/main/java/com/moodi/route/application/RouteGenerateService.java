@@ -62,7 +62,11 @@ public class RouteGenerateService {
         List<List<LegResult>> legsByDay = calculateLegsForAllDays(distribution);
         trimByActualSchedule(distribution, legsByDay);
 
-        String title = titleGenerator.generate(command.areas(), totalDays);
+        List<String> allMoodTags = distribution.stream()
+                .flatMap(List::stream)
+                .flatMap(snap -> snap.moodTagKeys().stream())
+                .toList();
+        String title = titleGenerator.generate(command.areas(), allMoodTags, totalDays);
         return buildResult(title, command.startDate(), command.endDate(), distribution, legsByDay);
     }
 
