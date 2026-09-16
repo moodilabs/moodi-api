@@ -24,6 +24,34 @@ public class Policy extends BaseEntity {
     private String version;
     private String content;
     private LocalDate effectiveAt;
+    private String locale = "en-US";
+    private boolean enabled = true;
+    private boolean visible = true;
+
+    public void configure(String locale, boolean enabled, boolean visible, LocalDate today) {
+        requireNotEffective(today);
+        validateLocale(locale);
+        this.locale = locale;
+        this.enabled = enabled;
+        this.visible = visible;
+    }
+
+    public void changePublication(boolean enabled, boolean visible) {
+        this.enabled = enabled;
+        this.visible = visible;
+    }
+
+    public static void validateLocale(String locale) {
+        if (!"ko-KR".equals(locale) && !"en-US".equals(locale)) throw new BusinessException(ErrorCode.INVALID_REQUEST);
+    }
+
+    public static Policy create(PolicyType type, String version, String content, LocalDate effectiveAt,
+                                String locale, boolean enabled, boolean visible) {
+        validateLocale(locale);
+        Policy policy = create(type, version, content, effectiveAt);
+        policy.locale = locale; policy.enabled = enabled; policy.visible = visible;
+        return policy;
+    }
 
     private Policy(PolicyType type, String version, String content, LocalDate effectiveAt) {
         validate(type, version, content, effectiveAt);

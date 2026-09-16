@@ -222,3 +222,5 @@ include::../support/admin-faq.adoc[]
 include::../support/admin-policy.adoc[]
 
 include::../support/admin-inquiry.adoc[]
+
+include::curation.adoc[]

@@ -57,6 +57,9 @@ class AdminPolicyControllerDocsTest extends AdminRestDocsSupport {
                                 fieldWithPath("data[].id").type(JsonFieldType.NUMBER).description("약관 ID"),
                                 fieldWithPath("data[].type").type(JsonFieldType.STRING).description("종류"),
                                 fieldWithPath("data[].version").type(JsonFieldType.STRING).description("버전"),
+                                fieldWithPath("data[].locale").type(JsonFieldType.STRING).description("약관 언어 (ko-KR, en-US)"),
+                                fieldWithPath("data[].enabled").type(JsonFieldType.BOOLEAN).description("시행 활성 여부"),
+                                fieldWithPath("data[].visible").type(JsonFieldType.BOOLEAN).description("공개 여부"),
                                 fieldWithPath("data[].effectiveAt").type(JsonFieldType.STRING).description("시행일")
                         )
                 ));
@@ -78,6 +81,9 @@ class AdminPolicyControllerDocsTest extends AdminRestDocsSupport {
                                 fieldWithPath("data.type").type(JsonFieldType.STRING).description("종류"),
                                 fieldWithPath("data.version").type(JsonFieldType.STRING).description("버전"),
                                 fieldWithPath("data.content").type(JsonFieldType.STRING).description("전문"),
+                                fieldWithPath("data.locale").type(JsonFieldType.STRING).description("약관 언어 (ko-KR, en-US)"),
+                                fieldWithPath("data.enabled").type(JsonFieldType.BOOLEAN).description("시행 활성 여부"),
+                                fieldWithPath("data.visible").type(JsonFieldType.BOOLEAN).description("공개 여부"),
                                 fieldWithPath("data.effectiveAt").type(JsonFieldType.STRING).description("시행일")
                         )
                 ));
@@ -98,6 +104,9 @@ class AdminPolicyControllerDocsTest extends AdminRestDocsSupport {
                                 fieldWithPath("type").type(JsonFieldType.STRING).description("종류 (TERMS_OF_SERVICE, PRIVACY_POLICY)"),
                                 fieldWithPath("version").type(JsonFieldType.STRING).description("버전 (종류 내 중복 불가, ≤20자)"),
                                 fieldWithPath("content").type(JsonFieldType.STRING).description("전문"),
+                                fieldWithPath("locale").type(JsonFieldType.STRING).description("약관 언어 (ko-KR, en-US)"),
+                                fieldWithPath("enabled").type(JsonFieldType.BOOLEAN).description("시행 활성 여부"),
+                                fieldWithPath("visible").type(JsonFieldType.BOOLEAN).description("공개 여부"),
                                 fieldWithPath("effectiveAt").type(JsonFieldType.STRING).description("시행일 (yyyy-MM-dd)")
                         ),
                         responseFields(
@@ -118,4 +127,13 @@ class AdminPolicyControllerDocsTest extends AdminRestDocsSupport {
 
         verify(policyAdminService).delete(3L);
     }
+    @Test
+    @DisplayName("[어드민] 약관 시행·공개 상태 변경")
+    void change_publication() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/admin/policies/3/publication")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"enabled\":false,\"visible\":false}"))
+                .andExpect(status().isNoContent()).andDo(document("admin/policies/publication"));
+        verify(policyAdminService).changePublication(3L, false, false);
+    }
+
 }

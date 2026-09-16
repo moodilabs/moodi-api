@@ -91,7 +91,7 @@ public class MemberAdminService {
         Member member = findMember(memberId);
         List<MemberAdminDetail.Agreement> agreements = memberAgreementRepository.findByMemberId(memberId).stream()
                 .map(agreement -> new MemberAdminDetail.Agreement(agreement.getType(), agreement.isAgreed(),
-                        agreement.getAgreedAt()))
+                        agreement.getAgreedAt(), agreement.getPolicyId(), agreement.getPolicyVersion(), agreement.getPolicyLocale()))
                 .toList();
         MemberAdminDetail.Withdrawal withdrawal = member.isWithdrawn()
                 ? memberWithdrawalRepository.findFirstByMemberIdOrderByCreatedAtDesc(memberId)

@@ -364,3 +364,30 @@ JWT secret은 회원과 같은 `jwt.secret`을 쓰되 `type` 클레임으로 구
 3. 관리자 접근 제한: 프론트는 `admin.moodi.kr`로 분리됐지만 API 자체는 `moodi.kr/api/admin/**`로 열려 있다(CORS는 브라우저만 막음). IP 허용 목록 또는 별도 API 호스트는 후순위.
 4. 정지(`SUSPENDED`) 회원의 공유 루트 링크는 계속 열리는가 — 정책 미정, 기본은 열림.
 5. 1:1 문의 첨부 버킷 생성·IAM(signBlob) — Pick 버킷과 동일한 준비 필요.
+
+
+## 17. 2026-09-14 추가 요청 반영 (V29)
+
+요청서 `[어드민] 추가 개발 및 기능 수정 사항`의 5개 항목을 반영한다.
+
+| 항목 | 관리자 API | 앱 연동 |
+|---|---|---|
+| 운영 추천 루트 | `/api/admin/recommended-routes` 목록·상세·POST·PUT·DELETE, `PUT /order`, `PATCH /{id}/visibility` | `GET /api/v1/feed/recommended-routes`, 공개 스팟으로 구성된 노출 루트 최대 3개 |
+| 추천 지역 | `/api/admin/recommended-areas` 목록·상세·POST·PUT·DELETE, `PUT /order` | `GET /api/v1/picks/recommended-areas`, 기존 지역 자동완성과 같은 지역 값 |
+| 약관·정책 | 기존 API에 locale/enabled/visible 추가, `PATCH /api/admin/policies/{id}/publication` | `GET /api/v1/policies[/{type}]?locale=ko-KR`, 기본 en-US |
+| 사전조사 이미지 | `/api/admin/survey-images` 목록·상세·POST·PUT·DELETE, `PUT /order` | `GET /api/v1/members/survey-images` |
+| 회원 동의 버전 | 기존 회원 상세 agreements에 policyId/policyVersion/policyLocale 추가 | 동의 요청의 locale/policyIds 및 서버 현재 시행본 스냅샷 저장 |
+
+관리 API는 `@AdminRequired`이며 OPERATOR 이상 권한이다. 변경은 기존 감사 인터셉터가 기록한다.
+새 관리 콘텐츠는 별도 테이블이며 컨텍스트 간 FK를 추가하지 않는다. 스팟의 공개 상태는 등록과 앱 조회 때 검증한다.
+사전조사 이미지는 관리자 스팟 상세의 images에서 선택하며 원본 이미지의 업로드·삭제 기능과는 별도다.
+
+약관의 중복 기준은 `(type, version, locale)`로 변경한다. 언어는 `ko-KR`/`en-US`, 마케팅 문서용 `MARKETING` 유형을 지원한다.
+기존 문서는 기존 영문 API 계약에 따라 en-US로 이관하고 공개·시행 활성 상태를 유지한다.
+시행일이 지난 버전은 상태를 끄더라도 본문·버전·언어·시행일 수정 및 삭제가 불가하다.
+과거 버전을 관리자 API로 보관·조회하며, 동의 기록의 약관 버전은 새 약관 등록으로 바뀌지 않는다.
+기존 동의의 버전을 추정해 채우지 않으며 null로 남긴다. 현재 시행본이 없는 종류의 신규 동의도 기존 가입 호환성을 위해 null로 기록한다.
+프론트는 조회한 문서 ID를 policyIds로 보내 동의 직전 버전 변경을 검출할 수 있다.
+
+상세 요청·응답 예시는 `./gradlew asciidoctorApp asciidoctorAdmin` 문서에 포함된다.
+마이그레이션은 `V29__admin_curated_content_and_policy_versions.sql`이며 배포 시 Flyway로 적용한다.

@@ -62,6 +62,9 @@ class MemberOnboardingServiceTest {
     @Mock
     private MemberPreferredMoodRepository memberPreferredMoodRepository;
 
+    @Mock
+    private AgreementPolicyReader agreementPolicyReader;
+
     @Captor
     private ArgumentCaptor<MemberAgreement> agreementsCaptor;
 
@@ -70,7 +73,7 @@ class MemberOnboardingServiceTest {
     @BeforeEach
     void setUp() {
         memberOnboardingService = new MemberOnboardingService(
-                memberRepository, memberAgreementRepository, memberPreferredMoodRepository, FIXED_CLOCK);
+                memberRepository, memberAgreementRepository, memberPreferredMoodRepository, FIXED_CLOCK, agreementPolicyReader);
     }
 
     @Test
@@ -283,4 +286,21 @@ class MemberOnboardingServiceTest {
                 AgreementType.MARKETING, marketing
         ));
     }
+    @Test
+    @DisplayName("동의 화면에서 조회한 약관이 교체되면 동의를 저장하지 않는다")
+    void rejects_stale_policy_id() {
+        when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(MemberFixture.withProfile()));
+        when(agreementPolicyReader.findCurrent(AgreementType.TERMS_OF_SERVICE, "ko-KR"))
+                .thenReturn(new AgreementPolicyReader.Version(20L, "2.0", "ko-KR"));
+        AgreementCommand command = new AgreementCommand(Map.of(
+                AgreementType.TERMS_OF_SERVICE, true, AgreementType.PRIVACY_POLICY, true,
+                AgreementType.AGE_OVER_14, true, AgreementType.MARKETING, false),
+                "ko-KR", Map.of(AgreementType.TERMS_OF_SERVICE, 10L));
+        assertThatThrownBy(() -> memberOnboardingService.agree(MEMBER_ID, command))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST);
+        verify(memberAgreementRepository, never()).save(any());
+        verify(memberRepository, never()).save(any());
+    }
+
 }

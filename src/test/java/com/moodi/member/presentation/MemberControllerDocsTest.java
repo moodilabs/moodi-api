@@ -213,6 +213,8 @@ class MemberControllerDocsTest extends AuthenticatedRestDocsSupport {
                                 fieldWithPath("termsOfService").type(JsonFieldType.BOOLEAN).description("[필수] 이용약관 동의 여부"),
                                 fieldWithPath("privacyPolicy").type(JsonFieldType.BOOLEAN).description("[필수] 개인정보 수집·이용 동의 여부"),
                                 fieldWithPath("ageOver14").type(JsonFieldType.BOOLEAN).description("[필수] 만 14세 이상 확인 여부"),
+                                fieldWithPath("locale").type(JsonFieldType.STRING).optional().description("동의한 약관 언어, 기본 en-US"),
+                                fieldWithPath("policyIds").type(JsonFieldType.OBJECT).optional().description("조회한 약관의 종류별 ID, 최신 버전과 다르면 400"),
                                 fieldWithPath("marketing").type(JsonFieldType.BOOLEAN).description("[선택] 마케팅 수신 동의 여부")
                         )
                 ));
@@ -241,4 +243,15 @@ class MemberControllerDocsTest extends AuthenticatedRestDocsSupport {
 
         verify(memberWithdrawService).withdraw(any(), any(WithdrawalCommand.class));
     }
+    @Test
+    @DisplayName("동의 약관 ID는 null 또는 음수일 수 없다")
+    void reject_invalid_policy_ids() throws Exception {
+        for (String value : java.util.List.of("null", "-1")) {
+            mockMvc.perform(post("/api/v1/members/agreements")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"termsOfService\":true,\"privacyPolicy\":true,\"ageOver14\":true,\"marketing\":false,\"policyIds\":{\"TERMS_OF_SERVICE\":" + value + "}}"))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
 }

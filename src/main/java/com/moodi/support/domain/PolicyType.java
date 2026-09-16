@@ -5,5 +5,6 @@ package com.moodi.support.domain;
  */
 public enum PolicyType {
     TERMS_OF_SERVICE,
-    PRIVACY_POLICY
+    PRIVACY_POLICY,
+    MARKETING
 }

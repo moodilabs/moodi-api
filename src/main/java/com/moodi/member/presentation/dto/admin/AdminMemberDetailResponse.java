@@ -21,7 +21,10 @@ public record AdminMemberDetailResponse(
         List<MoodTag> preferredMoods, long savedSpotCount, long routeCount, long inquiryCount
 ) {
 
-    public record AgreementResponse(AgreementType type, boolean agreed, LocalDateTime agreedAt) {}
+    public record AgreementResponse(AgreementType type, boolean agreed, LocalDateTime agreedAt,
+                                    Long policyId, String policyVersion, String policyLocale) {
+        public AgreementResponse(AgreementType type, boolean agreed, LocalDateTime agreedAt) { this(type, agreed, agreedAt, null, null, null); }
+    }
 
     public record WithdrawalResponse(Set<WithdrawalReason> reasons, String detail, LocalDateTime withdrawnAt) {}
 
@@ -32,7 +35,7 @@ public record AdminMemberDetailResponse(
                 detail.withdrawal() == null ? null : new WithdrawalResponse(detail.withdrawal().reasons(),
                         detail.withdrawal().detail(), detail.withdrawal().withdrawnAt()),
                 detail.agreements().stream()
-                        .map(agreement -> new AgreementResponse(agreement.type(), agreement.agreed(), agreement.agreedAt()))
+                        .map(agreement -> new AgreementResponse(agreement.type(), agreement.agreed(), agreement.agreedAt(), agreement.policyId(), agreement.policyVersion(), agreement.policyLocale()))
                         .toList(),
                 detail.preferredMoods(), detail.savedSpotCount(), detail.routeCount(), detail.inquiryCount());
     }

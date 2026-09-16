@@ -17,6 +17,18 @@ public class MemberAgreement extends BaseEntity {
     private AgreementType type;
     private boolean agreed;
     private LocalDateTime agreedAt;
+    private Long policyId;
+    private String policyVersion;
+    private String policyLocale;
+
+    public static MemberAgreement of(UUID memberId, AgreementType type, boolean agreed, LocalDateTime now,
+                                      Long policyId, String policyVersion, String policyLocale) {
+        MemberAgreement agreement = of(memberId, type, agreed, now);
+        agreement.policyId = policyId;
+        agreement.policyVersion = policyVersion;
+        agreement.policyLocale = policyLocale;
+        return agreement;
+    }
 
     private MemberAgreement(UUID memberId, AgreementType type, boolean agreed, LocalDateTime agreedAt) {
         this.memberId = memberId;

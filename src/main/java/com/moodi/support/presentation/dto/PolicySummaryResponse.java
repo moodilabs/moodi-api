@@ -5,9 +5,9 @@ import com.moodi.support.domain.PolicyType;
 
 import java.time.LocalDate;
 
-public record PolicySummaryResponse(PolicyType type, String version, LocalDate effectiveAt) {
+public record PolicySummaryResponse(PolicyType type, String version, LocalDate effectiveAt, Long id, String locale) {
 
     public static PolicySummaryResponse from(PolicySummary summary) {
-        return new PolicySummaryResponse(summary.type(), summary.version(), summary.effectiveAt());
+        return new PolicySummaryResponse(summary.type(), summary.version(), summary.effectiveAt(), summary.id(), summary.locale());
     }
 }

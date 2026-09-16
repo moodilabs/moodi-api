@@ -45,18 +45,26 @@ public class PolicyAdminService {
     }
 
     public Long create(PolicyCommand command) {
-        validateVersionAvailable(command.type(), command.version());
-        Policy policy = Policy.create(command.type(), command.version(), command.content(), command.effectiveAt());
+        validateVersionAvailable(command.type(), command.version(), command.locale());
+        Policy policy = Policy.create(command.type(), command.version(), command.content(), command.effectiveAt(), command.locale(), command.enabled(), command.visible());
         return saveWithVersionConflictCheck(policy).getId();
     }
 
     public void update(Long policyId, PolicyCommand command) {
         Policy policy = findPolicy(policyId);
-        if (!policy.getVersion().equals(command.version())) {
-            validateVersionAvailable(policy.getType(), command.version());
+        if (policy.getType() != command.type()) throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        if (!policy.getVersion().equals(command.version()) || !policy.getLocale().equals(command.locale())) {
+            validateVersionAvailable(policy.getType(), command.version(), command.locale());
         }
+        policy.configure(command.locale(), command.enabled(), command.visible(), LocalDate.now(clock));
         policy.update(command.version(), command.content(), command.effectiveAt(), LocalDate.now(clock));
         saveWithVersionConflictCheck(policy);
+    }
+
+    public void changePublication(Long policyId, boolean enabled, boolean visible) {
+        Policy policy = findPolicy(policyId);
+        policy.changePublication(enabled, visible);
+        policyRepository.save(policy);
     }
 
     public void delete(Long policyId) {
@@ -70,8 +78,8 @@ public class PolicyAdminService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.POLICY_NOT_FOUND));
     }
 
-    private void validateVersionAvailable(PolicyType type, String version) {
-        if (policyRepository.existsByTypeAndVersion(type, version)) {
+    private void validateVersionAvailable(PolicyType type, String version, String locale) {
+        if (policyRepository.existsByTypeAndVersionAndLocale(type, version, locale)) {
             throw new BusinessException(ErrorCode.POLICY_VERSION_DUPLICATE);
         }
     }

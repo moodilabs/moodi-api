@@ -20,10 +20,17 @@ public record AdminPolicyRequest(
         String content,
 
         @NotNull(message = "시행일은 필수입니다.")
-        LocalDate effectiveAt
+        LocalDate effectiveAt,
+        @jakarta.validation.constraints.Pattern(regexp = "ko-KR|en-US") String locale,
+        Boolean enabled,
+        Boolean visible
 ) {
 
+    public AdminPolicyRequest(PolicyType type, String version, String content, LocalDate effectiveAt) {
+        this(type, version, content, effectiveAt, "en-US", true, true);
+    }
+
     public PolicyCommand toCommand() {
-        return new PolicyCommand(type, version, content, effectiveAt);
+        return new PolicyCommand(type, version, content, effectiveAt, locale == null ? "en-US" : locale, enabled == null || enabled, visible == null || visible);
     }
 }

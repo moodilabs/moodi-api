@@ -58,6 +58,15 @@ public class AdminPolicyController {
         policyAdminService.update(policyId, request.toCommand());
     }
 
+    public record PublicationRequest(@jakarta.validation.constraints.NotNull Boolean enabled,
+                                     @jakarta.validation.constraints.NotNull Boolean visible) {}
+
+    @org.springframework.web.bind.annotation.PatchMapping("/{policyId}/publication")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void publication(@PathVariable Long policyId, @Valid @RequestBody PublicationRequest request) {
+        policyAdminService.changePublication(policyId, request.enabled(), request.visible());
+    }
+
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{policyId}")
     public void delete(@PathVariable Long policyId) {

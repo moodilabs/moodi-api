@@ -24,12 +24,12 @@ public class PolicyController {
     }
 
     @GetMapping
-    public SuccessResponse<PolicyListResponse> getPolicies() {
-        return SuccessResponse.of(PolicyListResponse.from(policyQueryService.getCurrentPolicies()));
+    public SuccessResponse<PolicyListResponse> getPolicies(@org.springframework.web.bind.annotation.RequestParam(defaultValue = "en-US") String locale) {
+        return SuccessResponse.of(PolicyListResponse.from(("en-US".equals(locale) ? policyQueryService.getCurrentPolicies() : policyQueryService.getCurrentPolicies(locale))));
     }
 
     @GetMapping("/{type}")
-    public SuccessResponse<PolicyDetailResponse> getPolicy(@PathVariable PolicyType type) {
-        return SuccessResponse.of(PolicyDetailResponse.from(policyQueryService.getCurrentPolicy(type)));
+    public SuccessResponse<PolicyDetailResponse> getPolicy(@PathVariable PolicyType type, @org.springframework.web.bind.annotation.RequestParam(defaultValue = "en-US") String locale) {
+        return SuccessResponse.of(PolicyDetailResponse.from(("en-US".equals(locale) ? policyQueryService.getCurrentPolicy(type) : policyQueryService.getCurrentPolicy(type, locale))));
     }
 }

@@ -1,8 +1,9 @@
 package com.moodi.support.application.dto;
-
 import com.moodi.support.domain.PolicyType;
-
 import java.time.LocalDate;
-
-public record PolicyCommand(PolicyType type, String version, String content, LocalDate effectiveAt) {
+public record PolicyCommand(PolicyType type, String version, String content, LocalDate effectiveAt,
+                            String locale, boolean enabled, boolean visible) {
+    public PolicyCommand(PolicyType type, String version, String content, LocalDate effectiveAt) {
+        this(type, version, content, effectiveAt, "en-US", true, true);
+    }
 }

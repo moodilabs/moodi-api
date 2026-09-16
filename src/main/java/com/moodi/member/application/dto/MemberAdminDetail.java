@@ -32,7 +32,10 @@ public record MemberAdminDetail(
         long inquiryCount
 ) {
 
-    public record Agreement(AgreementType type, boolean agreed, LocalDateTime agreedAt) {}
+    public record Agreement(AgreementType type, boolean agreed, LocalDateTime agreedAt,
+                                    Long policyId, String policyVersion, String policyLocale) {
+        public Agreement(AgreementType type, boolean agreed, LocalDateTime agreedAt) { this(type, agreed, agreedAt, null, null, null); }
+    }
 
     /** 탈퇴 회원의 최근 탈퇴 사유. 탈퇴 전이면 null. */
     public record Withdrawal(Set<WithdrawalReason> reasons, String detail, LocalDateTime withdrawnAt) {}
