@@ -1,0 +1,24 @@
+== 운영 추천 콘텐츠
+
+운영자가 등록한 콘텐츠를 로그인 없이 조회합니다. 등록된 항목이 없으면 `data: []`를 반환합니다.
+추천 루트와 사전조사 이미지는 연결된 스팟이 PUBLISHED 상태일 때만, 추천 지역은 실제 공개 스팟이 있을 때만 노출됩니다.
+
+=== 추천 루트
+
+노출 가능한 루트를 순서대로 최대 3개 반환합니다. stops는 일차·순서로 정렬되며 spotId로 스팟 상세 API를 조회할 수 있습니다.
+
+include::{snippets}/curation/recommended-routes/http-request.adoc[]
+
+include::{snippets}/curation/recommended-routes/http-response.adoc[]
+
+=== 추천 지역
+
+include::{snippets}/curation/recommended-areas/http-request.adoc[]
+
+include::{snippets}/curation/recommended-areas/http-response.adoc[]
+
+=== 사전조사 이미지
+
+include::{snippets}/curation/survey-images/http-request.adoc[]
+
+include::{snippets}/curation/survey-images/http-response.adoc[]

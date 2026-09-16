@@ -20,6 +20,10 @@ public interface PolicyRepository {
 
     boolean existsByTypeAndVersion(PolicyType type, String version);
 
+    boolean existsByTypeAndVersionAndLocale(PolicyType type, String version, String locale);
+
+    Optional<Policy> findFirstByTypeAndLocaleAndEnabledTrueAndVisibleTrueAndEffectiveAtLessThanEqualOrderByEffectiveAtDescIdDesc(PolicyType type, String locale, LocalDate today);
+
     void delete(Policy policy);
 
     void flush();

@@ -44,3 +44,9 @@ include::{snippets}/support/policy-detail/response-fields.adoc[]
 | `POLICY_NOT_FOUND` | 404 | 해당 종류에 시행 중인 버전이 없음
 | `INVALID_REQUEST` | 400 | 알 수 없는 종류
 |===
+
+=== 약관 언어와 동의 버전
+
+목록·상세 조회의 `locale` 쿼리 파라미터로 `ko-KR` 또는 `en-US`를 지정합니다(기본 `en-US`).
+해당 언어의 공개 시행본이 없으면 목록에서 빠지며 단건은 `POLICY_NOT_FOUND` (404)입니다. 다른 언어로 자동 대체하지 않습니다.
+응답의 `id`와 `locale`을 회원 약관 동의 요청에 전달하면, 조회한 문서와 서버의 현재 시행본이 같은지 검증합니다.

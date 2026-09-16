@@ -49,7 +49,7 @@ class PolicyAdminServiceTest {
     @Test
     @DisplayName("새 버전을 등록하면 ID를 돌려준다")
     void create_returns_id() {
-        when(policyRepository.existsByTypeAndVersion(PolicyType.TERMS_OF_SERVICE, "2.0")).thenReturn(false);
+        when(policyRepository.existsByTypeAndVersionAndLocale(PolicyType.TERMS_OF_SERVICE, "2.0", "en-US")).thenReturn(false);
         when(policyRepository.save(any(Policy.class)))
                 .thenReturn(PolicyFixture.createWithId(5L, PolicyType.TERMS_OF_SERVICE, "2.0", TODAY.plusDays(7)));
 
@@ -63,7 +63,7 @@ class PolicyAdminServiceTest {
     @Test
     @DisplayName("같은 종류에 같은 버전이 있으면 등록할 수 없다")
     void create_with_duplicate_version_throws() {
-        when(policyRepository.existsByTypeAndVersion(PolicyType.TERMS_OF_SERVICE, "1.0")).thenReturn(true);
+        when(policyRepository.existsByTypeAndVersionAndLocale(PolicyType.TERMS_OF_SERVICE, "1.0", "en-US")).thenReturn(true);
 
         assertThatThrownBy(() -> policyAdminService.create(new PolicyCommand(PolicyType.TERMS_OF_SERVICE, "1.0",
                 "content", TODAY)))
@@ -76,7 +76,7 @@ class PolicyAdminServiceTest {
     @Test
     @DisplayName("저장 중 버전이 선점되면 중복으로 처리한다")
     void create_with_race_condition_throws_duplicate() {
-        when(policyRepository.existsByTypeAndVersion(PolicyType.TERMS_OF_SERVICE, "2.0")).thenReturn(false);
+        when(policyRepository.existsByTypeAndVersionAndLocale(PolicyType.TERMS_OF_SERVICE, "2.0", "en-US")).thenReturn(false);
         when(policyRepository.save(any(Policy.class)))
                 .thenReturn(PolicyFixture.createWithId(5L, PolicyType.TERMS_OF_SERVICE, "2.0", TODAY));
         doThrow(new DataIntegrityViolationException("uk_policy_type_version")).when(policyRepository).flush();

@@ -49,6 +49,24 @@ public class PolicyQueryService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.POLICY_NOT_FOUND));
     }
 
+    public List<PolicySummary> getCurrentPolicies(String locale) {
+        Policy.validateLocale(locale);
+        if ("en-US".equals(locale)) return getCurrentPolicies();
+        return Arrays.stream(PolicyType.values()).map(type -> findCurrent(type, locale))
+                .flatMap(Optional::stream).map(PolicySummary::from).toList();
+    }
+
+    public PolicyDetail getCurrentPolicy(PolicyType type, String locale) {
+        Policy.validateLocale(locale);
+        if ("en-US".equals(locale)) return getCurrentPolicy(type);
+        return findCurrent(type, locale).map(PolicyDetail::from)
+                .orElseThrow(() -> new BusinessException(ErrorCode.POLICY_NOT_FOUND));
+    }
+
+    private Optional<Policy> findCurrent(PolicyType type, String locale) {
+        return policyRepository.findFirstByTypeAndLocaleAndEnabledTrueAndVisibleTrueAndEffectiveAtLessThanEqualOrderByEffectiveAtDescIdDesc(type, locale, LocalDate.now(clock));
+    }
+
     private Optional<Policy> findCurrent(PolicyType type, LocalDate today) {
         return policyRepository.findFirstByTypeAndEffectiveAtLessThanEqualOrderByEffectiveAtDescIdDesc(type, today);
     }

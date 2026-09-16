@@ -60,3 +60,17 @@ include::{snippets}/admin/policies/delete/http-response.adoc[]
 | `POLICY_VERSION_DUPLICATE` | 409 | 같은 종류에 같은 버전 존재
 | `POLICY_ALREADY_EFFECTIVE` | 409 | 시행된 버전 수정·삭제
 |===
+
+=== 국문·영문 및 공개 상태
+
+등록·수정 요청에 `locale` (`ko-KR` 또는 `en-US`), `enabled` (시행 활성), `visible` (공개 여부)를 지정합니다.
+생략 시 기존 계약을 유지해 `en-US`, `true`, `true`를 사용합니다. 버전 중복은 `(type, version, locale)` 기준입니다.
+`type`은 `TERMS_OF_SERVICE`, `PRIVACY_POLICY`, `MARKETING`이며, 기존 문서의 type 변경은 허용하지 않습니다.
+앱에는 요청 언어의 `enabled=true AND visible=true AND effectiveAt <= 오늘` 중 최신 시행본만 표시됩니다.
+공개를 중지하면 해당 버전을 제외한 이전 공개 시행본이 다시 조회될 수 있습니다.
+시행일이 지난 문서는 숨김 또는 시행 중지 상태여도 본문·버전·언어·시행일 변경 및 삭제가 불가능합니다. 새 버전을 등록해야 합니다.
+기존 버전은 관리자 목록·상세에 계속 남습니다. 상태 변경은 아래 API로 언제든 가능합니다.
+
+include::{snippets}/admin/policies/publication/http-request.adoc[]
+
+include::{snippets}/admin/policies/publication/http-response.adoc[]

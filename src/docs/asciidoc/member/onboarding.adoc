@@ -199,3 +199,14 @@ include::{snippets}/member/me/response-fields.adoc[]
 
 | `MEMBER_NOT_FOUND` | 404 | 회원 없음
 |===
+
+=== 동의 문서 버전
+
+`POST /api/v1/members/agreements`에 선택 필드 `locale` (기본 `en-US`)와
+`policyIds` (`{"TERMS_OF_SERVICE": 1, "PRIVACY_POLICY": 2, "MARKETING": 3}`)를 전달할 수 있습니다.
+약관 조회 응답에서 실제로 표시한 문서의 ID를 전달해야 하며 현재 공개 시행본과 다르면 400입니다. 다시 조회하여 동의받으세요.
+`AGE_OVER_14`는 문서가 없는 확인 항목이므로 policyIds에 넣지 않습니다.
+기존 클라이언트처럼 policyIds를 생략하면 해당 언어의 현재 시행본을 기록합니다.
+등록된 시행본이 없는 종류와 배포 전 동의 기록의 약관 ID·버전·언어는 null입니다.
+관리자 회원 상세의 agreements에 policyId, policyVersion, policyLocale이 함께 반환됩니다.
+마케팅에 동의하지 않은 경우 agreed=false, agreedAt=null이며 기록된 동의 내용을 덮어쓰지 않습니다.

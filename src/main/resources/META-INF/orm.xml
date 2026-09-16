@@ -112,6 +112,9 @@
             <basic name="agreedAt">
                 <column name="agreed_at" nullable="true"/>
             </basic>
+            <basic name="policyId"><column name="policy_id" nullable="true"/></basic>
+            <basic name="policyVersion"><column name="policy_version" nullable="true" length="20"/></basic>
+            <basic name="policyLocale"><column name="policy_locale" nullable="true" length="10"/></basic>
         </attributes>
     </entity>
 
@@ -621,6 +624,7 @@
             <unique-constraint>
                 <column-name>type</column-name>
                 <column-name>version</column-name>
+                <column-name>locale</column-name>
             </unique-constraint>
         </table>
         <attributes>
@@ -640,6 +644,9 @@
             <basic name="effectiveAt">
                 <column name="effective_at" nullable="false"/>
             </basic>
+            <basic name="locale"><column name="locale" nullable="false" length="10"/></basic>
+            <basic name="enabled"><column name="enabled" nullable="false"/></basic>
+            <basic name="visible"><column name="visible" nullable="false"/></basic>
         </attributes>
     </entity>
 
@@ -832,5 +839,53 @@
             </element-collection>
         </attributes>
     </entity>
+
+    <entity class="com.moodi.route.domain.RecommendedRoute" access="FIELD">
+        <table name="recommended_route"/>
+        <attributes>
+            <id name="id"><generated-value strategy="IDENTITY"/></id>
+            <basic name="title"><column name="title" nullable="false" length="100"/></basic>
+            <basic name="imageUrl"><column name="image_url" nullable="false" length="2000"/></basic>
+            <basic name="region"><column name="region" nullable="false" length="100"/></basic>
+            <basic name="visible"><column name="visible" nullable="false"/></basic>
+            <basic name="sortOrder"><column name="sort_order" nullable="false"/></basic>
+            <element-collection name="stops" fetch="EAGER">
+                <order-by>day ASC, sequence ASC</order-by>
+                <collection-table name="recommended_route_stop"><join-column name="recommended_route_id" nullable="false"/></collection-table>
+            </element-collection>
+        </attributes>
+    </entity>
+
+    <entity class="com.moodi.discovery.domain.RecommendedArea" access="FIELD">
+        <table name="recommended_area"/>
+        <attributes>
+            <id name="id"><generated-value strategy="IDENTITY"/></id>
+            <basic name="level"><column name="level" nullable="false" length="30"/><enumerated>STRING</enumerated></basic>
+            <basic name="region"><column name="region" nullable="false" length="100"/></basic>
+            <basic name="district"><column name="district" nullable="true" length="100"/></basic>
+            <basic name="neighborhood"><column name="neighborhood" nullable="true" length="100"/></basic>
+            <basic name="label"><column name="label" nullable="false" length="200"/></basic>
+            <basic name="sortOrder"><column name="sort_order" nullable="false"/></basic>
+        </attributes>
+    </entity>
+
+    <entity class="com.moodi.member.domain.SurveyImage" access="FIELD">
+        <table name="survey_image"/>
+        <attributes>
+            <id name="id"><generated-value strategy="IDENTITY"/></id>
+            <basic name="mood"><column name="mood" nullable="false" length="30"/><enumerated>STRING</enumerated></basic>
+            <basic name="spotId"><column name="spot_id" nullable="false"/></basic>
+            <basic name="imageUrl"><column name="image_url" nullable="false" length="2000"/></basic>
+            <basic name="sortOrder"><column name="sort_order" nullable="false"/></basic>
+        </attributes>
+    </entity>
+
+    <embeddable class="com.moodi.route.domain.RecommendedRouteStop" access="FIELD">
+        <attributes>
+            <basic name="spotId"><column name="spot_id" nullable="false"/></basic>
+            <basic name="day"><column name="day_number" nullable="false"/></basic>
+            <basic name="sequence"><column name="sequence" nullable="false"/></basic>
+        </attributes>
+    </embeddable>
 
 </entity-mappings>

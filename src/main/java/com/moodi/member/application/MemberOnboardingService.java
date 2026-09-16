@@ -32,17 +32,20 @@ public class MemberOnboardingService {
     private final MemberAgreementRepository memberAgreementRepository;
     private final MemberPreferredMoodRepository memberPreferredMoodRepository;
     private final Clock clock;
+    private final AgreementPolicyReader agreementPolicyReader;
 
     public MemberOnboardingService(
             MemberRepository memberRepository,
             MemberAgreementRepository memberAgreementRepository,
             MemberPreferredMoodRepository memberPreferredMoodRepository,
-            Clock clock
+            Clock clock,
+            AgreementPolicyReader agreementPolicyReader
     ) {
         this.memberRepository = memberRepository;
         this.memberAgreementRepository = memberAgreementRepository;
         this.memberPreferredMoodRepository = memberPreferredMoodRepository;
         this.clock = clock;
+        this.agreementPolicyReader = agreementPolicyReader;
     }
 
     public boolean isNicknameAvailable(UUID memberId, String nickname) {
@@ -129,7 +132,15 @@ public class MemberOnboardingService {
     private List<MemberAgreement> toAgreements(UUID memberId, AgreementCommand command) {
         LocalDateTime now = LocalDateTime.now(clock);
         return Arrays.stream(AgreementType.values())
-                .map(type -> MemberAgreement.of(memberId, type, command.isAgreed(type), now))
+                .map(type -> {
+                    AgreementPolicyReader.Version policy = agreementPolicyReader.findCurrent(type, command.locale());
+                    Long requestedId = command.policyIds().get(type);
+                    if (requestedId != null && (policy == null || !requestedId.equals(policy.id())))
+                        throw new BusinessException(ErrorCode.INVALID_REQUEST);
+                    return MemberAgreement.of(memberId, type, command.isAgreed(type), now,
+                            policy == null ? null : policy.id(), policy == null ? null : policy.version(),
+                            policy == null ? null : policy.locale());
+                })
                 .toList();
     }
 }
