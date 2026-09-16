@@ -121,7 +121,10 @@ public class BookmarkService {
 
         List<Long> spotIds = pageRows.stream().map(BookmarkSpotRow::spotId).toList();
 
-        Map<Long, SpotTranslation> translationMap = spotTranslationRepository.findBySpotIdIn(spotIds)
+        // 스팟마다 ko-KR 원문과 en-US 번역 행이 함께 있다 — locale 을 걸지 않으면 아무 행이나
+        // 뽑혀 저장한 스팟 제목이 한글로 나갔다([COM-04-01]). 설명과 같은 en-US 로 고정한다.
+        Map<Long, SpotTranslation> translationMap = spotTranslationRepository
+                .findBySpotIdInAndLocale(spotIds, DESCRIPTION_LOCALE)
                 .stream()
                 .collect(Collectors.toMap(SpotTranslation::getSpotId, Function.identity(), (a, b) -> a));
 

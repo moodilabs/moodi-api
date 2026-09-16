@@ -2,6 +2,11 @@ package com.moodi.spot.application;
 
 import com.moodi.shared.error.BusinessException;
 import com.moodi.shared.error.ErrorCode;
+import com.moodi.shared.response.CursorResponse;
+import com.moodi.spot.application.dto.BookmarkListRequest;
+import com.moodi.spot.application.dto.BookmarkSortType;
+import com.moodi.spot.application.dto.BookmarkSpotItem;
+import com.moodi.spot.application.dto.BookmarkSpotRow;
 import com.moodi.spot.application.dto.BookmarkToggleResult;
 import com.moodi.spot.domain.Bookmark;
 import com.moodi.spot.domain.BookmarkRepository;
@@ -14,6 +19,7 @@ import com.moodi.spot.domain.SpotTranslationRepository;
 import com.moodi.spot.application.BookmarkQueryRepository;
 import com.moodi.spot.support.BookmarkFixture;
 import com.moodi.spot.support.SpotFixture;
+import com.moodi.spot.support.SpotTranslationFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +28,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -186,5 +193,25 @@ class BookmarkServiceTest {
         int deletedCount = bookmarkService.deleteBookmarks(memberId, spotIds);
 
         assertThat(deletedCount).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("저장한 스팟 목록의 제목은 en-US 번역에서만 가져온다")
+    void get_bookmarks_uses_english_title() {
+        UUID memberId = UUID.randomUUID();
+        BookmarkListRequest request = BookmarkListRequest.of(null, List.of(), BookmarkSortType.LATEST, null, 20);
+        BookmarkSpotRow row = new BookmarkSpotRow(1L, 10551L, "인천", "남동구", 37.4, 126.7, LocalDateTime.now(), 3L);
+
+        when(bookmarkQueryRepository.findByMemberLatest(memberId, null, List.of(), null, null, 20))
+                .thenReturn(List.of(row));
+        when(spotTranslationRepository.findBySpotIdInAndLocale(List.of(10551L), "en-US"))
+                .thenReturn(List.of(SpotTranslationFixture.create(10551L, "en-US", "Jubux")));
+
+        CursorResponse<BookmarkSpotItem> response = bookmarkService.getBookmarks(memberId, request);
+
+        assertThat(response.items()).singleElement()
+                .extracting(BookmarkSpotItem::title)
+                .isEqualTo("Jubux");
+        verify(spotTranslationRepository, never()).findBySpotIdIn(any());
     }
 }
