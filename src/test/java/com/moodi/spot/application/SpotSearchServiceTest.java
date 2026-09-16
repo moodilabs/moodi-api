@@ -267,8 +267,27 @@ class SpotSearchServiceTest {
         assertThat(result.nextCursor()).isEqualTo("3,8326");
     }
 
+    @Test
+    @DisplayName("목록 제목은 상세 조회와 같은 en-US 로케일로 읽는다")
+    void search_reads_title_with_en_us_locale() {
+        // given
+        SpotSearchRequest request = SpotSearchRequestFixture.createMostSaved();
+
+        when(spotSearchQueryRepository.searchByMostSaved(
+                any(), any(), any(), anyBoolean(), any(), any(), any(), anyInt()
+        )).thenReturn(List.of(SpotSearchRowFixture.create()));
+        stubEnrichment();
+
+        // when
+        spotSearchService.search(null, request);
+
+        // then — 로케일을 걸지 않으면 한 스팟에 여러 번역 행이 있을 때 아무 행이나
+        // 뽑혀, 목록만 한국어 제목이고 상세는 영문 제목인 상태가 된다.
+        verify(spotTranslationRepository).findBySpotIdInAndLocale(anyList(), eq("en-US"));
+    }
+
     private void stubEnrichment() {
-        when(spotTranslationRepository.findBySpotIdIn(anyList()))
+        when(spotTranslationRepository.findBySpotIdInAndLocale(anyList(), anyString()))
                 .thenAnswer(invocation -> {
                     List<Long> ids = invocation.getArgument(0);
                     return ids.stream()

@@ -23,15 +23,28 @@ public class NoticeQueryRepositoryImpl implements NoticeQueryRepository {
 
     @Override
     public List<Notice> findVisible(LocalDate cursorPublishedAt, Long cursorId, int limit) {
-        return findAll(null, true, cursorPublishedAt, cursorId, limit);
+        // 예약 발행을 존중한다 — visible 만 보면 미래 날짜로 잡아 둔 공지가 등록 즉시,
+        // 그것도 publishedAt DESC 정렬 탓에 목록 맨 위에 뜬다. 약관은 이미
+        // effectiveAt <= today 로 같은 규칙을 지킨다. 관리자 목록은 예약분까지
+        // 봐야 하므로 이 조건은 공개 조회에만 건다.
+        return findAll(null, true, LocalDate.now(), cursorPublishedAt, cursorId, limit);
     }
 
     @Override
     public List<Notice> findAll(NoticeType type, Boolean visible, LocalDate cursorPublishedAt, Long cursorId,
                                 int limit) {
+        return findAll(type, visible, null, cursorPublishedAt, cursorId, limit);
+    }
+
+    private List<Notice> findAll(NoticeType type, Boolean visible, LocalDate publishedOnOrBefore,
+                                 LocalDate cursorPublishedAt, Long cursorId, int limit) {
         StringBuilder jpql = new StringBuilder("SELECT n FROM Notice n WHERE 1 = 1");
         Map<String, Object> params = new HashMap<>();
 
+        if (publishedOnOrBefore != null) {
+            jpql.append(" AND n.publishedAt <= :publishedOnOrBefore");
+            params.put("publishedOnOrBefore", publishedOnOrBefore);
+        }
         if (type != null) {
             jpql.append(" AND n.type = :type");
             params.put("type", type);

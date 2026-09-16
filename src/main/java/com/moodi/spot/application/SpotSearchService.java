@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 public class SpotSearchService {
 
     private static final String DESCRIPTION_LOCALE = "en-US";
+    /** 상세 조회(SpotDetailReader)와 같은 로케일이어야 목록·상세의 제목이 일치한다. */
+    private static final String TRANSLATION_LOCALE = "en-US";
 
     private final SpotSearchQueryRepository spotSearchQueryRepository;
     private final BookmarkQueryRepository bookmarkQueryRepository;
@@ -65,7 +67,9 @@ public class SpotSearchService {
 
         List<Long> spotIds = pageRows.stream().map(SpotSearchRow::spotId).toList();
 
-        Map<Long, SpotTranslation> translationMap = spotTranslationRepository.findBySpotIdIn(spotIds)
+        // locale 을 걸지 않으면 한국어 행이 뽑혀 목록 제목만 한국어로 나갔다.
+        Map<Long, SpotTranslation> translationMap = spotTranslationRepository
+                .findBySpotIdInAndLocale(spotIds, TRANSLATION_LOCALE)
                 .stream()
                 .collect(Collectors.toMap(SpotTranslation::getSpotId, Function.identity(), (a, b) -> a));
 

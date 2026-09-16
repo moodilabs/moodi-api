@@ -11,6 +11,7 @@ import com.moodi.support.domain.NoticeRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -46,8 +47,11 @@ public class NoticeQueryService {
     }
 
     public NoticeDetail getVisibleNotice(Long noticeId) {
+        // 목록과 같은 기준이어야 한다 — 목록에서 감춘 예약 공지가 id 를 아는 사람에게는
+        // 열리면, 발행 전 내용이 그대로 새 나간다.
         Notice notice = noticeRepository.findById(noticeId)
                 .filter(Notice::isVisible)
+                .filter(n -> !n.getPublishedAt().isAfter(LocalDate.now()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOTICE_NOT_FOUND));
         return NoticeDetail.from(notice);
     }
