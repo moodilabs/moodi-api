@@ -82,6 +82,11 @@ include::{snippets}/support/inquiry-list/response-fields.adoc[]
 
 첨부의 `url`은 5분짜리 서명 URL이라 저장하지 말고 화면을 열 때마다 다시 조회합니다.
 
+NOTE: 첨부의 읽기 URL 발급이 실패해도 **상세 조회는 200으로 성공**하며, 실패한 첨부만
+`attachments` 에서 빠집니다. 예전에는 실패가 그대로 올라가 첨부 한 건 때문에 본문과 답변까지
+읽을 수 없었습니다(스토리지가 준비되지 않은 환경에서 상세가 통째로 503). 따라서 클라이언트는
+`attachments` 가 비어 있는 것을 정상 응답으로 다뤄야 합니다.
+
 .HTTP Request
 include::{snippets}/support/inquiry-detail/http-request.adoc[]
 
