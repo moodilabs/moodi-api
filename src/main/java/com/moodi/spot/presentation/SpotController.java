@@ -1,6 +1,8 @@
 package com.moodi.spot.presentation;
 
 import com.moodi.shared.auth.OptionalAuthMember;
+import com.moodi.shared.error.BusinessException;
+import com.moodi.shared.error.ErrorCode;
 import com.moodi.shared.response.CursorResponse;
 import com.moodi.shared.response.SuccessResponse;
 import com.moodi.spot.application.SpotDetailService;
@@ -50,6 +52,12 @@ public class SpotController {
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "20") int size,
             @OptionalAuthMember UUID memberId) {
+        // saved 는 "내가 저장한 것만"이라 회원이 있어야 뜻이 선다. 예전에는 비로그인
+        // 요청이면 조건을 조용히 버려, 저장한 적 없는 스팟까지 그대로 담긴 목록을
+        // "저장한 스팟"이라며 돌려줬다 — 약속과 정반대인 응답이라 401 로 끊는다.
+        if (saved && memberId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
         SpotSearchRequest request = SpotSearchRequest.of(keyword, area, moodTags, saved, sort,
                 routePublicId, cursor, Math.clamp(size, 1, MAX_SEARCH_SIZE));
         CursorResponse<SpotSearchItem> result = spotSearchService.search(memberId, request);
