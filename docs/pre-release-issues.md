@@ -386,7 +386,19 @@ android.package      : com.mudi
 ios.bundleIdentifier : kr.moodi.app
 ```
 
-`com.mudi` 는 오타로 보인다. **스토어에 한 번 게시되면 영구히 고정**되며 바꾸려면 새 앱으로 올려야 한다. 참고로 `Play Store release` 워크플로 실행 이력은 **전부 실패**라 실제로 게시된 적이 없을 가능성이 높다 — 그렇다면 지금이 바꿀 수 있는 마지막 시점이다. Play Console 에서 게시 여부를 확인해야 한다.
+`com.mudi` 는 오타로 보인다. **스토어에 한 번 게시되면 영구히 고정**되며 바꾸려면 새 앱으로 올려야 한다.
+
+**이 워크플로로는 게시된 적이 없다** (2026-09-16 실행 로그 확인). `Play Store release` 6회 실행이 전부 같은 지점에서 멈췄다.
+
+```
+Looking up credentials configuration for com.mudi...
+Google Service Account Keys cannot be set up in --non-interactive mode.
+Error: build command failed.
+```
+
+자격증명 조회 단계에서 실패해 **빌드가 시작조차 못 했다** — AAB 가 만들어진 적이 없으니 제출도 없었다. 같은 로그에 `No environment variables with visibility "Plain text" and "Sensitive" found for the "production" environment on EAS` 도 찍혀 [B2]·[N6] 의 전제(production `env` 부재)가 함께 확인됐다.
+
+따라서 **지금 바꾸면 비용이 거의 없다.** 다만 이 근거는 "이 워크플로로는 게시된 적 없음"까지이고, 누군가 로컬에서 `eas submit` 을 수동으로 돌렸을 가능성까지 배제하지는 못한다. Play Console 에 앱 레코드가 있는지만 확인하면 결론이 난다.
 
 덧붙여 `eas.json` 의 `submit.production.ios.language` 가 `"ko"` 인데 앱 UI 는 전부 영어다.
 
@@ -443,9 +455,25 @@ export const KAKAO_WEBVIEW_BASE_URL =
 
 타일만이 아니라 **지도 런타임 스크립트 자체**가 평문이다(`http://t1.daumcdn.net/mapjsapi/js/main/4.5.26/kakao.js`). `app.json` 에는 `ios.infoPlist` 가 **아예 없어** ATS 예외도 없다. 따라서 iOS 에서는 타일이 빠지는 정도가 아니라 **지도가 초기화되지 못할 가능성이 크다.**
 
-선택지: ① Kakao Developers 에 HTTPS 도메인을 등록하고 `EXPO_PUBLIC_KAKAO_WEBVIEW_ORIGIN` 을 production `env` 에 넣는다 ② `app.json` 에 `NSAllowsArbitraryLoadsInWebContent` 를 추가한다. **①만으로 충분한지는 확실하지 않다** — origin 이 https 가 돼도 SDK 가 계속 `http://t1.daumcdn.net` 을 부르면 혼합 콘텐츠로 막힌다. 실기기 확인이 가르는 지점이다.
+**해결 방법이 확정됐다 — ATS 예외는 필요 없다.** (2026-09-16 실측)
 
-**미검증**: 위 관측은 Chrome(웹 빌드, 문서 origin 이 http) 기준이다. 실기기 WKWebView 에서의 동작은 확인하지 못했다 — **남은 확인 항목 중 가치가 가장 높다.**
+Kakao 자원이 HTTPS 로도 모두 제공되는지 직접 확인했다.
+
+| 자원 | HTTPS 응답 |
+|---|---|
+| SDK 로더 `dapi.kakao.com/v2/maps/sdk.js` | 200 |
+| 런타임 스크립트 `t1.daumcdn.net/mapjsapi/js/main/4.5.26/kakao.js` | 200 |
+| 타일 `mts.daumcdn.net/api/v1/tile/...` | 200 |
+| 이미지 자원 `t1.daumcdn.net/mapjsapi/images/...` | 200 |
+
+결정적으로 **로더 스크립트에는 하드코딩된 `http://` 참조가 하나도 없다.** `"//t1.daumcdn.net"` 처럼 **프로토콜 상대** 경로를 쓰므로 SDK 는 문서의 프로토콜을 그대로 따라간다. 즉 평문으로 내려받던 것은 순전히 문서 origin 이 `http://localhost:8081/` 이었기 때문이다.
+
+따라서 **`EXPO_PUBLIC_KAKAO_WEBVIEW_ORIGIN` 에 HTTPS 도메인을 넣으면 모든 자원이 HTTPS 로 따라온다.** `NSAllowsArbitraryLoadsInWebContent` 같은 보안 완화는 필요 없다. 남은 작업은 두 가지뿐이다.
+
+1. Kakao Developers 에 HTTPS 도메인을 등록한다(콘솔 작업).
+2. 그 도메인을 `eas.json` production 의 `env` 에 넣는다 — [B2] 와 같은 자리다.
+
+**미검증**: 실기기 WKWebView 동작은 확인하지 못했다. 다만 위 실측으로 원인과 해법이 특정됐으므로, 실기기 확인은 "고친 뒤 확인"의 성격이 됐다.
 
 ### [N7] 로마자 표기가 스스로 어긋난다 — 콘텐츠
 
