@@ -112,7 +112,7 @@ public class RouteController {
             @AuthMember UUID memberId,
             @Valid @RequestBody RouteGenerateRequest request) {
         RouteGenerateCommand command = new RouteGenerateCommand(
-                request.spotIds(), request.areas(), request.startDate(), request.endDate());
+                request.spotIds(), request.toAreaConditions(), request.startDate(), request.endDate());
         RouteGenerateResult result = routeGenerateService.generate(command);
         return SuccessResponse.of(toResponse(result));
     }

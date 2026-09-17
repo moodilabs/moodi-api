@@ -64,7 +64,7 @@ class RouteGenerateServiceTest {
     void generate_route_success() {
         // given
         RouteGenerateCommand command = new RouteGenerateCommand(
-                List.of(1L, 2L, 3L), List.of("서울"), FUTURE_START, FUTURE_END);
+                List.of(1L, 2L, 3L), List.of(new AreaCondition("서울", null)), FUTURE_START, FUTURE_END);
 
         List<SpotSnapshot> snapshots = List.of(
                 createSnapshot(1L, 37.55, 127.05),
@@ -160,7 +160,7 @@ class RouteGenerateServiceTest {
     void generate_route_with_recommended_spots() {
         // given
         RouteGenerateCommand command = new RouteGenerateCommand(
-                List.of(1L, 2L), List.of("Seoul"), FUTURE_START, FUTURE_END);
+                List.of(1L, 2L), List.of(new AreaCondition("Seoul", null)), FUTURE_START, FUTURE_END);
 
         List<SpotSnapshot> baseSnapshots = List.of(
                 createSnapshot(1L, 37.55, 127.05),
@@ -174,7 +174,8 @@ class RouteGenerateServiceTest {
 
         given(spotSnapshotReader.readBySpotIds(command.spotIds())).willReturn(baseSnapshots);
         // 2일 × 6 = 12, 기준 2개 → 10개 추천 요청
-        given(spotRecommendationReader.recommend(eq(List.of(1L, 2L)), eq(List.of("Seoul")), eq(10)))
+        given(spotRecommendationReader.recommend(
+                eq(List.of(1L, 2L)), eq(List.of(new AreaCondition("Seoul", null))), eq(10)))
                 .willReturn(recommended);
         given(legCalculator.calculate(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
                 .willReturn(Optional.of(new LegResult(TravelMode.WALK, 600, 800, null)));
@@ -198,7 +199,7 @@ class RouteGenerateServiceTest {
         // given — 1일에 6개(=꽉 참)
         List<Long> spotIds = List.of(1L, 2L, 3L, 4L, 5L, 6L);
         RouteGenerateCommand command = new RouteGenerateCommand(
-                spotIds, List.of("Seoul"), FUTURE_START, FUTURE_START);
+                spotIds, List.of(new AreaCondition("Seoul", null)), FUTURE_START, FUTURE_START);
 
         List<SpotSnapshot> snapshots = spotIds.stream()
                 .map(id -> createSnapshot(id, 37.55 + id * 0.001, 127.05 + id * 0.001))
