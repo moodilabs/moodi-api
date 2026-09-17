@@ -21,6 +21,7 @@ public record SpotDetailResponse(
         Double longitude,
         String addr1,
         String addr2,
+        String addr1Ko,
         List<SimilarMoodSpotResponse> similarMoodSpots,
         List<PopularSpotResponse> popularAreaSpots
 ) {

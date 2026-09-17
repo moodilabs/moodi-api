@@ -30,6 +30,7 @@ import java.util.UUID;
 public class SpotDetailReader {
 
     private static final String DEFAULT_LOCALE = "en-US";
+    private static final String KOREAN_LOCALE = "ko-KR";
     private static final int SIMILAR_MOOD_LIMIT = 5;
     private static final int POPULAR_AREA_LIMIT = 5;
 
@@ -64,6 +65,10 @@ public class SpotDetailReader {
 
         SpotTranslation translation = translationRepository.findBySpotIdAndLocale(spotId, DEFAULT_LOCALE)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SPOT_NOT_FOUND));
+
+        String addr1Ko = translationRepository.findBySpotIdAndLocale(spotId, KOREAN_LOCALE)
+                .map(SpotTranslation::getAddr1)
+                .orElse(null);
 
         List<SpotImage> images = imageRepository.findBySpotId(spotId);
 
@@ -112,6 +117,7 @@ public class SpotDetailReader {
                 spot.getLongitude(),
                 translation.getAddr1(),
                 translation.getAddr2(),
+                addr1Ko,
                 similarMoodSpots,
                 popularAreaSpots,
                 null

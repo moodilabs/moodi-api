@@ -48,6 +48,7 @@ public class SpotDetailService {
                 snapshot.longitude(),
                 snapshot.addr1(),
                 snapshot.addr2(),
+                snapshot.addr1Ko(),
                 snapshot.similarMoodSpots(),
                 snapshot.popularAreaSpots(),
                 aiDescription
