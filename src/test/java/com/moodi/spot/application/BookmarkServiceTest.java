@@ -2,6 +2,11 @@ package com.moodi.spot.application;
 
 import com.moodi.shared.error.BusinessException;
 import com.moodi.shared.error.ErrorCode;
+import com.moodi.shared.response.CursorResponse;
+import com.moodi.spot.application.dto.BookmarkListRequest;
+import com.moodi.spot.application.dto.BookmarkSortType;
+import com.moodi.spot.application.dto.BookmarkSpotItem;
+import com.moodi.spot.application.dto.BookmarkSpotRow;
 import com.moodi.spot.application.dto.BookmarkToggleResult;
 import com.moodi.spot.domain.Bookmark;
 import com.moodi.spot.domain.BookmarkRepository;
@@ -10,6 +15,7 @@ import com.moodi.spot.domain.SpotDescriptionRepository;
 import com.moodi.spot.domain.SpotImageRepository;
 import com.moodi.spot.domain.SpotMoodRepository;
 import com.moodi.spot.domain.SpotRepository;
+import com.moodi.spot.domain.SpotTranslation;
 import com.moodi.spot.domain.SpotTranslationRepository;
 import com.moodi.spot.application.BookmarkQueryRepository;
 import com.moodi.spot.support.BookmarkFixture;
@@ -22,6 +28,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,6 +36,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -173,6 +184,31 @@ class BookmarkServiceTest {
         BookmarkToggleResult responseB = bookmarkService.toggle(memberB, spotId);
         assertThat(responseB.bookmarked()).isTrue();
         assertThat(responseB.bookmarkCount()).isEqualTo(2L);
+    }
+
+    @Test
+    @DisplayName("저장한 스팟 목록 제목은 en-US 로케일로 읽는다")
+    void getBookmarks_reads_title_with_en_us_locale() {
+        UUID memberId = UUID.randomUUID();
+        Long spotId = 1L;
+        BookmarkListRequest request = new BookmarkListRequest(
+                null, null, BookmarkSortType.LATEST, null, null, null, null, 20);
+        BookmarkSpotRow row = new BookmarkSpotRow(
+                1L, spotId, "부산", "해운대구", 35.1, 129.1, LocalDateTime.now(), 1L);
+
+        when(bookmarkQueryRepository.findByMemberLatest(
+                eq(memberId), any(), any(), any(), any(), anyInt()))
+                .thenReturn(List.of(row));
+        when(spotTranslationRepository.findBySpotIdInAndLocale(anyList(), anyString()))
+                .thenReturn(List.of(SpotTranslation.create(spotId, "en-US", "Title", "Overview", "Addr1", "Addr2")));
+
+        CursorResponse<BookmarkSpotItem> result = bookmarkService.getBookmarks(memberId, request);
+
+        // 로케일을 걸지 않으면 한 스팟에 여러 번역 행이 있을 때 아무 행이나 뽑혀
+        // Saved Spot 목록에 한국어 제목이 나갈 수 있다.
+        verify(spotTranslationRepository).findBySpotIdInAndLocale(anyList(), eq("en-US"));
+        assertThat(result.items()).hasSize(1);
+        assertThat(result.items().getFirst().title()).isEqualTo("Title");
     }
 
     @Test

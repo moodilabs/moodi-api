@@ -50,6 +50,8 @@ public class RuleBasedTitleGenerator implements RouteTitleGenerator {
         if (dominant == null) {
             return "";
         }
-        return MoodTag.fromKey(dominant).getDisplayTag();
+        // MoodTag.displayTag는 해시태그 표기("#Retro")라 제목 앞에 그대로 붙이면 "#"이 남는다.
+        String displayTag = MoodTag.fromKey(dominant).getDisplayTag();
+        return displayTag.startsWith("#") ? displayTag.substring(1) : displayTag;
     }
 }

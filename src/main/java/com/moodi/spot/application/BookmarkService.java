@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class BookmarkService {
 
+    private static final String TRANSLATION_LOCALE = "en-US";
     private static final String DESCRIPTION_LOCALE = "en-US";
 
     private final BookmarkRepository bookmarkRepository;
@@ -121,7 +122,8 @@ public class BookmarkService {
 
         List<Long> spotIds = pageRows.stream().map(BookmarkSpotRow::spotId).toList();
 
-        Map<Long, SpotTranslation> translationMap = spotTranslationRepository.findBySpotIdIn(spotIds)
+        Map<Long, SpotTranslation> translationMap = spotTranslationRepository
+                .findBySpotIdInAndLocale(spotIds, TRANSLATION_LOCALE)
                 .stream()
                 .collect(Collectors.toMap(SpotTranslation::getSpotId, Function.identity(), (a, b) -> a));
 
