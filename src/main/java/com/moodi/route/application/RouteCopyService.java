@@ -18,7 +18,7 @@ public class RouteCopyService {
     private final RouteRepository routeRepository;
 
     public Route copy(UUID publicId, UUID memberId) {
-        Route original = routeRepository.findSharedByPublicId(publicId)
+        Route original = routeRepository.findSharedByPublicIdWithDays(publicId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROUTE_NOT_FOUND));
 
         Route copy = original.copyFor(memberId);
