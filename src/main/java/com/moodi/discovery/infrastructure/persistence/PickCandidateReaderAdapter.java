@@ -54,6 +54,7 @@ public class PickCandidateReaderAdapter implements PickCandidateReader {
             ) si ON true
             LEFT JOIN bookmark bm ON bm.spot_id = s.id AND bm.member_id = :memberId
             WHERE s.status = 'PUBLISHED'
+              AND (s.route_excluded = false OR (s.content_type = 'SHOPPING' AND s.lcls_systm2 = 'SH06'))
             """;
 
     private final EntityManager em;
