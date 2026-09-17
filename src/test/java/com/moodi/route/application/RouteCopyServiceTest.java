@@ -49,7 +49,7 @@ class RouteCopyServiceTest {
         );
         original.share();
 
-        given(routeRepository.findSharedByPublicId(publicId))
+        given(routeRepository.findSharedByPublicIdWithDays(publicId))
                 .willReturn(Optional.of(original));
         given(routeRepository.save(any(Route.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
@@ -76,7 +76,7 @@ class RouteCopyServiceTest {
         );
         original.share();
 
-        given(routeRepository.findSharedByPublicId(publicId))
+        given(routeRepository.findSharedByPublicIdWithDays(publicId))
                 .willReturn(Optional.of(original));
         given(routeRepository.save(any(Route.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
@@ -94,7 +94,7 @@ class RouteCopyServiceTest {
     void copy_not_shared_route_fails() {
         // given
         UUID publicId = UUID.randomUUID();
-        given(routeRepository.findSharedByPublicId(publicId))
+        given(routeRepository.findSharedByPublicIdWithDays(publicId))
                 .willReturn(Optional.empty());
 
         // when & then
