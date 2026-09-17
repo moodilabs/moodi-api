@@ -66,7 +66,8 @@ public class RouteGenerateService {
                 .flatMap(List::stream)
                 .flatMap(snap -> snap.moodTagKeys().stream())
                 .toList();
-        String title = titleGenerator.generate(command.areas(), allMoodTags, totalDays);
+        List<String> areaNames = command.areas().stream().map(AreaCondition::region).distinct().toList();
+        String title = titleGenerator.generate(areaNames, allMoodTags, totalDays);
         return buildResult(title, command.startDate(), command.endDate(), distribution, legsByDay);
     }
 

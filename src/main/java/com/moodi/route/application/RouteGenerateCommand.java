@@ -5,7 +5,7 @@ import java.util.List;
 
 public record RouteGenerateCommand(
         List<Long> spotIds,
-        List<String> areas,
+        List<AreaCondition> areas,
         LocalDate startDate,
         LocalDate endDate
 ) {
