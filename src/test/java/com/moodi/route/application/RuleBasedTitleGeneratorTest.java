@@ -16,7 +16,7 @@ class RuleBasedTitleGeneratorTest {
     void generate_title_with_mood_area_and_period() {
         String title = generator.generate(List.of("Seoul"), List.of("retro", "retro", "nature"), 2);
 
-        assertThat(title).isEqualTo("#Retro Seoul 2-Day Trip");
+        assertThat(title).isEqualTo("Retro Seoul 2-Day Trip");
     }
 
     @Test
@@ -32,7 +32,7 @@ class RuleBasedTitleGeneratorTest {
     void generate_title_no_area() {
         String title = generator.generate(List.of(), List.of("serene"), 3);
 
-        assertThat(title).isEqualTo("#Serene 3-Day Trip");
+        assertThat(title).isEqualTo("Serene 3-Day Trip");
     }
 
     @Test
@@ -48,7 +48,7 @@ class RuleBasedTitleGeneratorTest {
     void generate_title_multiple_areas() {
         String title = generator.generate(List.of("Seoul", "Busan"), List.of("lively"), 4);
 
-        assertThat(title).isEqualTo("#Lively Seoul 4-Day Trip");
+        assertThat(title).isEqualTo("Lively Seoul 4-Day Trip");
     }
 
     @Test
