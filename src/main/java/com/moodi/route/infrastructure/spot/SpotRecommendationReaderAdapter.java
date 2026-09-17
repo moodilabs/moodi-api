@@ -1,6 +1,7 @@
 package com.moodi.route.infrastructure.spot;
 
 import com.moodi.discovery.domain.MoodSimilarity;
+import com.moodi.route.application.AreaCondition;
 import com.moodi.route.application.SpotRecommendationReader;
 import com.moodi.route.application.SpotSnapshot;
 import com.moodi.route.domain.RouteSpotType;
@@ -16,8 +17,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * 기준 스팟의 무드 벡터와 유사한 스팟을 지역 내에서 찾는다.
@@ -71,7 +70,7 @@ public class SpotRecommendationReaderAdapter implements SpotRecommendationReader
     }
 
     @Override
-    public List<SpotSnapshot> recommend(List<Long> baseSpotIds, List<String> areas, int limit) {
+    public List<SpotSnapshot> recommend(List<Long> baseSpotIds, List<AreaCondition> areas, int limit) {
         if (baseSpotIds.isEmpty()) {
             return List.of();
         }
@@ -114,7 +113,7 @@ public class SpotRecommendationReaderAdapter implements SpotRecommendationReader
         return MoodVectorAverager.average(vectors);
     }
 
-    private List<CandidateRow> loadCandidates(List<Long> excludeIds, List<String> areas) {
+    private List<CandidateRow> loadCandidates(List<Long> excludeIds, List<AreaCondition> areas) {
         Map<String, Object> params = new HashMap<>();
         params.put("descLocale", DESCRIPTION_LOCALE);
         params.put("excludeIds", excludeIds);
@@ -135,17 +134,21 @@ public class SpotRecommendationReaderAdapter implements SpotRecommendationReader
         return rows.stream().map(CandidateRow::from).toList();
     }
 
-    private String areaFilter(List<String> areas, Map<String, Object> params) {
+    /**
+     * 지역 조건 중 하나라도 걸리면 후보다. district가 있으면 구/군까지, 없으면 시/도 전체가 대상이다.
+     * discovery의 {@code PickCandidateReaderAdapter#areaFilter}와 같은 전략이다.
+     */
+    private String areaFilter(List<AreaCondition> areas, Map<String, Object> params) {
         List<String> conditions = new ArrayList<>();
-        Set<String> koreanAreas = areas.stream()
-                .map(RegionDictionary::toKoreanArea)
-                .collect(Collectors.toSet());
-
-        int i = 0;
-        for (String area : koreanAreas) {
-            conditions.add("s.area = :area" + i);
-            params.put("area" + i, area);
-            i++;
+        for (int i = 0; i < areas.size(); i++) {
+            AreaCondition area = areas.get(i);
+            StringBuilder condition = new StringBuilder("(s.area = :region" + i);
+            params.put("region" + i, RegionDictionary.toKoreanArea(area.region()));
+            if (area.district() != null && !area.district().isBlank()) {
+                condition.append(" AND s.district = :district").append(i);
+                params.put("district" + i, RegionDictionary.toKoreanDistrict(area.district()));
+            }
+            conditions.add(condition.append(")").toString());
         }
         return "  AND (" + String.join(" OR ", conditions) + ")\n";
     }
