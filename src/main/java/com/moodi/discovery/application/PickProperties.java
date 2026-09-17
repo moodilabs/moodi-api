@@ -7,13 +7,17 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * 지역이 넓게 잡히면 후보가 크게 불어날 수 있어 상한을 설정값으로 둔다.
  */
 @ConfigurationProperties("moodi.pick")
-public record PickProperties(int candidateLimit) {
+public record PickProperties(int candidateLimit, double preferenceAlpha) {
 
     private static final int DEFAULT_CANDIDATE_LIMIT = 500;
+    private static final double DEFAULT_PREFERENCE_ALPHA = 0.4;
 
     public PickProperties {
         if (candidateLimit <= 0) {
             candidateLimit = DEFAULT_CANDIDATE_LIMIT;
+        }
+        if (preferenceAlpha <= 0.0 || preferenceAlpha > 1.0) {
+            preferenceAlpha = DEFAULT_PREFERENCE_ALPHA;
         }
     }
 }
