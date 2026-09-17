@@ -16,6 +16,9 @@ import java.util.UUID;
 @Repository
 public class SpotSearchQueryRepositoryImpl implements SpotSearchQueryRepository {
 
+    private static final String ROUTE_EXCLUDED_FILTER =
+            " AND (s.route_excluded = false OR (s.content_type = 'SHOPPING' AND s.lcls_systm2 = 'SH06'))";
+
     private final EntityManager em;
 
     public SpotSearchQueryRepositoryImpl(EntityManager em) {
@@ -44,6 +47,7 @@ public class SpotSearchQueryRepositoryImpl implements SpotSearchQueryRepository 
                 WHERE s.status = 'PUBLISHED'
                   AND (st.title ILIKE :containKeyword OR st.addr1 ILIKE :containKeyword OR s.area ILIKE :containKeyword OR s.district ILIKE :containKeyword)
                 """);
+        innerSql.append(ROUTE_EXCLUDED_FILTER);
 
         Map<String, Object> params = new HashMap<>();
         params.put("exactKeyword", keyword);
@@ -84,6 +88,7 @@ public class SpotSearchQueryRepositoryImpl implements SpotSearchQueryRepository 
         }
 
         sql.append(" WHERE s.status = 'PUBLISHED'");
+        sql.append(ROUTE_EXCLUDED_FILTER);
 
         appendKeywordFilter(sql, params, keyword);
         appendAreaFilter(sql, params, area);
@@ -160,9 +165,6 @@ public class SpotSearchQueryRepositoryImpl implements SpotSearchQueryRepository 
 
     private void appendMoodTagFilter(StringBuilder sql, Map<String, Object> params, List<String> moodTagKeys) {
         if (moodTagKeys != null && !moodTagKeys.isEmpty()) {
-            // 태그 검색은 "이 무드에 맞는 스팟 보여줘"이므로 피드·루트 추천과 같은 기준으로
-            // 숙박·음식점·쇼핑(전통시장 제외)을 걸러낸다.
-            sql.append(" AND (s.route_excluded = false OR (s.content_type = 'SHOPPING' AND s.lcls_systm2 = 'SH06'))");
             sql.append(" AND EXISTS (");
             sql.append("   SELECT 1 FROM spot_mood sm WHERE sm.spot_id = s.id");
             sql.append("   AND (");
