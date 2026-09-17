@@ -21,6 +21,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -44,6 +45,9 @@ public class PickService {
     private final PickResultSpotRepository pickResultSpotRepository;
     private final MoodTagRuleEngine moodTagRuleEngine;
     private final PickProperties pickProperties;
+    private final PreferredVectorReader preferredVectorReader;
+    private final PreferredVectorWriter preferredVectorWriter;
+    private final PreferredMoodWriter preferredMoodWriter;
 
     public PickService(MoodAnalysisClient moodAnalysisClient,
                        ImageStorageClient imageStorageClient,
@@ -52,7 +56,10 @@ public class PickService {
                        PickRequestAreaRepository pickRequestAreaRepository,
                        PickResultSpotRepository pickResultSpotRepository,
                        MoodTagRuleEngine moodTagRuleEngine,
-                       PickProperties pickProperties) {
+                       PickProperties pickProperties,
+                       PreferredVectorReader preferredVectorReader,
+                       PreferredVectorWriter preferredVectorWriter,
+                       PreferredMoodWriter preferredMoodWriter) {
         this.moodAnalysisClient = moodAnalysisClient;
         this.imageStorageClient = imageStorageClient;
         this.pickCandidateReader = pickCandidateReader;
@@ -61,6 +68,9 @@ public class PickService {
         this.pickResultSpotRepository = pickResultSpotRepository;
         this.moodTagRuleEngine = moodTagRuleEngine;
         this.pickProperties = pickProperties;
+        this.preferredVectorReader = preferredVectorReader;
+        this.preferredVectorWriter = preferredVectorWriter;
+        this.preferredMoodWriter = preferredMoodWriter;
     }
 
     @Transactional
@@ -76,6 +86,7 @@ public class PickService {
         List<Ranked> fallbackSpots = spots.isEmpty() ? rankFallback(memberId, uploaded) : List.of();
 
         UUID pickId = persist(memberId, imageKey, areas, spots, fallbackSpots);
+        updatePreferredMood(memberId, uploaded);
         return new PickResult(pickId, toItems(spots), toItems(fallbackSpots));
     }
 
@@ -124,6 +135,26 @@ public class PickService {
                 .filter(candidate -> candidate != null)
                 .map(PickResultItem::from)
                 .toList();
+    }
+
+    /**
+     * 분석된 무드 벡터를 회원 선호에 누적하고, 파생 태그로 member_preferred_mood를 갱신한다.
+     *
+     * <p>첫 Pick이면 분석 벡터가 그대로 초기값이 되고, 이후에는 EMA로 블렌딩한다.
+     * 피드(DSC-01)는 태그 일치 수로 정렬하므로 태그를 함께 갱신해야 피드가 바뀐다.
+     */
+    private void updatePreferredMood(UUID memberId, MoodVector incoming) {
+        Optional<MoodVector> existing = preferredVectorReader.readByMemberId(memberId);
+        MoodVector accumulated = existing
+                .map(v -> MoodVectorBlender.blend(v, incoming, pickProperties.preferenceAlpha()))
+                .orElse(incoming);
+
+        preferredVectorWriter.save(memberId, accumulated);
+
+        List<MoodTag> tags = moodTagRuleEngine.deriveTags(accumulated);
+        if (!tags.isEmpty()) {
+            preferredMoodWriter.overwrite(memberId, tags);
+        }
     }
 
     private List<Ranked> rankFallback(UUID memberId, MoodVector uploaded) {

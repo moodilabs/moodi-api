@@ -63,6 +63,12 @@ class PickServiceTest {
     private PickRequestAreaRepository pickRequestAreaRepository;
     @Mock
     private PickResultSpotRepository pickResultSpotRepository;
+    @Mock
+    private PreferredVectorReader preferredVectorReader;
+    @Mock
+    private PreferredVectorWriter preferredVectorWriter;
+    @Mock
+    private PreferredMoodWriter preferredMoodWriter;
 
     private PickService pickService;
     private final UUID memberId = UUID.randomUUID();
@@ -72,7 +78,8 @@ class PickServiceTest {
     void setUp() {
         pickService = new PickService(moodAnalysisClient, imageStorageClient, pickCandidateReader,
                 pickRequestRepository, pickRequestAreaRepository, pickResultSpotRepository,
-                new MoodTagRuleEngine(), new PickProperties(CANDIDATE_LIMIT));
+                new MoodTagRuleEngine(), new PickProperties(CANDIDATE_LIMIT, 0.4),
+                preferredVectorReader, preferredVectorWriter, preferredMoodWriter);
     }
 
     @Test
@@ -312,6 +319,60 @@ class PickServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.PICK_FORBIDDEN);
+    }
+
+    @Test
+    @DisplayName("첫 Pick이면 분석 벡터가 그대로 선호 벡터 초기값이 된다")
+    void recommend_sets_initial_preferred_vector_on_first_pick() {
+        givenPickRequestSaved();
+        MoodVector uploaded = MoodVectorFixture.serene();
+        givenAnalyzed(uploaded);
+        given(pickCandidateReader.readByAreas(any(), any(PickAreas.class), anyInt()))
+                .willReturn(List.of(candidate(1L, MoodVectorFixture.serene())));
+        given(preferredVectorReader.readByMemberId(memberId)).willReturn(Optional.empty());
+
+        pickService.recommend(memberId, IMAGE_KEY, List.of(SEOUL));
+
+        verify(preferredVectorWriter).save(memberId, uploaded);
+        verify(preferredMoodWriter).overwrite(any(), anyList());
+    }
+
+    @Test
+    @DisplayName("기존 벡터가 있으면 EMA로 블렌딩하여 누적한다")
+    void recommend_blends_with_existing_preferred_vector() {
+        givenPickRequestSaved();
+        givenAnalyzed(MoodVectorFixture.serene());
+        given(pickCandidateReader.readByAreas(any(), any(PickAreas.class), anyInt()))
+                .willReturn(List.of(candidate(1L, MoodVectorFixture.serene())));
+        given(preferredVectorReader.readByMemberId(memberId))
+                .willReturn(Optional.of(MoodVectorFixture.lively()));
+
+        pickService.recommend(memberId, IMAGE_KEY, List.of(SEOUL));
+
+        ArgumentCaptor<MoodVector> captor = ArgumentCaptor.forClass(MoodVector.class);
+        verify(preferredVectorWriter).save(any(), captor.capture());
+
+        MoodVector blended = captor.getValue();
+        // 블렌딩 결과는 기존(lively)과 새(serene) 사이의 값이어야 한다
+        assertThat(blended.getWeight(Atmosphere.SERENE))
+                .isGreaterThan(MoodVectorFixture.lively().getWeight(Atmosphere.SERENE))
+                .isLessThan(MoodVectorFixture.serene().getWeight(Atmosphere.SERENE));
+    }
+
+    @Test
+    @DisplayName("누적 벡터에서 태그를 파생하여 선호 무드를 갱신한다")
+    void recommend_updates_preferred_mood_tags_from_accumulated_vector() {
+        givenPickRequestSaved();
+        givenAnalyzed(MoodVectorFixture.serene());
+        given(pickCandidateReader.readByAreas(any(), any(PickAreas.class), anyInt()))
+                .willReturn(List.of(candidate(1L, MoodVectorFixture.serene())));
+        given(preferredVectorReader.readByMemberId(memberId)).willReturn(Optional.empty());
+
+        pickService.recommend(memberId, IMAGE_KEY, List.of(SEOUL));
+
+        ArgumentCaptor<List<MoodTag>> captor = ArgumentCaptor.forClass(List.class);
+        verify(preferredMoodWriter).overwrite(any(), captor.capture());
+        assertThat(captor.getValue()).isNotEmpty();
     }
 
     private void givenPickRequestFound() {
