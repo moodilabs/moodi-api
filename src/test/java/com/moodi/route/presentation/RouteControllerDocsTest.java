@@ -74,7 +74,7 @@ class RouteControllerDocsTest extends AuthenticatedRestDocsSupport {
     void generate_route() throws Exception {
         // given
         RouteGenerateRequest request = new RouteGenerateRequest(
-                List.of(1L, 2L, 3L, 4L), List.of("Seoul"),
+                List.of(1L, 2L, 3L, 4L), List.of(new RouteGenerateRequest.AreaDto("Seoul", null)),
                 LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 11));
 
         RouteGenerateResult result = new RouteGenerateResult(
@@ -109,7 +109,9 @@ class RouteControllerDocsTest extends AuthenticatedRestDocsSupport {
                 .andDo(document("route-generate",
                         requestFields(
                                 fieldWithPath("spotIds").description("기준 스팟 ID 목록 (1~10개, 중복 불가)"),
-                                fieldWithPath("areas").description("여행 지역 (최대 5개, 선택)"),
+                                fieldWithPath("areas").description("여행 지역 조건 (최대 5개, 선택). 지역 자동완성(`GET /api/v1/picks/areas`) 응답의 region·district를 그대로 되돌려 보낸다"),
+                                fieldWithPath("areas[].region").description("시/도 (영문)"),
+                                fieldWithPath("areas[].district").description("구/군 (영문, 선택 — 없으면 시/도 전체가 대상)"),
                                 fieldWithPath("startDate").description("여행 시작일"),
                                 fieldWithPath("endDate").description("여행 종료일")
                         ),
