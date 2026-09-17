@@ -23,6 +23,7 @@ public record SpotDetailSnapshot(
         String addr1,
         String addr2,
         String addr1Ko,
+        String kakaoMapUrl,
         List<SimilarMoodSpotItem> similarMoodSpots,
         List<PopularAreaSpotItem> popularAreaSpots,
         String aiDescription

@@ -93,6 +93,7 @@ public class SpotController {
                 s.addr1(),
                 s.addr2(),
                 s.addr1Ko(),
+                s.kakaoMapUrl(),
                 s.similarMoodSpots().stream()
                         .map(item -> new SimilarMoodSpotResponse(
                                 item.spotId(), item.title(), item.imageUrl(),

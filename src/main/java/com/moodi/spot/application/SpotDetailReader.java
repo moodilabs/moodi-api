@@ -22,6 +22,8 @@ import jakarta.annotation.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,6 +33,7 @@ public class SpotDetailReader {
 
     private static final String DEFAULT_LOCALE = "en-US";
     private static final String KOREAN_LOCALE = "ko-KR";
+    private static final String KAKAO_MAP_URL_TEMPLATE = "https://map.kakao.com/link/map/%s,%s,%s";
     private static final int SIMILAR_MOOD_LIMIT = 5;
     private static final int POPULAR_AREA_LIMIT = 5;
 
@@ -99,6 +102,8 @@ public class SpotDetailReader {
         List<PopularAreaSpotItem> popularAreaSpots =
                 spotDetailQueryRepository.findPopularSpotsByArea(spotId, spot.getArea(), spot.getDistrict(), POPULAR_AREA_LIMIT);
 
+        String kakaoMapUrl = buildKakaoMapUrl(translation.getTitle(), spot.getLatitude(), spot.getLongitude());
+
         return new SpotDetailSnapshot(
                 spot.getId(),
                 translation.getTitle(),
@@ -118,9 +123,18 @@ public class SpotDetailReader {
                 translation.getAddr1(),
                 translation.getAddr2(),
                 addr1Ko,
+                kakaoMapUrl,
                 similarMoodSpots,
                 popularAreaSpots,
                 null
         );
+    }
+
+    private String buildKakaoMapUrl(String title, Double latitude, Double longitude) {
+        if (latitude == null || longitude == null) {
+            return null;
+        }
+        String encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8).replace("+", "%20");
+        return KAKAO_MAP_URL_TEMPLATE.formatted(encodedTitle, latitude, longitude);
     }
 }

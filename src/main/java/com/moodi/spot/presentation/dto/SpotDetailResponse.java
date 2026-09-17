@@ -22,6 +22,7 @@ public record SpotDetailResponse(
         String addr1,
         String addr2,
         String addr1Ko,
+        String kakaoMapUrl,
         List<SimilarMoodSpotResponse> similarMoodSpots,
         List<PopularSpotResponse> popularAreaSpots
 ) {

@@ -93,6 +93,7 @@ class SpotControllerDocsTest extends RestDocsSupport {
                 "서울특별시 종로구 수표로28길 17",
                 "익선동 166",
                 "서울특별시 종로구 수표로28길 17",
+                "https://map.kakao.com/link/map/Ikseon-dong%20Hanok%20Alley,37.5762,126.9854",
                 List.of(
                         new SimilarMoodSpotItem(2L, "북촌 한옥마을", "https://img.moodi.kr/spot2.jpg", "서울", 189L),
                         new SimilarMoodSpotItem(3L, "전주 한옥마을", "https://img.moodi.kr/spot3.jpg", "전주", 312L)
@@ -134,6 +135,7 @@ class SpotControllerDocsTest extends RestDocsSupport {
                                 fieldWithPath("data.addr1").type(JsonFieldType.STRING).description("주소 (영문)").optional(),
                                 fieldWithPath("data.addr2").type(JsonFieldType.STRING).description("상세주소 (영문)").optional(),
                                 fieldWithPath("data.addr1Ko").type(JsonFieldType.STRING).description("주소 (한글)").optional(),
+                                fieldWithPath("data.kakaoMapUrl").type(JsonFieldType.STRING).description("카카오맵에서 해당 위치를 보여주는 링크 (좌표 없으면 null)").optional(),
                                 fieldWithPath("data.similarMoodSpots[]").type(JsonFieldType.ARRAY).description("비슷한 무드의 스팟 (최대 5개)"),
                                 fieldWithPath("data.similarMoodSpots[].spotId").type(JsonFieldType.NUMBER).description("스팟 ID"),
                                 fieldWithPath("data.similarMoodSpots[].title").type(JsonFieldType.STRING).description("스팟 이름"),
