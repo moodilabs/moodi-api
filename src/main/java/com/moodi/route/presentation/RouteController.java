@@ -1,5 +1,8 @@
 package com.moodi.route.presentation;
 
+import com.moodi.route.application.LegCalculateService;
+import com.moodi.route.application.LegCalculateService.LegCalculateResult;
+import com.moodi.route.application.LegCalculateService.SpotPairCommand;
 import com.moodi.route.application.RouteDeleteService;
 import com.moodi.route.application.RouteGenerateCommand;
 import com.moodi.route.application.RouteGenerateResult;
@@ -12,6 +15,9 @@ import com.moodi.route.application.RouteSaveService;
 import com.moodi.route.application.RouteCopyService;
 import com.moodi.route.application.RouteShareService;
 import com.moodi.route.domain.Route;
+import com.moodi.route.presentation.dto.LegCalculateRequest;
+import com.moodi.route.presentation.dto.LegCalculateResponse;
+import com.moodi.route.presentation.dto.LegCalculateResponse.LegInfo;
 import com.moodi.route.presentation.dto.RouteAddSpotRequest;
 import com.moodi.route.presentation.dto.RouteCopyResponse;
 import com.moodi.route.presentation.dto.RouteGenerateRequest;
@@ -54,19 +60,22 @@ public class RouteController {
     private final RouteDeleteService routeDeleteService;
     private final RouteShareService routeShareService;
     private final RouteCopyService routeCopyService;
+    private final LegCalculateService legCalculateService;
 
     public RouteController(RouteGenerateService routeGenerateService,
                            RouteSaveService routeSaveService,
                            RouteQueryService routeQueryService,
                            RouteDeleteService routeDeleteService,
                            RouteShareService routeShareService,
-                           RouteCopyService routeCopyService) {
+                           RouteCopyService routeCopyService,
+                           LegCalculateService legCalculateService) {
         this.routeGenerateService = routeGenerateService;
         this.routeSaveService = routeSaveService;
         this.routeQueryService = routeQueryService;
         this.routeDeleteService = routeDeleteService;
         this.routeShareService = routeShareService;
         this.routeCopyService = routeCopyService;
+        this.legCalculateService = legCalculateService;
     }
 
     @GetMapping
@@ -76,6 +85,25 @@ public class RouteController {
             @RequestParam(defaultValue = "20") int size) {
         CursorResponse<RouteListRow> result = routeQueryService.getList(memberId, cursor, size);
         CursorResponse<RouteListResponse> response = result.map(RouteController::toListResponse);
+        return SuccessResponse.of(response);
+    }
+
+    @PostMapping("/legs/calculate")
+    public SuccessResponse<LegCalculateResponse> calculateLegs(
+            @AuthMember UUID memberId,
+            @Valid @RequestBody LegCalculateRequest request) {
+        List<SpotPairCommand> commands = request.pairs().stream()
+                .map(p -> new SpotPairCommand(p.fromSpotId(), p.toSpotId()))
+                .toList();
+        List<LegCalculateResult> results = legCalculateService.calculate(commands);
+        LegCalculateResponse response = new LegCalculateResponse(
+                results.stream()
+                        .map(r -> new LegInfo(
+                                r.fromSpotId(), r.toSpotId(),
+                                r.travelMode(), r.durationSeconds(),
+                                r.distanceMeters(), r.landingUrl()))
+                        .toList()
+        );
         return SuccessResponse.of(response);
     }
 

@@ -1,0 +1,17 @@
+== 구간 이동정보 계산 (Leg Calculate)
+
+편집 화면에서 스팟 순서 변경 시, 변경된 구간의 이동 시간·거리를 계산합니다.
+
+=== 구간 이동정보 계산
+
+.HTTP Request
+include::{snippets}/route-leg-calculate/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/route-leg-calculate/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/route-leg-calculate/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/route-leg-calculate/response-fields.adoc[]

@@ -1,6 +1,9 @@
 package com.moodi.route.presentation;
 
 import com.moodi.route.application.RouteDetail;
+import com.moodi.route.application.LegCalculateService;
+import com.moodi.route.application.LegCalculateService.LegCalculateResult;
+import com.moodi.route.application.LegCalculateService.SpotPairCommand;
 import com.moodi.route.application.RouteDeleteService;
 import com.moodi.route.application.RouteGenerateCommand;
 import com.moodi.route.application.RouteGenerateResult;
@@ -59,10 +62,11 @@ class RouteControllerDocsTest extends AuthenticatedRestDocsSupport {
     private final RouteDeleteService routeDeleteService = mock(RouteDeleteService.class);
     private final RouteShareService routeShareService = mock(RouteShareService.class);
     private final RouteCopyService routeCopyService = mock(RouteCopyService.class);
+    private final LegCalculateService legCalculateService = mock(LegCalculateService.class);
 
     @Override
     protected Object initController() {
-        return new RouteController(routeGenerateService, routeSaveService, routeQueryService, routeDeleteService, routeShareService, routeCopyService);
+        return new RouteController(routeGenerateService, routeSaveService, routeQueryService, routeDeleteService, routeShareService, routeCopyService, legCalculateService);
     }
 
     @Test
@@ -392,6 +396,44 @@ class RouteControllerDocsTest extends AuthenticatedRestDocsSupport {
         mockMvc.perform(post("/api/routes/{publicId}/share", publicId))
                 .andExpect(status().isNoContent())
                 .andDo(document("route-share"));
+    }
+
+    @Test
+    @DisplayName("구간 이동정보 계산 API")
+    void calculate_legs() throws Exception {
+        // given
+        given(legCalculateService.calculate(any()))
+                .willReturn(List.of(
+                        new LegCalculateResult(1L, 3L, "WALK", 480, 650, "https://map.kakao.com/link/to/1,37.5796,126.9770"),
+                        new LegCalculateResult(3L, 2L, "PUBLIC_TRANSIT", 1200, 5400, "https://map.kakao.com/link/to/3,37.5445,127.0560")
+                ));
+
+        // when & then
+        mockMvc.perform(post("/api/routes/legs/calculate")
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new com.moodi.route.presentation.dto.LegCalculateRequest(
+                                        List.of(
+                                                new com.moodi.route.presentation.dto.LegCalculateRequest.SpotPair(1L, 3L),
+                                                new com.moodi.route.presentation.dto.LegCalculateRequest.SpotPair(3L, 2L)
+                                        )
+                                )
+                        )))
+                .andExpect(status().isOk())
+                .andDo(document("route-leg-calculate",
+                        requestFields(
+                                fieldWithPath("pairs[].fromSpotId").description("출발 스팟 ID"),
+                                fieldWithPath("pairs[].toSpotId").description("도착 스팟 ID")
+                        ),
+                        responseFields(
+                                fieldWithPath("data.legs[].fromSpotId").description("출발 스팟 ID"),
+                                fieldWithPath("data.legs[].toSpotId").description("도착 스팟 ID"),
+                                fieldWithPath("data.legs[].travelMode").description("이동수단 (WALK/PUBLIC_TRANSIT, 경로 없으면 null)"),
+                                fieldWithPath("data.legs[].durationSeconds").description("이동시간(초)"),
+                                fieldWithPath("data.legs[].distanceMeters").description("이동거리(미터)"),
+                                fieldWithPath("data.legs[].landingUrl").description("카카오맵 경로 링크")
+                        )
+                ));
     }
 
     private org.springframework.restdocs.snippet.Snippet saveResponseFields() {
