@@ -34,7 +34,8 @@ public class SpotDetailQueryRepositoryImpl implements SpotDetailQueryRepository 
                 SELECT s.id, st.title,
                        (SELECT si.image_url FROM spot_image si WHERE si.spot_id = s.id AND si.is_primary = true LIMIT 1),
                        s.area,
-                       (SELECT COUNT(*) FROM bookmark b WHERE b.spot_id = s.id) AS bookmark_count
+                       (SELECT COUNT(*) FROM bookmark b WHERE b.spot_id = s.id) AS bookmark_count,
+                       sm.mood_tags
                 FROM spot s
                 JOIN spot_mood sm ON sm.spot_id = s.id
                 JOIN spot_translation st ON st.spot_id = s.id AND st.locale = 'en-US'
@@ -67,7 +68,8 @@ public class SpotDetailQueryRepositoryImpl implements SpotDetailQueryRepository 
                         (String) row[1],
                         (String) row[2],
                         RegionDictionary.translateArea((String) row[3]),
-                        ((Number) row[4]).longValue()
+                        ((Number) row[4]).longValue(),
+                        parseMoodTagDisplayTags((String) row[5])
                 ))
                 .toList();
     }

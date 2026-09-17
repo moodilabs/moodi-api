@@ -138,7 +138,7 @@ class SpotDetailReaderTest {
         stubPublishedSpot(spotId);
 
         List<SimilarMoodSpotItem> similarSpots = List.of(
-                new SimilarMoodSpotItem(2L, "스팟B", "img.jpg", "서울", 10L)
+                new SimilarMoodSpotItem(2L, "스팟B", "img.jpg", "서울", 10L, List.of("#Cozy"))
         );
         List<PopularAreaSpotItem> popularSpots = List.of(
                 new PopularAreaSpotItem(3L, "스팟C", "img2.jpg", List.of("#Cozy"))

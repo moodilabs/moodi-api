@@ -97,7 +97,7 @@ public class SpotController {
                 s.similarMoodSpots().stream()
                         .map(item -> new SimilarMoodSpotResponse(
                                 item.spotId(), item.title(), item.imageUrl(),
-                                item.area(), item.bookmarkCount()))
+                                item.area(), item.bookmarkCount(), item.moodTags()))
                         .toList(),
                 s.popularAreaSpots().stream()
                         .map(item -> new PopularSpotResponse(
