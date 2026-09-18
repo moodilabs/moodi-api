@@ -13,6 +13,7 @@ import com.moodi.route.application.RouteSaveCommand;
 import com.moodi.route.application.RouteSaveCommand.DayCommand;
 import com.moodi.route.application.RouteSaveService;
 import com.moodi.route.application.RouteCopyService;
+import com.moodi.route.application.RouteShareLinkBuilder;
 import com.moodi.route.application.RouteShareService;
 import com.moodi.route.domain.Route;
 import com.moodi.route.presentation.dto.LegCalculateRequest;
@@ -29,10 +30,12 @@ import com.moodi.route.application.RouteDetail;
 import com.moodi.route.presentation.dto.RouteListResponse;
 import com.moodi.route.presentation.dto.RouteSaveRequest;
 import com.moodi.route.presentation.dto.RouteSaveResponse;
+import com.moodi.route.presentation.dto.RouteShareResponse;
 import com.moodi.shared.auth.AuthMember;
 import com.moodi.shared.auth.LoginRequired;
 import com.moodi.shared.response.CursorResponse;
 import com.moodi.shared.response.SuccessResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -61,6 +64,7 @@ public class RouteController {
     private final RouteShareService routeShareService;
     private final RouteCopyService routeCopyService;
     private final LegCalculateService legCalculateService;
+    private final RouteShareLinkBuilder shareLinkBuilder;
 
     public RouteController(RouteGenerateService routeGenerateService,
                            RouteSaveService routeSaveService,
@@ -68,7 +72,8 @@ public class RouteController {
                            RouteDeleteService routeDeleteService,
                            RouteShareService routeShareService,
                            RouteCopyService routeCopyService,
-                           LegCalculateService legCalculateService) {
+                           LegCalculateService legCalculateService,
+                           RouteShareLinkBuilder shareLinkBuilder) {
         this.routeGenerateService = routeGenerateService;
         this.routeSaveService = routeSaveService;
         this.routeQueryService = routeQueryService;
@@ -76,6 +81,7 @@ public class RouteController {
         this.routeShareService = routeShareService;
         this.routeCopyService = routeCopyService;
         this.legCalculateService = legCalculateService;
+        this.shareLinkBuilder = shareLinkBuilder;
     }
 
     @GetMapping
@@ -162,12 +168,17 @@ public class RouteController {
         return SuccessResponse.of(RouteSaveResponse.from(route));
     }
 
+    /**
+     * 공유를 켜고 단축 링크를 돌려준다. 예전 앱(204 + 본문 무시)과도 호환된다 — 2xx 이기만 하면 됐다.
+     */
     @PostMapping("/{publicId}/share")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void share(
+    public SuccessResponse<RouteShareResponse> share(
             @AuthMember UUID memberId,
-            @PathVariable UUID publicId) {
-        routeShareService.share(publicId, memberId);
+            @PathVariable UUID publicId,
+            HttpServletRequest request) {
+        Route route = routeShareService.share(publicId, memberId);
+        String shareUrl = shareLinkBuilder.shareUrl(RequestOrigin.of(request), route.getPublicId(), route.getShortCode());
+        return SuccessResponse.of(new RouteShareResponse(route.getPublicId(), route.getShortCode(), shareUrl));
     }
 
     @DeleteMapping("/{publicId}")

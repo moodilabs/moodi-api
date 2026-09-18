@@ -16,6 +16,8 @@ import com.moodi.route.application.RouteQueryService;
 import com.moodi.route.application.RouteSaveCommand;
 import com.moodi.route.application.RouteCopyService;
 import com.moodi.route.application.RouteSaveService;
+import com.moodi.route.application.RouteShareLinkBuilder;
+import com.moodi.route.application.RouteShareProperties;
 import com.moodi.route.application.RouteShareService;
 import com.moodi.route.domain.Route;
 import com.moodi.route.presentation.dto.RouteGenerateRequest;
@@ -63,10 +65,13 @@ class RouteControllerDocsTest extends AuthenticatedRestDocsSupport {
     private final RouteShareService routeShareService = mock(RouteShareService.class);
     private final RouteCopyService routeCopyService = mock(RouteCopyService.class);
     private final LegCalculateService legCalculateService = mock(LegCalculateService.class);
+    private final RouteShareLinkBuilder shareLinkBuilder = new RouteShareLinkBuilder(
+            new RouteShareProperties(null, "https://dev-api.moodi.kr", null, null, null));
 
     @Override
     protected Object initController() {
-        return new RouteController(routeGenerateService, routeSaveService, routeQueryService, routeDeleteService, routeShareService, routeCopyService, legCalculateService);
+        return new RouteController(routeGenerateService, routeSaveService, routeQueryService, routeDeleteService,
+                routeShareService, routeCopyService, legCalculateService, shareLinkBuilder);
     }
 
     @Test
@@ -391,13 +396,23 @@ class RouteControllerDocsTest extends AuthenticatedRestDocsSupport {
     @DisplayName("루트 공유 활성화 API")
     void share_route() throws Exception {
         // given
-        UUID publicId = UUID.randomUUID();
-        doNothing().when(routeShareService).share(any(UUID.class), any(UUID.class));
+        Route route = RouteFixture.createRoute(memberId, "Retro mood trip in Seongsu",
+                LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 11),
+                List.of(RouteFixture.createDay(1, LocalDate.of(2026, 8, 10), 2)));
+        route.share();
+        route.assignShortCode("Ab12Cd34");
+        given(routeShareService.share(any(UUID.class), any(UUID.class))).willReturn(route);
 
         // when & then
-        mockMvc.perform(post("/api/routes/{publicId}/share", publicId))
-                .andExpect(status().isNoContent())
-                .andDo(document("route-share"));
+        mockMvc.perform(post("/api/routes/{publicId}/share", route.getPublicId()))
+                .andExpect(status().isOk())
+                .andDo(document("route-share",
+                        responseFields(
+                                fieldWithPath("data.publicId").description("루트 공개 식별자"),
+                                fieldWithPath("data.shortCode").description("단축 링크 코드 (base62 8자리)"),
+                                fieldWithPath("data.shareUrl").description("외부 공유용 링크. 단축 링크 /s/{shortCode}")
+                        )
+                ));
     }
 
     @Test

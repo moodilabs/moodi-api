@@ -381,6 +381,9 @@
             <basic name="shared">
                 <column name="is_shared" nullable="false"/>
             </basic>
+            <basic name="shortCode">
+                <column name="short_code" length="10"/>
+            </basic>
             <basic name="deletedAt">
                 <column name="deleted_at"/>
             </basic>
