@@ -7,6 +7,7 @@ Figma 화면설계서를 기준으로 백엔드가 제공해야 할 API·도메�
 |---|---|---|
 | [mypage.md](./mypage.md) | 마이페이지 `MY-01 ~ MY-07` — 계정설정·탈퇴·공지·FAQ·1:1 문의·약관 | 개발자 A |
 | [admin.md](./admin.md) | 관리자 백엔드 — 관리자 인증, 회원·공지·FAQ·약관·문의 관리, 대시보드 | 개발자 A (스팟 관리는 B) |
+| [social-token-revocation.md](./social-token-revocation.md) | 탈퇴 시 Apple·Google 계정 연결 철회 — 백엔드 완료, **시크릿·앱 클라이언트 작업 남음** (남은 일 체크리스트 포함) | 개발자 A |
 
 ## 화면 ID ↔ 스펙 매핑
 
