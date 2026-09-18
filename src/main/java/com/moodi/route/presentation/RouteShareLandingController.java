@@ -3,6 +3,7 @@ package com.moodi.route.presentation;
 import com.moodi.route.application.RouteShareLandingService;
 import com.moodi.route.application.RouteShareLandingView;
 import com.moodi.route.application.RouteShareProperties;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +37,8 @@ public class RouteShareLandingController {
     @GetMapping(value = "/routes/shared/{publicId}", produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> landing(
             @PathVariable String publicId,
-            @RequestHeader(value = HttpHeaders.USER_AGENT, required = false) String userAgent) {
+            @RequestHeader(value = HttpHeaders.USER_AGENT, required = false) String userAgent,
+            HttpServletRequest request) {
 
         RouteShareLandingView view = parsePublicId(publicId)
                 .map(routeShareLandingService::getLandingView)
@@ -45,11 +47,40 @@ public class RouteShareLandingController {
         String deepLink = properties.appScheme() + publicId;
         Platform platform = Platform.from(userAgent);
         String storeUrl = platform.storeUrl(properties);
+        String logoUrl = resolveLogoUrl(request);
 
-        String html = render(view, deepLink, platform, storeUrl);
+        String html = render(view, deepLink, platform, storeUrl, logoUrl);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE + ";charset=UTF-8")
                 .body(html);
+    }
+
+    /**
+     * 설정값(moodi.route.share.logo-url)이 비어 있으면 이 페이지와 같은 호스트의
+     * 정적 리소스(icon_ios.jpg)로 폴백한다. moodi.kr 같은 도메인을 코드에 고정해두면
+     * 그 도메인이 이 API가 아닌 다른 프론트로 옮겨갔을 때 og:image가 조용히 깨진다 —
+     * 실제로 이 문제로 카카오톡 미리보기 카드 자체가 안 뜨는 걸 배포 후 확인했다.
+     */
+    private String resolveLogoUrl(HttpServletRequest request) {
+        String configured = properties.logoUrl();
+        if (configured != null && !configured.isBlank()) {
+            return configured;
+        }
+        return currentOrigin(request) + "/icon_ios.jpg";
+    }
+
+    private String currentOrigin(HttpServletRequest request) {
+        String proto = firstHeaderValue(request, "X-Forwarded-Proto", request.getScheme());
+        String host = firstHeaderValue(request, "X-Forwarded-Host", request.getServerName());
+        return proto + "://" + host;
+    }
+
+    private String firstHeaderValue(HttpServletRequest request, String headerName, String fallback) {
+        String value = request.getHeader(headerName);
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        return value.split(",")[0].trim();
     }
 
     private Optional<UUID> parsePublicId(String publicId) {
@@ -60,9 +91,9 @@ public class RouteShareLandingController {
         }
     }
 
-    private String render(RouteShareLandingView view, String deepLink, Platform platform, String storeUrl) {
+    private String render(RouteShareLandingView view, String deepLink, Platform platform, String storeUrl,
+                          String logoUrl) {
         String safeTitle = HtmlUtils.htmlEscape(view.title());
-        String logoUrl = properties.logoUrl();
 
         StringBuilder meta = new StringBuilder();
         meta.append("<meta property=\"og:type\" content=\"website\">\n");
