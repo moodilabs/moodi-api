@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.time.LocalDateTime;
+
 import static com.moodi.member.support.MemberFixture.CURRENT_YEAR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -296,5 +298,29 @@ class MemberTest {
         assertThat(member.isWithdrawn()).isTrue();
         assertThat(member.isSuspended()).isFalse();
         assertThat(member.getSuspendReason()).isNull();
+    }
+
+    @Test
+    @DisplayName("제공자 자격은 client_id는 매번 갱신하고 refresh token은 값이 있을 때만 덮어쓴다")
+    void remember_provider_credential_keeps_token_when_absent() {
+        Member member = MemberFixture.create();
+
+        member.rememberProviderCredential("client-a", "token-1");
+        member.rememberProviderCredential("client-b", null);
+
+        assertThat(member.getProviderClientId()).isEqualTo("client-b");
+        assertThat(member.getProviderRefreshToken()).isEqualTo("token-1");
+    }
+
+    @Test
+    @DisplayName("탈퇴하면 제공자 refresh token은 지우고 client_id는 남긴다 - 재인증 철회 때 secret 서명에 필요")
+    void withdraw_clears_provider_refresh_token() {
+        Member member = MemberFixture.active();
+        member.rememberProviderCredential("client-a", "token-1");
+
+        member.withdraw(LocalDateTime.now());
+
+        assertThat(member.getProviderRefreshToken()).isNull();
+        assertThat(member.getProviderClientId()).isEqualTo("client-a");
     }
 }

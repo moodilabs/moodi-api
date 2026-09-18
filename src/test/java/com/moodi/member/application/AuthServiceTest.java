@@ -49,6 +49,9 @@ class AuthServiceTest {
     private OAuthClient oAuthClient;
 
     @Mock
+    private SocialTokenClient socialTokenClient;
+
+    @Mock
     private TokenProvider tokenProvider;
 
     @InjectMocks
@@ -65,7 +68,7 @@ class AuthServiceTest {
         when(memberRepository.save(any(Member.class))).thenReturn(MemberFixture.create(memberId, PROVIDER, PROVIDER_ID, EMAIL));
         when(tokenProvider.issue(memberId)).thenReturn(tokens);
 
-        LoginResult result = authService.login(PROVIDER, ID_TOKEN);
+        LoginResult result = authService.login(PROVIDER, ID_TOKEN, null);
 
         assertThat(result.isNewMember()).isTrue();
         assertThat(result.accessToken()).isEqualTo("access-token");
@@ -84,7 +87,7 @@ class AuthServiceTest {
                 .thenReturn(Optional.of(MemberFixture.create(memberId, PROVIDER, PROVIDER_ID, EMAIL)));
         when(tokenProvider.issue(memberId)).thenReturn(tokens);
 
-        LoginResult result = authService.login(PROVIDER, ID_TOKEN);
+        LoginResult result = authService.login(PROVIDER, ID_TOKEN, null);
 
         assertThat(result.isNewMember()).isFalse();
         verify(memberRepository, never()).save(any(Member.class));
@@ -103,7 +106,7 @@ class AuthServiceTest {
                 .thenReturn(Optional.of(withdrawn));
         when(tokenProvider.issue(memberId)).thenReturn(tokens);
 
-        LoginResult result = authService.login(PROVIDER, ID_TOKEN);
+        LoginResult result = authService.login(PROVIDER, ID_TOKEN, null);
 
         assertThat(withdrawn.isWithdrawn()).isFalse();
         assertThat(withdrawn.getEmail()).isEqualTo(EMAIL);
@@ -122,7 +125,7 @@ class AuthServiceTest {
                 .thenReturn(Optional.of(withdrawn));
         when(tokenProvider.issue(memberId)).thenReturn(tokens);
 
-        LoginResult result = authService.login(PROVIDER, ID_TOKEN);
+        LoginResult result = authService.login(PROVIDER, ID_TOKEN, null);
 
         assertThat(result.isNewMember()).isTrue();
         assertThat(withdrawn.hasProfile()).isFalse();
@@ -135,7 +138,7 @@ class AuthServiceTest {
         when(memberRepository.findByProviderAndProviderId(PROVIDER, PROVIDER_ID)).thenReturn(Optional.empty());
         when(memberRepository.existsByEmail(EMAIL)).thenReturn(true);
 
-        assertThatThrownBy(() -> authService.login(PROVIDER, ID_TOKEN))
+        assertThatThrownBy(() -> authService.login(PROVIDER, ID_TOKEN, null))
                 .isInstanceOf(BusinessException.class)
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.DUPLICATE_EMAIL);
@@ -154,7 +157,7 @@ class AuthServiceTest {
         when(memberRepository.save(any(Member.class))).thenReturn(MemberFixture.create(memberId, PROVIDER, PROVIDER_ID, null));
         when(tokenProvider.issue(memberId)).thenReturn(tokens);
 
-        LoginResult result = authService.login(PROVIDER, ID_TOKEN);
+        LoginResult result = authService.login(PROVIDER, ID_TOKEN, null);
 
         assertThat(result.isNewMember()).isTrue();
         verify(memberRepository, never()).existsByEmail(anyString());
@@ -249,7 +252,7 @@ class AuthServiceTest {
         when(oAuthClient.verify(PROVIDER, ID_TOKEN)).thenReturn(new OidcPayload(PROVIDER_ID, EMAIL));
         when(memberRepository.findByProviderAndProviderId(PROVIDER, PROVIDER_ID)).thenReturn(Optional.of(suspended));
 
-        assertThatThrownBy(() -> authService.login(PROVIDER, ID_TOKEN))
+        assertThatThrownBy(() -> authService.login(PROVIDER, ID_TOKEN, null))
                 .isInstanceOf(BusinessException.class)
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.MEMBER_SUSPENDED);
@@ -273,5 +276,52 @@ class AuthServiceTest {
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.MEMBER_SUSPENDED);
         verify(refreshTokenRepository, never()).deleteByToken(refreshToken);
+    }
+
+    @Test
+    @DisplayName("인가 코드를 보내면 제공자 refresh token으로 바꿔 회원에 저장한다 - 탈퇴 시 계정 연결 철회용")
+    void login_with_authorization_code_stores_provider_refresh_token() {
+        Member member = MemberFixture.create(OAuthProvider.APPLE, "apple-sub", EMAIL);
+        when(oAuthClient.verify(OAuthProvider.APPLE, ID_TOKEN)).thenReturn(new OidcPayload("apple-sub", EMAIL, "kr.moodi.app"));
+        when(memberRepository.findByProviderAndProviderId(OAuthProvider.APPLE, "apple-sub")).thenReturn(Optional.of(member));
+        when(socialTokenClient.exchangeRefreshToken(OAuthProvider.APPLE, "kr.moodi.app", "auth-code"))
+                .thenReturn(Optional.of("apple-refresh-token"));
+        when(tokenProvider.issue(any())).thenReturn(new TokenPair("a", "r", LocalDateTime.now().plusDays(14)));
+
+        authService.login(OAuthProvider.APPLE, ID_TOKEN, "auth-code");
+
+        assertThat(member.getProviderClientId()).isEqualTo("kr.moodi.app");
+        assertThat(member.getProviderRefreshToken()).isEqualTo("apple-refresh-token");
+    }
+
+    @Test
+    @DisplayName("인가 코드 교환에 실패해도 로그인은 성공한다 - 철회는 탈퇴 시 재인증 코드로 대신할 수 있다")
+    void login_succeeds_when_code_exchange_fails() {
+        Member member = MemberFixture.create(OAuthProvider.APPLE, "apple-sub", EMAIL);
+        when(oAuthClient.verify(OAuthProvider.APPLE, ID_TOKEN)).thenReturn(new OidcPayload("apple-sub", EMAIL, "kr.moodi.app"));
+        when(memberRepository.findByProviderAndProviderId(OAuthProvider.APPLE, "apple-sub")).thenReturn(Optional.of(member));
+        when(socialTokenClient.exchangeRefreshToken(OAuthProvider.APPLE, "kr.moodi.app", "auth-code")).thenReturn(Optional.empty());
+        when(tokenProvider.issue(any())).thenReturn(new TokenPair("a", "r", LocalDateTime.now().plusDays(14)));
+
+        LoginResult result = authService.login(OAuthProvider.APPLE, ID_TOKEN, "auth-code");
+
+        assertThat(result.accessToken()).isEqualTo("a");
+        assertThat(member.getProviderClientId()).isEqualTo("kr.moodi.app");
+        assertThat(member.getProviderRefreshToken()).isNull();
+    }
+
+    @Test
+    @DisplayName("인가 코드 없이 로그인하면 교환을 시도하지 않고 이전에 받아둔 refresh token은 유지한다")
+    void login_without_code_keeps_stored_refresh_token() {
+        Member member = MemberFixture.create(OAuthProvider.APPLE, "apple-sub", EMAIL);
+        member.rememberProviderCredential("kr.moodi.app", "stored-refresh-token");
+        when(oAuthClient.verify(OAuthProvider.APPLE, ID_TOKEN)).thenReturn(new OidcPayload("apple-sub", EMAIL, "kr.moodi.app"));
+        when(memberRepository.findByProviderAndProviderId(OAuthProvider.APPLE, "apple-sub")).thenReturn(Optional.of(member));
+        when(tokenProvider.issue(any())).thenReturn(new TokenPair("a", "r", LocalDateTime.now().plusDays(14)));
+
+        authService.login(OAuthProvider.APPLE, ID_TOKEN, null);
+
+        verify(socialTokenClient, never()).exchangeRefreshToken(any(), any(), any());
+        assertThat(member.getProviderRefreshToken()).isEqualTo("stored-refresh-token");
     }
 }

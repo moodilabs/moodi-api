@@ -119,6 +119,7 @@ private void requireActive()                  // status != ACTIVE → INVALID_RE
 | `route` (+ day/spot/leg) | **소프트 삭제** (`deleted_at`) — "생성한 루트 삭제". 다른 회원이 복사한 루트는 그 회원 소유(`member_id`)라 영향 없음 — "Routes saved by other users will remain" |
 | `pick_request` (+ area/result, GCS 원본 사진) | **삭제** — 개인 사진, "계정 데이터 삭제"에 포함 |
 | `feed_impression` | 보존 (개인정보 아님, 30일 윈도우로 소멸) |
+| 제공자 계정 연결 (Apple "Apple로 로그인" 목록 · Google "타사 앱 및 서비스") | **철회** — 로그인 때 `authorizationCode`로 받아둔 `member.provider_refresh_token`을 Apple `auth/revoke` / Google `oauth2/revoke`에 보낸다. 없으면 탈퇴 요청의 `authorizationCode`(재인증)로 즉시 교환. Apple은 심사 지침 5.1.1(v) 필수. 실패해도 탈퇴는 진행(ERROR 로그) |
 | 재로그인 | `Member.restore()`의 "이전 북마크·루트 복구" 의미는 사라진다. 같은 `provider·providerId` 행을 재활용해 `PENDING`으로 온보딩 시작 (사실상 신규 가입). 관련 Javadoc·`onboarding.adoc` 탈퇴 절 문구 갱신 |
 
 `bookmark`·`route`·`pick_request`는 다른 컨텍스트 테이블이다. 삭제 순서를 DB가 막지 않으므로(V16) 애플리케이션이 책임진다.
@@ -141,6 +142,7 @@ discovery/application/PickWithdrawalListener      @EventListener → pickRequest
 ```json
 {
   "reasons": ["HARD_TO_USE", "OTHER"],
+  "authorizationCode": "(선택) 로그인 때 코드를 안 보낸 회원의 제공자 재인증 코드",
   "detail": "Tell us more (optional, ≤ 500자)"
 }
 ```

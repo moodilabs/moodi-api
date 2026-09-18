@@ -52,6 +52,8 @@
 | `DB_USERNAME` | Cloud SQL 사용자명 |
 | `DB_PASSWORD` | Cloud SQL 비밀번호 |
 | `ADMIN_ALLOWED_ORIGINS` | 관리자 프론트 CORS 오리진 (쉼표 구분, `*` 와일드카드 가능). GitHub Secret이 비어 있으면 기본 `https://admin.moodi.kr,https://*.vercel.app,http://localhost:5173,http://localhost:3000` |
+| `APPLE_TOKEN_ENABLED` · `APPLE_TEAM_ID` · `APPLE_KEY_ID` · `APPLE_PRIVATE_KEY` | 탈퇴 시 Sign in with Apple 연결 철회(심사 5.1.1(v)). Apple Developer > Certificates, Identifiers & Profiles > Keys에서 "Sign in with Apple" 키를 만들어 Team ID·Key ID·.p8 내용(PEM 전체, 개행은 `\n` 리터럴 허용)을 Secret Manager에 넣고 `APPLE_TOKEN_ENABLED=true`. **키 없이 enabled를 켜면 기동 실패**하므로 시크릿 먼저. |
+| `GOOGLE_TOKEN_ENABLED` · `GOOGLE_WEB_CLIENT_ID` · `GOOGLE_CLIENT_SECRET` (· `GOOGLE_TOKEN_REDIRECT_URI`) | 탈퇴 시 Google 계정 "타사 앱 및 서비스" 연결 철회. serverAuthCode는 **웹 애플리케이션 OAuth 클라이언트** 앞으로 발급되므로 그 클라이언트의 ID·secret(GCP 콘솔 > API 및 서비스 > 사용자 인증 정보). 모바일 코드 교환은 redirect URI 빈 값. |
 | `ADMIN_BOOTSTRAP_LOGIN_ID` / `ADMIN_BOOTSTRAP_PASSWORD` | 최초 관리자(SUPER) 생성용 GitHub Secret. `admin_account`가 비어 있을 때만 기동 시 1회 사용되며, 이후에는 남아 있어도 무해. 생성된 계정은 초기 비밀번호 상태라 첫 로그인 후 `PATCH /api/admin/me/password`로 바꿔야 다른 API를 쓸 수 있다. (예전 `ADMIN_BOOTSTRAP_EMAIL`은 배포 시 `--remove-env-vars`로 제거) |
 
 관리자 프론트는 Vercel에 배포하고 `admin.moodi.kr` 커스텀 도메인(가비아 DNS → Vercel CNAME)을 연결한다. 프론트는 `https://moodi.kr/api/admin/**`를 호출하며,

@@ -34,10 +34,10 @@ class AuthControllerDocsTest extends RestDocsSupport {
     @Test
     @DisplayName("소셜 로그인 성공")
     void social_login_success() throws Exception {
-        when(authService.login(any(OAuthProvider.class), anyString()))
+        when(authService.login(any(OAuthProvider.class), anyString(), any()))
                 .thenReturn(new LoginResult("access-token", "refresh-token", true));
 
-        LoginRequest request = new LoginRequest("GOOGLE", "provider-id-token");
+        LoginRequest request = new LoginRequest("APPLE", "provider-id-token", "provider-authorization-code");
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -46,7 +46,10 @@ class AuthControllerDocsTest extends RestDocsSupport {
                 .andDo(document("auth/login",
                         requestFields(
                                 fieldWithPath("provider").type(JsonFieldType.STRING).description("소셜 로그인 제공자 (GOOGLE, APPLE)"),
-                                fieldWithPath("idToken").type(JsonFieldType.STRING).description("소셜 제공자가 발급한 id_token")
+                                fieldWithPath("idToken").type(JsonFieldType.STRING).description("소셜 제공자가 발급한 id_token"),
+                                fieldWithPath("authorizationCode").type(JsonFieldType.STRING).optional()
+                                        .description("제공자 인가 코드(선택). Apple `authorizationCode` / Google `serverAuthCode`. "
+                                                + "서버가 refresh token으로 바꿔 두었다가 탈퇴 시 계정 연결을 철회한다. 5분·1회용이라 로그인 요청에 바로 싣는다")
                         ),
                         responseFields(
                                 fieldWithPath("data").type(JsonFieldType.OBJECT).description("토큰 정보"),

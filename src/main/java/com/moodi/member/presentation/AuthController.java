@@ -30,7 +30,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public SuccessResponse<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
-        LoginResult result = authService.login(request.toProvider(), request.idToken());
+        LoginResult result = authService.login(request.toProvider(), request.idToken(), request.authorizationCode());
         return SuccessResponse.of(TokenResponse.from(result));
     }
 

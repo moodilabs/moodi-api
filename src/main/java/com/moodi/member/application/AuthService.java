@@ -10,12 +10,14 @@ import com.moodi.member.domain.RefreshToken;
 import com.moodi.member.domain.RefreshTokenRepository;
 import com.moodi.shared.error.BusinessException;
 import com.moodi.shared.error.ErrorCode;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 public class AuthService {
@@ -23,24 +25,32 @@ public class AuthService {
     private final MemberRepository memberRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final OAuthClient oAuthClient;
+    private final SocialTokenClient socialTokenClient;
     private final TokenProvider tokenProvider;
 
     public AuthService(
             MemberRepository memberRepository,
             RefreshTokenRepository refreshTokenRepository,
             OAuthClient oAuthClient,
+            SocialTokenClient socialTokenClient,
             TokenProvider tokenProvider
     ) {
         this.memberRepository = memberRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.oAuthClient = oAuthClient;
+        this.socialTokenClient = socialTokenClient;
         this.tokenProvider = tokenProvider;
     }
 
+    /**
+     * @param authorizationCode 제공자 인가 코드(선택). Apple은 이 코드를 refresh token으로 바꿔 두어야
+     *                          탈퇴 때 계정 연결을 철회할 수 있다. 교환 실패는 로그인을 막지 않는다.
+     */
     @Transactional
-    public LoginResult login(OAuthProvider provider, String idToken) {
+    public LoginResult login(OAuthProvider provider, String idToken, String authorizationCode) {
         OidcPayload payload = oAuthClient.verify(provider, idToken);
         MemberResolution resolution = resolveMember(provider, payload);
+        rememberProviderCredential(resolution.member(), provider, payload.audience(), authorizationCode);
         TokenPair tokens = issueTokens(resolution.member().getId());
         return new LoginResult(tokens.accessToken(), tokens.refreshToken(), resolution.isNew());
     }
@@ -102,6 +112,18 @@ public class AuthService {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
         return memberRepository.save(Member.create(provider, payload.providerId(), email));
+    }
+
+    private void rememberProviderCredential(Member member, OAuthProvider provider, String clientId, String authorizationCode) {
+        String refreshToken = null;
+        if (authorizationCode != null && !authorizationCode.isBlank()) {
+            refreshToken = socialTokenClient.exchangeRefreshToken(provider, clientId, authorizationCode).orElse(null);
+            if (refreshToken == null) {
+                log.warn("제공자 refresh token 교환 실패 — 탈퇴 시 계정 연결 철회가 불가할 수 있음: provider={}, memberId={}",
+                        provider, member.getId());
+            }
+        }
+        member.rememberProviderCredential(clientId, refreshToken);
     }
 
     private TokenPair issueTokens(UUID memberId) {

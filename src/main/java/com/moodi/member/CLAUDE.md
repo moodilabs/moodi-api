@@ -53,7 +53,7 @@ com.moodi.member/
 
 | Method | Path | 인증 | Body → 응답 |
 |---|---|---|---|
-| POST | `/api/v1/auth/login` | 불필요 | `{ provider, idToken }` → `SuccessResponse<TokenResponse>` |
+| POST | `/api/v1/auth/login` | 불필요 | `{ provider, idToken, authorizationCode? }` → `SuccessResponse<TokenResponse>` |
 | POST | `/api/v1/auth/reissue` | 불필요 | `{ refreshToken }` → `SuccessResponse<TokenResponse>` |
 | POST | `/api/v1/auth/logout` | `@LoginRequired` | 없음 → `204 No Content` |
 
@@ -63,6 +63,18 @@ com.moodi.member/
 ```
 
 - 신규 로그인은 `isNewMember=true` → 클라이언트가 프로필 설정으로, 기존은 Feed로 분기(AUT-F01).
+- `authorizationCode`(선택)는 Apple `authorizationCode` / Google `serverAuthCode`. 서버가 제공자 토큰 엔드포인트에서
+  refresh token으로 바꿔 `member.provider_refresh_token`에 두고, id_token의 `aud`는 `provider_client_id`에 둔다.
+  **탈퇴 시 제공자 계정 연결 철회에 쓴다** (아래 "회원 탈퇴 > 제공자 계정 연결 철회").
+
+## 제공자 토큰 교환·철회 (`SocialTokenClient`)
+
+- 포트 `application/SocialTokenClient` — `exchangeRefreshToken(provider, clientId, code)` · `revoke(provider, clientId, token)`. 둘 다 best-effort(empty/false).
+- 어댑터 `infrastructure/oauth`: `AppleTokenClient`(client_secret = .p8로 서명한 ES256 JWT, iss=Team ID·sub=client_id·aud=appleid.apple.com),
+  `GoogleTokenClient`(웹 클라이언트 ID·secret으로 교환, 철회는 token만). `ProviderRoutingSocialTokenClient`가 provider로 분기.
+- 설정 `oauth.apple.token.*`(`APPLE_TOKEN_ENABLED`·`APPLE_TEAM_ID`·`APPLE_KEY_ID`·`APPLE_PRIVATE_KEY`),
+  `oauth.google.token.*`(`GOOGLE_TOKEN_ENABLED`·`GOOGLE_WEB_CLIENT_ID`·`GOOGLE_CLIENT_SECRET`). 꺼져 있으면 호출마다 경고만 남기고 실패.
+- Apple client_id는 회원마다 다를 수 있어(iOS 번들 ID vs 웹 Services ID) id_token `aud`를 저장해 쓴다. Google은 serverAuthCode가 항상 웹 클라이언트 앞이라 설정값을 쓴다.
 
 ## 토큰 정책
 
@@ -232,7 +244,8 @@ com.moodi.member/
 
 | 처리 | 대상 |
 |---|---|
-| 비움 | `email` · `nickname` · `country` · `birth_year` · `gender`, `status`는 `PENDING`으로 복귀 |
+| 철회 | 제공자 계정 연결 — 저장된 `provider_refresh_token`(없으면 요청의 `authorizationCode`로 즉시 교환)으로 Apple/Google revoke. 실패해도 탈퇴는 진행(ERROR 로그) |
+| 비움 | `email` · `nickname` · `country` · `birth_year` · `gender` · `provider_refresh_token`, `status`는 `PENDING`으로 복귀 |
 | 삭제 | `member_preferred_mood` · `member_agreement` · `refresh_token` |
 | 유지 | `provider` · `provider_id`(복구용), `bookmark` · `route` · `feed_impression` · `pick_request` |
 

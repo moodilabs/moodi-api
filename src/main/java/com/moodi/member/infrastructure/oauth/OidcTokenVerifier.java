@@ -38,10 +38,16 @@ public class OidcTokenVerifier implements OAuthClient {
     public OidcPayload verify(OAuthProvider provider, String idToken) {
         try {
             JWTClaimsSet claims = processors.get(provider).process(idToken, null);
-            return new OidcPayload(claims.getSubject(), claims.getStringClaim("email"));
+            return new OidcPayload(claims.getSubject(), claims.getStringClaim("email"), firstAudience(claims));
         } catch (Exception e) {
             throw new BusinessException(ErrorCode.OAUTH_VERIFICATION_FAILED);
         }
+    }
+
+    /** id_token의 aud는 배열일 수 있지만 Google·Apple 모두 client_id 하나만 싣는다. */
+    private String firstAudience(JWTClaimsSet claims) {
+        List<String> audiences = claims.getAudience();
+        return audiences == null || audiences.isEmpty() ? null : audiences.get(0);
     }
 
     private DefaultJWTProcessor<SecurityContext> buildProcessor(OauthProperties.Provider provider) {
