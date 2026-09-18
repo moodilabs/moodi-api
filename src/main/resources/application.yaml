@@ -88,6 +88,14 @@ moodi:
   feed:
     # 스팟 카탈로그가 커서 재순환보다 재등장 방지가 목적이라 길게 잡는다.
     impression-window-days: ${FEED_IMPRESSION_WINDOW_DAYS:30}
+  route:
+    share:
+      # 앱 미설치 시 이동할 스토어 링크. 미등록 상태면 빈 값 — 랜딩 페이지는 그대로 동작하고
+      # 스토어 이동만 생략한다.
+      app-scheme: ${ROUTE_SHARE_APP_SCHEME:moodi://route/}
+      logo-url: ${ROUTE_SHARE_LOGO_URL:}
+      ios-store-url: ${ROUTE_SHARE_IOS_STORE_URL:}
+      android-store-url: ${ROUTE_SHARE_ANDROID_STORE_URL:}
 
 logging:
   pattern:
