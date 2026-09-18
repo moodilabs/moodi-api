@@ -10,7 +10,8 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 
 /**
- * 약관 한 버전. 시행일이 지난 버전은 회원이 동의한 시점의 문서이므로 고칠 수 없다 — 오탈자도 새 버전으로.
+ * 약관 한 버전. 회원이 한 명이라도 동의한 버전은 그 시점의 문서이므로 고칠 수 없다 — 오탈자도 새 버전으로.
+ * 시행됐더라도 아직 아무도 동의하지 않았다면(최초 등록 직후 등) 수정·삭제할 수 있다.
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -28,8 +29,8 @@ public class Policy extends BaseEntity {
     private boolean enabled = true;
     private boolean visible = true;
 
-    public void configure(String locale, boolean enabled, boolean visible, LocalDate today) {
-        requireNotEffective(today);
+    public void configure(String locale, boolean enabled, boolean visible, boolean agreed) {
+        requireNotAgreed(agreed);
         validateLocale(locale);
         this.locale = locale;
         this.enabled = enabled;
@@ -65,8 +66,8 @@ public class Policy extends BaseEntity {
         return new Policy(type, version, content, effectiveAt);
     }
 
-    public void update(String version, String content, LocalDate effectiveAt, LocalDate today) {
-        requireNotEffective(today);
+    public void update(String version, String content, LocalDate effectiveAt, boolean agreed) {
+        requireNotAgreed(agreed);
         validate(this.type, version, content, effectiveAt);
         this.version = version;
         this.content = content;
@@ -77,9 +78,10 @@ public class Policy extends BaseEntity {
         return !effectiveAt.isAfter(today);
     }
 
-    public void requireNotEffective(LocalDate today) {
-        if (isEffective(today)) {
-            throw new BusinessException(ErrorCode.POLICY_ALREADY_EFFECTIVE);
+    /** @param agreed 이 버전에 동의한 회원이 있는지 — 회원 컨텍스트에서 읽어 넘긴다 */
+    public void requireNotAgreed(boolean agreed) {
+        if (agreed) {
+            throw new BusinessException(ErrorCode.POLICY_ALREADY_AGREED);
         }
     }
 

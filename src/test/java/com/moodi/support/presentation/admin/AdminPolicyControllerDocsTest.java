@@ -60,6 +60,7 @@ class AdminPolicyControllerDocsTest extends AdminRestDocsSupport {
                                 fieldWithPath("data[].locale").type(JsonFieldType.STRING).description("약관 언어 (ko-KR, en-US)"),
                                 fieldWithPath("data[].enabled").type(JsonFieldType.BOOLEAN).description("시행 활성 여부"),
                                 fieldWithPath("data[].visible").type(JsonFieldType.BOOLEAN).description("공개 여부"),
+                                fieldWithPath("data[].agreed").type(JsonFieldType.BOOLEAN).description("동의한 회원 존재 여부 (true면 수정·삭제 불가)"),
                                 fieldWithPath("data[].effectiveAt").type(JsonFieldType.STRING).description("시행일")
                         )
                 ));
@@ -84,6 +85,7 @@ class AdminPolicyControllerDocsTest extends AdminRestDocsSupport {
                                 fieldWithPath("data.locale").type(JsonFieldType.STRING).description("약관 언어 (ko-KR, en-US)"),
                                 fieldWithPath("data.enabled").type(JsonFieldType.BOOLEAN).description("시행 활성 여부"),
                                 fieldWithPath("data.visible").type(JsonFieldType.BOOLEAN).description("공개 여부"),
+                                fieldWithPath("data.agreed").type(JsonFieldType.BOOLEAN).description("동의한 회원 존재 여부 (true면 수정·삭제 불가)"),
                                 fieldWithPath("data.effectiveAt").type(JsonFieldType.STRING).description("시행일")
                         )
                 ));
