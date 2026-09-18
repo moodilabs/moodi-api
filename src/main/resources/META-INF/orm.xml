@@ -85,6 +85,12 @@
             <basic name="suspendReason">
                 <column name="suspend_reason" nullable="true" length="200"/>
             </basic>
+            <basic name="providerClientId">
+                <column name="provider_client_id" nullable="true" length="255"/>
+            </basic>
+            <basic name="providerRefreshToken">
+                <column name="provider_refresh_token" nullable="true" length="2048"/>
+            </basic>
         </attributes>
     </entity>
 

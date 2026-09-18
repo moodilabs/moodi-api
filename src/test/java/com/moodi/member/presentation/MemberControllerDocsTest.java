@@ -226,7 +226,8 @@ class MemberControllerDocsTest extends AuthenticatedRestDocsSupport {
     @DisplayName("회원 탈퇴 성공")
     void withdraw_success() throws Exception {
         WithdrawalRequest request = new WithdrawalRequest(
-                Set.of(WithdrawalReason.HARD_TO_USE, WithdrawalReason.OTHER), "Too many taps to build a route.");
+                Set.of(WithdrawalReason.HARD_TO_USE, WithdrawalReason.OTHER), "Too many taps to build a route.",
+                "provider-authorization-code");
 
         mockMvc.perform(post("/api/v1/members/me/withdrawal")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -237,7 +238,10 @@ class MemberControllerDocsTest extends AuthenticatedRestDocsSupport {
                                 fieldWithPath("reasons").type(JsonFieldType.ARRAY)
                                         .description("탈퇴 사유 1개 이상 — NOT_USED_MUCH, RECOMMENDATION_MISMATCH, HARD_TO_USE, FOUND_ANOTHER_APP, OTHER"),
                                 fieldWithPath("detail").type(JsonFieldType.STRING).optional()
-                                        .description("기타 사유 자유 입력 (≤500자, OTHER가 아니어도 허용)")
+                                        .description("기타 사유 자유 입력 (≤500자, OTHER가 아니어도 허용)"),
+                                fieldWithPath("authorizationCode").type(JsonFieldType.STRING).optional()
+                                        .description("제공자 재인증 인가 코드(선택). 로그인 때 코드를 보내지 않아 서버에 refresh token이 없는 회원의 "
+                                                + "계정 연결 철회용. 로그인 때 보냈다면 생략")
                         )
                 ));
 

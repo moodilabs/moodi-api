@@ -6,6 +6,19 @@ provider가 발급한 `id_token`을 백엔드가 JWKS로 검증한 뒤 자체 JW
 
 최초 로그인 시 회원이 자동 생성되며 `isNewMember=true`로 응답합니다.
 
+[IMPORTANT]
+====
+**`authorizationCode`를 함께 보내세요.** 탈퇴 때 제공자 쪽 계정 연결(Apple ID 설정의 "Apple로 로그인" 목록,
+Google 계정의 "타사 앱 및 서비스")을 끊으려면 서버에 제공자 refresh token이 있어야 하고, 그 토큰은 이 코드로만 받을 수 있습니다.
+Apple은 계정 삭제 시 토큰 철회가 심사 요건(5.1.1(v))입니다.
+
+* Apple: `ASAuthorizationAppleIDCredential.authorizationCode` (UTF-8 문자열). 5분·1회용.
+* Google: `serverAuthCode` — iOS `GIDSignIn`은 `serverClientID` 설정 후 `result.serverAuthCode`, Android는
+  `requestServerAuthCode(webClientId, /* forceCodeForRefreshToken */ true)`. **강제 재동의 옵션이 없으면 refresh token이 내려오지 않습니다.**
+
+교환 실패는 로그인을 막지 않습니다(서버 로그 경고). 그런 회원은 탈퇴 요청에 재인증 코드를 실어 보내면 그 자리에서 철회합니다.
+====
+
 .HTTP Request
 include::{snippets}/auth/login/http-request.adoc[]
 

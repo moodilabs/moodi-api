@@ -42,10 +42,26 @@ oauth:
     issuer: https://accounts.google.com
     audiences: ${GOOGLE_CLIENT_ID:}
     jwks-uri: https://www.googleapis.com/oauth2/v3/certs
+    # 탈퇴 시 계정 연결 철회용. serverAuthCode는 웹(서버) OAuth 클라이언트 앞으로 발급되므로 그 ID·secret을 쓴다.
+    token:
+      enabled: ${GOOGLE_TOKEN_ENABLED:false}
+      client-id: ${GOOGLE_WEB_CLIENT_ID:}
+      client-secret: ${GOOGLE_CLIENT_SECRET:}
+      token-uri: https://oauth2.googleapis.com/token
+      revoke-uri: https://oauth2.googleapis.com/revoke
+      redirect-uri: ${GOOGLE_TOKEN_REDIRECT_URI:}
   apple:
     issuer: https://appleid.apple.com
     audiences: ${APPLE_CLIENT_ID:kr.moodi.app,moodi.test}
     jwks-uri: https://appleid.apple.com/auth/keys
+    # 탈퇴 시 계정 연결 철회용(심사 지침 5.1.1(v)). Apple Developer > Keys > Sign in with Apple 키(.p8).
+    token:
+      enabled: ${APPLE_TOKEN_ENABLED:false}
+      team-id: ${APPLE_TEAM_ID:}
+      key-id: ${APPLE_KEY_ID:}
+      private-key: ${APPLE_PRIVATE_KEY:}
+      token-uri: https://appleid.apple.com/auth/token
+      revoke-uri: https://appleid.apple.com/auth/revoke
 
 spot-import:
   enabled: false

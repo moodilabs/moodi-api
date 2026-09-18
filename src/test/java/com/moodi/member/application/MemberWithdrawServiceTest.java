@@ -26,6 +26,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Optional;
+import com.moodi.member.domain.OAuthProvider;
 import java.util.Set;
 import java.util.UUID;
 
@@ -33,6 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -59,6 +61,9 @@ class MemberWithdrawServiceTest {
     private MemberWithdrawalRepository memberWithdrawalRepository;
 
     @Mock
+    private SocialTokenClient socialTokenClient;
+
+    @Mock
     private ApplicationEventPublisher eventPublisher;
 
     private static final WithdrawalCommand COMMAND =
@@ -71,7 +76,7 @@ class MemberWithdrawServiceTest {
             memberWithdrawService = new MemberWithdrawService(
                     memberRepository, memberPreferredMoodRepository,
                     memberAgreementRepository, refreshTokenRepository, memberWithdrawalRepository,
-                    eventPublisher, FIXED_CLOCK);
+                    socialTokenClient, eventPublisher, FIXED_CLOCK);
         }
         return memberWithdrawService;
     }
@@ -179,5 +184,76 @@ class MemberWithdrawServiceTest {
                 .isEqualTo(ErrorCode.WITHDRAWAL_REASON_REQUIRED);
         assertThat(member.isWithdrawn()).isFalse();
         verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("로그인 때 받아둔 제공자 refresh token이 있으면 탈퇴 시 계정 연결을 철회하고 토큰을 비운다")
+    void withdraw_revokes_stored_provider_token() {
+        Member member = MemberFixture.active();
+        member.rememberProviderCredential("kr.moodi.app", "apple-refresh-token");
+        when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(member));
+        when(socialTokenClient.revoke(OAuthProvider.GOOGLE, "kr.moodi.app", "apple-refresh-token")).thenReturn(true);
+
+        service().withdraw(MEMBER_ID, COMMAND);
+
+        verify(socialTokenClient).revoke(OAuthProvider.GOOGLE, "kr.moodi.app", "apple-refresh-token");
+        verify(socialTokenClient, never()).exchangeRefreshToken(any(), any(), any());
+        assertThat(member.getProviderRefreshToken()).isNull();
+        assertThat(member.isWithdrawn()).isTrue();
+    }
+
+    @Test
+    @DisplayName("탈퇴 요청에 인가 코드가 있으면 그 자리에서 교환한 토큰으로 철회한다 - 로그인 때 코드를 안 보낸 회원")
+    void withdraw_exchanges_code_then_revokes() {
+        Member member = MemberFixture.active();
+        member.rememberProviderCredential("kr.moodi.app", null);
+        when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(member));
+        when(socialTokenClient.exchangeRefreshToken(OAuthProvider.GOOGLE, "kr.moodi.app", "reauth-code"))
+                .thenReturn(Optional.of("fresh-refresh-token"));
+        when(socialTokenClient.revoke(OAuthProvider.GOOGLE, "kr.moodi.app", "fresh-refresh-token")).thenReturn(true);
+
+        service().withdraw(MEMBER_ID, new WithdrawalCommand(COMMAND.reasons(), COMMAND.detail(), "reauth-code"));
+
+        verify(socialTokenClient).revoke(OAuthProvider.GOOGLE, "kr.moodi.app", "fresh-refresh-token");
+        assertThat(member.isWithdrawn()).isTrue();
+    }
+
+    @Test
+    @DisplayName("철회할 토큰이 없으면 제공자를 호출하지 않고 탈퇴만 진행한다")
+    void withdraw_without_provider_token_skips_revocation() {
+        when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(MemberFixture.active()));
+
+        service().withdraw(MEMBER_ID, COMMAND);
+
+        verifyNoInteractions(socialTokenClient);
+        verify(memberWithdrawalRepository).save(any(MemberWithdrawal.class));
+    }
+
+    @Test
+    @DisplayName("제공자 철회가 실패해도 탈퇴는 막지 않는다 - 데이터 삭제 요구가 우선")
+    void withdraw_proceeds_when_revocation_fails() {
+        Member member = MemberFixture.active();
+        member.rememberProviderCredential("kr.moodi.app", "apple-refresh-token");
+        when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(member));
+        when(socialTokenClient.revoke(any(), any(), any())).thenReturn(false);
+
+        service().withdraw(MEMBER_ID, COMMAND);
+
+        assertThat(member.isWithdrawn()).isTrue();
+        verify(eventPublisher).publishEvent(any(MemberWithdrawnEvent.class));
+    }
+
+    @Test
+    @DisplayName("이미 탈퇴한 회원은 제공자 철회를 다시 시도하지 않는다")
+    void withdraw_twice_does_not_revoke_again() {
+        Member member = MemberFixture.active();
+        member.rememberProviderCredential("kr.moodi.app", "apple-refresh-token");
+        when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(member));
+        when(socialTokenClient.revoke(any(), any(), any())).thenReturn(true);
+        service().withdraw(MEMBER_ID, COMMAND);
+
+        assertThatThrownBy(() -> service().withdraw(MEMBER_ID, COMMAND)).isInstanceOf(BusinessException.class);
+
+        verify(socialTokenClient).revoke(any(), any(), any());
     }
 }

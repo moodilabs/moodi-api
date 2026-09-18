@@ -35,6 +35,10 @@ public class Member extends BaseEntity {
     private LocalDateTime deletedAt;
     private LocalDateTime suspendedAt;
     private String suspendReason;
+    /** 마지막 로그인 id_token의 aud. 제공자 토큰 교환·철회는 이 client_id로 서명한 secret을 써야 한다. */
+    private String providerClientId;
+    /** 제공자(Apple) refresh token. 탈퇴 시 계정 연결 철회에 쓴다. 없으면 철회할 수 없다. */
+    private String providerRefreshToken;
 
     private Member(OAuthProvider provider, String providerId, String email) {
         this.provider = provider;
@@ -110,7 +114,21 @@ public class Member extends BaseEntity {
         this.status = MemberStatus.PENDING;
         this.suspendedAt = null;
         this.suspendReason = null;
+        this.providerRefreshToken = null;
         this.deletedAt = now;
+    }
+
+    /**
+     * 로그인 때마다 client_id를 갱신하고, 인가 코드를 교환한 경우에만 refresh token을 덮어쓴다.
+     * 코드 없이 로그인해도 이전에 받아둔 refresh token은 유지돼야 탈퇴 때 철회할 수 있다.
+     */
+    public void rememberProviderCredential(String clientId, String refreshToken) {
+        if (clientId != null && !clientId.isBlank()) {
+            this.providerClientId = clientId;
+        }
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            this.providerRefreshToken = refreshToken;
+        }
     }
 
     /**

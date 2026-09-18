@@ -148,6 +148,14 @@ access token은 만료가 30분이라 탈퇴 직후 잠시 유효할 수 있습�
 
 사유는 1개 이상 필수이며 복수 선택할 수 있습니다. `detail`은 `OTHER`를 고르지 않아도 보낼 수 있습니다.
 
+==== 제공자 계정 연결 철회
+
+탈퇴하면 서버가 로그인 때 받아둔 제공자 refresh token으로 **Apple `auth/revoke` · Google `oauth2/revoke`**를 호출해
+사용자 계정 설정에서 앱 연결을 지웁니다. 로그인 때 `authorizationCode`를 보내지 않았던 회원은 서버에 토큰이 없으므로,
+탈퇴 직전 제공자 재인증으로 받은 코드를 `authorizationCode`에 실어 보내면 그 자리에서 교환해 철회합니다.
+
+철회 실패(제공자 장애·이미 철회된 토큰)는 탈퇴를 막지 않습니다 — 데이터 삭제 요구가 우선이며 서버 로그로 추적합니다.
+
 .HTTP Request
 include::{snippets}/member/withdrawal/http-request.adoc[]
 
