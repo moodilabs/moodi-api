@@ -111,6 +111,29 @@ class RouteShareLandingControllerTest {
     }
 
     @Test
+    @DisplayName("로고 URL 미설정 시 요청 호스트 기준으로 og:image를 채운다")
+    void landing_falls_back_to_request_host_for_logo_when_not_configured() throws Exception {
+        // given
+        RouteShareProperties properties = new RouteShareProperties(APP_SCHEME, null, IOS_STORE_URL, ANDROID_STORE_URL);
+        MockMvc mockMvcWithoutLogo = MockMvcBuilders.standaloneSetup(
+                new RouteShareLandingController(routeShareLandingService, properties)).build();
+
+        UUID publicId = UUID.randomUUID();
+        given(routeShareLandingService.getLandingView(publicId))
+                .willReturn(RouteShareLandingView.of("Dev route"));
+
+        // when
+        String body = mockMvcWithoutLogo.perform(get("/routes/shared/{publicId}", publicId)
+                        .header("X-Forwarded-Proto", "https")
+                        .header("X-Forwarded-Host", "dev-api.moodi.kr"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        // then
+        assertThat(body).contains("og:image\" content=\"https://dev-api.moodi.kr/icon_ios.jpg\"");
+    }
+
+    @Test
     @DisplayName("데스크톱 User-Agent는 앱 딥링크로 리다이렉트하지 않는다")
     void landing_desktop_skips_redirect() throws Exception {
         // given

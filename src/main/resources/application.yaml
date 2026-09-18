@@ -93,8 +93,10 @@ moodi:
       # 앱 미설치 시 이동할 스토어 링크. 미등록 상태면 빈 값 — 랜딩 페이지는 그대로 동작하고
       # 스토어 이동만 생략한다.
       app-scheme: ${ROUTE_SHARE_APP_SCHEME:moodi://route/}
-      # 카카오톡 미리보기 썸네일. static/icon_ios.jpg(앱 아이콘과 동일 이미지)를 기본값으로 재사용한다.
-      logo-url: ${ROUTE_SHARE_LOGO_URL:https://moodi.kr/icon_ios.jpg}
+      # 카카오톡 미리보기 썸네일. 비워두면 컨트롤러가 요청 호스트 기준으로 static/icon_ios.jpg를
+      # 채운다 — moodi.kr 같은 도메인을 여기 고정하면 그 도메인이 다른 프론트로 옮겨갔을 때
+      # og:image가 조용히 깨진다.
+      logo-url: ${ROUTE_SHARE_LOGO_URL:}
       ios-store-url: ${ROUTE_SHARE_IOS_STORE_URL:}
       android-store-url: ${ROUTE_SHARE_ANDROID_STORE_URL:}
 
