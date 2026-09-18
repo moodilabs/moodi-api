@@ -12,23 +12,22 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Clock;
-import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 /**
- * 어드민의 약관 관리. 시행 전 버전만 고치거나 지울 수 있다. 컨트롤러는 관리자 인증(`ADM-F01`)과 함께 붙는다.
+ * 어드민의 약관 관리. 회원이 동의한 적 없는 버전만 고치거나 지울 수 있다. 컨트롤러는 관리자 인증(`ADM-F01`)과 함께 붙는다.
  */
 @Service
 @Transactional
 public class PolicyAdminService {
 
     private final PolicyRepository policyRepository;
-    private final Clock clock;
+    private final PolicyAgreementReader policyAgreementReader;
 
-    public PolicyAdminService(PolicyRepository policyRepository, Clock clock) {
+    public PolicyAdminService(PolicyRepository policyRepository, PolicyAgreementReader policyAgreementReader) {
         this.policyRepository = policyRepository;
-        this.clock = clock;
+        this.policyAgreementReader = policyAgreementReader;
     }
 
     @Transactional(readOnly = true)
@@ -36,12 +35,13 @@ public class PolicyAdminService {
         List<Policy> policies = type == null
                 ? policyRepository.findAllByOrderByTypeAscEffectiveAtDescIdDesc()
                 : policyRepository.findByTypeOrderByEffectiveAtDescIdDesc(type);
-        return policies.stream().map(PolicySummary::from).toList();
+        Set<Long> agreedIds = policyAgreementReader.findAgreedIds(policies.stream().map(Policy::getId).toList());
+        return policies.stream().map(policy -> PolicySummary.from(policy, agreedIds.contains(policy.getId()))).toList();
     }
 
     @Transactional(readOnly = true)
     public PolicyDetail get(Long policyId) {
-        return PolicyDetail.from(findPolicy(policyId));
+        return PolicyDetail.from(findPolicy(policyId), policyAgreementReader.hasAgreement(policyId));
     }
 
     public Long create(PolicyCommand command) {
@@ -56,8 +56,9 @@ public class PolicyAdminService {
         if (!policy.getVersion().equals(command.version()) || !policy.getLocale().equals(command.locale())) {
             validateVersionAvailable(policy.getType(), command.version(), command.locale());
         }
-        policy.configure(command.locale(), command.enabled(), command.visible(), LocalDate.now(clock));
-        policy.update(command.version(), command.content(), command.effectiveAt(), LocalDate.now(clock));
+        boolean agreed = policyAgreementReader.hasAgreement(policyId);
+        policy.configure(command.locale(), command.enabled(), command.visible(), agreed);
+        policy.update(command.version(), command.content(), command.effectiveAt(), agreed);
         saveWithVersionConflictCheck(policy);
     }
 
@@ -69,7 +70,7 @@ public class PolicyAdminService {
 
     public void delete(Long policyId) {
         Policy policy = findPolicy(policyId);
-        policy.requireNotEffective(LocalDate.now(clock));
+        policy.requireNotAgreed(policyAgreementReader.hasAgreement(policyId));
         policyRepository.delete(policy);
     }
 

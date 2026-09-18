@@ -24,11 +24,11 @@ class PolicyTest {
     }
 
     @Test
-    @DisplayName("시행 전 버전은 수정할 수 있다")
-    void update_allowed_before_effective() {
-        Policy policy = PolicyFixture.create(PolicyType.PRIVACY_POLICY, "1.1", TODAY.plusDays(7));
+    @DisplayName("동의한 회원이 없으면 시행 중이어도 수정할 수 있다")
+    void update_allowed_when_nobody_agreed() {
+        Policy policy = PolicyFixture.create(PolicyType.PRIVACY_POLICY, "1.1", TODAY.minusDays(7));
 
-        policy.update("1.2", "new content", TODAY.plusDays(14), TODAY);
+        policy.update("1.2", "new content", TODAY.plusDays(14), false);
 
         assertThat(policy.getVersion()).isEqualTo("1.2");
         assertThat(policy.getContent()).isEqualTo("new content");
@@ -36,14 +36,14 @@ class PolicyTest {
     }
 
     @Test
-    @DisplayName("이미 시행된 버전은 수정할 수 없다")
-    void update_rejected_after_effective() {
+    @DisplayName("회원이 동의한 버전은 수정할 수 없다")
+    void update_rejected_when_agreed() {
         Policy policy = PolicyFixture.create(PolicyType.PRIVACY_POLICY, "1.0", TODAY);
 
-        assertThatThrownBy(() -> policy.update("1.1", "fix typo", TODAY, TODAY))
+        assertThatThrownBy(() -> policy.update("1.1", "fix typo", TODAY, true))
                 .isInstanceOf(BusinessException.class)
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
-                .isEqualTo(ErrorCode.POLICY_ALREADY_EFFECTIVE);
+                .isEqualTo(ErrorCode.POLICY_ALREADY_AGREED);
         assertThat(policy.getVersion()).isEqualTo("1.0");
     }
 

@@ -4,7 +4,7 @@
 
 [IMPORTANT]
 ====
-시행일이 지난 버전은 **수정·삭제할 수 없습니다** (`POLICY_ALREADY_EFFECTIVE` 409).
+회원이 한 명이라도 동의한 버전은 **수정·삭제할 수 없습니다** (`POLICY_ALREADY_AGREED` 409). 시행됐더라도 아직 아무도 동의하지 않았다면 고칠 수 있습니다 — 목록·상세의 `agreed`로 판단합니다.
 회원이 동의한 시점의 문서가 보존돼야 하므로 오탈자 수정도 새 버전으로 등록합니다.
 ====
 
@@ -32,7 +32,7 @@ include::{snippets}/admin/policies/detail/http-response.adoc[]
 
 === 버전 등록
 
-수정은 `PUT /api/admin/policies/{policyId}`에 같은 본문을 보냅니다(시행 전만).
+수정은 `PUT /api/admin/policies/{policyId}`에 같은 본문을 보냅니다(`agreed=false`인 버전만).
 
 .HTTP Request
 include::{snippets}/admin/policies/create/http-request.adoc[]
@@ -58,7 +58,7 @@ include::{snippets}/admin/policies/delete/http-response.adoc[]
 
 | `POLICY_NOT_FOUND` | 404 | 약관 없음
 | `POLICY_VERSION_DUPLICATE` | 409 | 같은 종류에 같은 버전 존재
-| `POLICY_ALREADY_EFFECTIVE` | 409 | 시행된 버전 수정·삭제
+| `POLICY_ALREADY_AGREED` | 409 | 회원이 동의한 버전 수정·삭제
 |===
 
 === 국문·영문 및 공개 상태
@@ -68,7 +68,7 @@ include::{snippets}/admin/policies/delete/http-response.adoc[]
 `type`은 `TERMS_OF_SERVICE`, `PRIVACY_POLICY`, `MARKETING`이며, 기존 문서의 type 변경은 허용하지 않습니다.
 앱에는 요청 언어의 `enabled=true AND visible=true AND effectiveAt <= 오늘` 중 최신 시행본만 표시됩니다.
 공개를 중지하면 해당 버전을 제외한 이전 공개 시행본이 다시 조회될 수 있습니다.
-시행일이 지난 문서는 숨김 또는 시행 중지 상태여도 본문·버전·언어·시행일 변경 및 삭제가 불가능합니다. 새 버전을 등록해야 합니다.
+회원이 동의한 문서는 숨김 또는 시행 중지 상태여도 본문·버전·언어·시행일 변경 및 삭제가 불가능합니다. 새 버전을 등록해야 합니다.
 기존 버전은 관리자 목록·상세에 계속 남습니다. 상태 변경은 아래 API로 언제든 가능합니다.
 
 include::{snippets}/admin/policies/publication/http-request.adoc[]

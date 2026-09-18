@@ -160,13 +160,13 @@ CREATE INDEX idx_member_created ON member (created_at DESC, id DESC);
 
 | Method | Path | 설명 |
 |---|---|---|
-| `GET` | `/api/admin/policies?type=` | 버전 전체(미래 시행분 포함), `effectiveAt DESC` |
+| `GET` | `/api/admin/policies?type=` | 버전 전체(미래 시행분 포함), `effectiveAt DESC`. `agreed`(동의한 회원 존재 여부)로 수정 가능 여부 판단 |
 | `GET` | `/api/admin/policies/{id}` | 전문 |
 | `POST` | `/api/admin/policies` | `{ type, version, content, effectiveAt }` → 201. `(type, version)` 중복 → `POLICY_VERSION_DUPLICATE` 409 |
-| `PUT` | `/api/admin/policies/{id}` | **시행 전(`effectiveAt > today`)만 수정 가능**. 시행된 버전은 `POLICY_ALREADY_EFFECTIVE` 409 → 새 버전으로 등록 |
-| `DELETE` | `/api/admin/policies/{id}` | 시행 전만 |
+| `PUT` | `/api/admin/policies/{id}` | **동의한 회원이 없는 버전(`agreed=false`)만 수정 가능**. 동의가 있으면 `POLICY_ALREADY_AGREED` 409 → 새 버전으로 등록 |
+| `DELETE` | `/api/admin/policies/{id}` | `agreed=false`인 버전만 |
 
-시행된 약관을 고치지 못하게 막는 이유: 회원이 동의한 시점의 문서가 보존돼야 한다(법적 근거). 오탈자 수정도 새 버전.
+동의된 약관을 고치지 못하게 막는 이유: 회원이 동의한 시점의 문서가 보존돼야 한다(법적 근거). 오탈자 수정도 새 버전. 시행됐어도 아직 아무도 동의하지 않은 버전(최초 등록 직후 등)은 고칠 수 있다 — `member_agreement.policy_id` 참조 유무로 판단.
 
 ## 7. 문의 관리 (support)
 
@@ -340,7 +340,7 @@ JWT secret은 회원과 같은 `jwt.secret`을 쓰되 `type` 클레임으로 구
 | `FAQ_CATEGORY_NOT_EMPTY` | 409 |
 | `FAQ_CATEGORY_NOT_FOUND` · `FAQ_NOT_FOUND` | 404 |
 | `POLICY_VERSION_DUPLICATE` | 409 |
-| `POLICY_ALREADY_EFFECTIVE` | 409 |
+| `POLICY_ALREADY_AGREED` | 409 |
 
 ## 14. 문서·테스트
 
@@ -384,7 +384,7 @@ JWT secret은 회원과 같은 `jwt.secret`을 쓰되 `type` 클레임으로 구
 
 약관의 중복 기준은 `(type, version, locale)`로 변경한다. 언어는 `ko-KR`/`en-US`, 마케팅 문서용 `MARKETING` 유형을 지원한다.
 기존 문서는 기존 영문 API 계약에 따라 en-US로 이관하고 공개·시행 활성 상태를 유지한다.
-시행일이 지난 버전은 상태를 끄더라도 본문·버전·언어·시행일 수정 및 삭제가 불가하다.
+회원이 동의한 버전은 상태를 끄더라도 본문·버전·언어·시행일 수정 및 삭제가 불가하다.
 과거 버전을 관리자 API로 보관·조회하며, 동의 기록의 약관 버전은 새 약관 등록으로 바뀌지 않는다.
 기존 동의의 버전을 추정해 채우지 않으며 null로 남긴다. 현재 시행본이 없는 종류의 신규 동의도 기존 가입 호환성을 위해 null로 기록한다.
 프론트는 조회한 문서 ID를 policyIds로 보내 동의 직전 버전 변경을 검출할 수 있다.
