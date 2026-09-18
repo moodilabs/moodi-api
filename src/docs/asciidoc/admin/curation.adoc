@@ -52,7 +52,15 @@ include::{snippets}/admin/recommended-routes/visibility/http-response.adoc[]
 
 === 추천 지역
 
-level(REGION/DISTRICT/NEIGHBORHOOD), region, district, neighborhood는 기존 `/api/v1/picks/areas`의 자동완성 결과를 그대로 사용합니다. label은 표시 이름(200자), sortOrder는 0 이상입니다. 자동완성 원장에 없는 지역은 등록할 수 없습니다. 인기 검색 통계와 별도로 운영자가 선정한 추천 지역입니다.
+level(REGION/DISTRICT/NEIGHBORHOOD), region, district, neighborhood는 아래 자동완성 결과를 그대로 사용합니다. label은 표시 이름(200자), sortOrder는 0 이상입니다. 자동완성 원장에 없는 지역은 등록할 수 없습니다. 인기 검색 통계와 별도로 운영자가 선정한 추천 지역입니다.
+
+==== 지역 자동완성
+
+앱의 `/api/v1/picks/areas`와 같은 후보(스팟이 실제로 있는 지역만)를 관리자 토큰으로 조회합니다. 키워드가 2자 미만이면 빈 목록입니다.
+
+include::{snippets}/admin/recommended-areas/suggest/http-request.adoc[]
+
+include::{snippets}/admin/recommended-areas/suggest/http-response.adoc[]
 
 ==== 등록
 
