@@ -1,6 +1,8 @@
 package com.moodi.route.presentation;
 
 import com.moodi.route.application.RouteQueryService;
+import com.moodi.route.application.RouteShareLinkBuilder;
+import com.moodi.route.application.RouteShareProperties;
 import com.moodi.route.application.SharedRouteDetail;
 import com.moodi.route.application.RouteDetail;
 import com.moodi.route.domain.Route;
@@ -35,7 +37,9 @@ class SharedRouteControllerDocsTest extends RestDocsSupport {
 
     @Override
     protected Object initController() {
-        return new SharedRouteController(routeQueryService);
+        RouteShareLinkBuilder shareLinkBuilder = new RouteShareLinkBuilder(
+                new RouteShareProperties(null, "https://dev-api.moodi.kr", null, null, null));
+        return new SharedRouteController(routeQueryService, shareLinkBuilder);
     }
 
     @Override
@@ -57,6 +61,7 @@ class SharedRouteControllerDocsTest extends RestDocsSupport {
                 )
         );
         route.share();
+        route.assignShortCode("Ab12Cd34");
 
         given(routeQueryService.getSharedDetail(any(UUID.class), any()))
                 .willReturn(SharedRouteDetail.from(route, true));
@@ -72,6 +77,8 @@ class SharedRouteControllerDocsTest extends RestDocsSupport {
                                 fieldWithPath("data.endDate").description("여행 종료일"),
                                 fieldWithPath("data.totalDays").description("총 여행 일수"),
                                 fieldWithPath("data.isOwner").description("요청자가 소유자인지 여부"),
+                                fieldWithPath("data.shortCode").description("단축 링크 코드. 단축 코드 도입 전에 공유된 루트는 null"),
+                                fieldWithPath("data.shareUrl").description("외부 공유용 링크. 단축 코드가 있으면 /s/{shortCode}, 없으면 /routes/shared/{publicId}"),
                                 fieldWithPath("data.days[].dayNumber").description("일차 번호"),
                                 fieldWithPath("data.days[].date").description("해당 일자"),
                                 fieldWithPath("data.days[].spots[].spotId").description("스팟 ID"),

@@ -47,6 +47,30 @@ class RouteTest {
     }
 
     @Test
+    @DisplayName("단축 코드는 한 번 붙으면 바뀌지 않는다")
+    void assign_short_code_once() {
+        Route route = RouteFixture.createRoute(1);
+        assertThat(route.hasShortCode()).isFalse();
+
+        route.assignShortCode("Ab12Cd34");
+        route.assignShortCode("Zz99Yy88");
+
+        assertThat(route.getShortCode()).isEqualTo("Ab12Cd34");
+        assertThat(route.hasShortCode()).isTrue();
+    }
+
+    @Test
+    @DisplayName("형식에 맞지 않는 단축 코드는 거부한다")
+    void assign_short_code_rejects_malformed() {
+        Route route = RouteFixture.createRoute(1);
+
+        assertThatThrownBy(() -> route.assignShortCode("bad code"))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.ROUTE_INVALID_SHORT_CODE);
+    }
+
+    @Test
     @DisplayName("6일 이상 여행 기간이면 실패")
     void create_route_exceeding_max_days() {
         LocalDate endDate = START.plusDays(5);

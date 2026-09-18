@@ -30,6 +30,7 @@ public class Route extends BaseEntity {
     private LocalDate endDate;
     private List<RouteDay> days = new ArrayList<>();
     private boolean shared;
+    private String shortCode;
     private LocalDateTime deletedAt;
 
     private Route(UUID memberId, String title, LocalDate startDate, LocalDate endDate,
@@ -85,6 +86,24 @@ public class Route extends BaseEntity {
 
     public boolean isShared() {
         return shared;
+    }
+
+    /**
+     * 단축 링크 코드는 한 번 붙으면 바꾸지 않는다 — 이미 카카오톡 등으로 퍼진 링크가 끊기면 안 된다.
+     * 이미 코드가 있는 루트에 다시 호출하면 조용히 무시한다.
+     */
+    public void assignShortCode(String shortCode) {
+        if (this.shortCode != null) {
+            return;
+        }
+        if (!RouteShortCode.isValid(shortCode)) {
+            throw new BusinessException(ErrorCode.ROUTE_INVALID_SHORT_CODE);
+        }
+        this.shortCode = shortCode;
+    }
+
+    public boolean hasShortCode() {
+        return shortCode != null;
     }
 
     public RouteDay getLastDay() {

@@ -2,7 +2,32 @@
 
 루트를 외부에 공유합니다. 공유 활성화된 루트는 링크를 통해 비소유자도 열람할 수 있습니다.
 
+공유 링크는 세 가지입니다.
+
+[cols="1,3,3"]
+|===
+| 종류 | 형식 | 용도
+
+| 단축 링크
+| `{origin}/s/{shortCode}`
+| 카카오톡 카드·OS 공유 문구 등 밖으로 내보내는 주소. 공유 활성화 응답의 `shareUrl`
+
+| 긴 링크
+| `{origin}/routes/shared/{publicId}`
+| 단축 코드 도입 전에 퍼진 링크. 계속 동작합니다
+
+| 앱 딥링크
+| `moodi://route/shared/{publicId}`
+| 랜딩 페이지의 "Open in MOODI" 버튼, 카카오톡 카드의 실행 파라미터(`publicId`)로 앱이 여는 주소
+|===
+
+`{origin}` 은 API 를 호출한 호스트(`https://dev-api.moodi.kr`, `https://moodi.kr`)를 따릅니다.
+운영 설정 `ROUTE_SHARE_BASE_URL` 로 고정할 수 있습니다.
+
 === 공유 활성화
+
+공유를 켜고 단축 링크를 발급합니다. 이미 공유 중인 루트에 다시 호출해도 안전하며(멱등), 단축 코드는 처음 발급된 값이 유지됩니다.
+단축 코드 도입 전에 공유된 루트는 이 API 를 다시 호출할 때 코드를 받습니다.
 
 .HTTP Request
 include::{snippets}/route-share/http-request.adoc[]
@@ -10,9 +35,12 @@ include::{snippets}/route-share/http-request.adoc[]
 .HTTP Response
 include::{snippets}/route-share/http-response.adoc[]
 
+.Response Fields
+include::{snippets}/route-share/response-fields.adoc[]
+
 === 공유 루트 상세 조회
 
-공유된 루트를 조회합니다. 로그인 여부에 관계없이 접근 가능하며, 응답에 소유자 여부(`isOwner`)가 포함됩니다.
+공유된 루트를 조회합니다. 로그인 여부에 관계없이 접근 가능하며, 응답에 소유자 여부(`isOwner`)와 공유 링크(`shortCode`, `shareUrl`)가 포함됩니다.
 
 .HTTP Request
 include::{snippets}/route-shared-detail/http-request.adoc[]
@@ -22,3 +50,30 @@ include::{snippets}/route-shared-detail/http-response.adoc[]
 
 .Response Fields
 include::{snippets}/route-shared-detail/response-fields.adoc[]
+
+=== 공유 랜딩 페이지 (단축 링크)
+
+`GET /s/{shortCode}` — 카카오톡 등 메신저가 미리보기 카드를 만들 때 읽는 HTML 페이지입니다.
+`og:title`(루트 제목)·`og:description`(기간 · 일수 · 스팟 수 · 지역)·`og:image`(첫 스팟 이미지, 없으면 로고)·`og:url` 을 담고,
+본문에는 일차별 스팟 목록과 "Open in MOODI" 딥링크 버튼, 스토어 버튼(`ROUTE_SHARE_IOS_STORE_URL` / `ROUTE_SHARE_ANDROID_STORE_URL` 설정 시)을 그립니다.
+
+존재하지 않거나 삭제된 루트도 항상 `200 text/html` 로 응답합니다(기본 제목 `Moodi`, 캐시 없음). 정상 응답은 `Cache-Control: max-age=300, public` 입니다.
+
+.HTTP Request
+include::{snippets}/route-share-short-link/http-request.adoc[]
+
+.Path Parameters
+include::{snippets}/route-share-short-link/path-parameters.adoc[]
+
+.HTTP Response
+include::{snippets}/route-share-short-link/http-response.adoc[]
+
+=== 공유 랜딩 페이지 (publicId)
+
+`GET /routes/shared/{publicId}` — 단축 링크와 같은 페이지를 그립니다. 예전에 퍼진 긴 링크용입니다.
+
+.HTTP Request
+include::{snippets}/route-share-landing/http-request.adoc[]
+
+.Path Parameters
+include::{snippets}/route-share-landing/path-parameters.adoc[]

@@ -52,6 +52,8 @@ public enum ErrorCode {
     ROUTE_FORBIDDEN(HttpStatus.FORBIDDEN, "ROUTE_FORBIDDEN", "해당 루트에 대한 권한이 없습니다."),
     ROUTE_INVALID_TITLE(HttpStatus.UNPROCESSABLE_ENTITY, "ROUTE_INVALID_TITLE", "제목은 1~40자여야 합니다."),
     ROUTE_GENERATION_FAILED(HttpStatus.UNPROCESSABLE_ENTITY, "ROUTE_GENERATION_FAILED", "루트 생성에 실패했습니다. 스팟 수를 줄이거나 기간을 늘려 주세요."),
+    ROUTE_INVALID_SHORT_CODE(HttpStatus.INTERNAL_SERVER_ERROR, "ROUTE_INVALID_SHORT_CODE", "공유 링크 코드 형식이 올바르지 않습니다."),
+    ROUTE_SHORT_CODE_EXHAUSTED(HttpStatus.INTERNAL_SERVER_ERROR, "ROUTE_SHORT_CODE_EXHAUSTED", "공유 링크 코드를 생성하지 못했습니다. 잠시 후 다시 시도해 주세요."),
     PICK_UNSUPPORTED_IMAGE_TYPE(HttpStatus.BAD_REQUEST, "PICK_UNSUPPORTED_IMAGE_TYPE", "지원하지 않는 파일 형식이에요. JPG, PNG, HEIC만 올릴 수 있어요."),
     PICK_IMAGE_TOO_LARGE(HttpStatus.BAD_REQUEST, "PICK_IMAGE_TOO_LARGE", "사진 용량이 너무 커요. 10MB 이하로 올려주세요."),
     PICK_INVALID_AREA_SELECTION(HttpStatus.BAD_REQUEST, "PICK_INVALID_AREA_SELECTION", "지역은 1개 이상 5개 이하로 선택해주세요."),

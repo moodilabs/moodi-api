@@ -106,9 +106,13 @@ moodi:
     impression-window-days: ${FEED_IMPRESSION_WINDOW_DAYS:30}
   route:
     share:
+      # 앱 딥링크 접두사. 앱은 route/shared/{publicId} 형태만 공유 루트로 인식한다.
+      app-scheme: ${ROUTE_SHARE_APP_SCHEME:moodi://route/shared/}
+      # 공유 링크(/s/{code}, /routes/shared/{id})의 공개 origin. 비우면 요청이 들어온 호스트를 쓴다 —
+      # dev-api.moodi.kr 로 호출하면 dev 링크가, moodi.kr 로 호출하면 운영 링크가 나온다.
+      base-url: ${ROUTE_SHARE_BASE_URL:}
       # 앱 미설치 시 이동할 스토어 링크. 미등록 상태면 빈 값 — 랜딩 페이지는 그대로 동작하고
-      # 스토어 이동만 생략한다.
-      app-scheme: ${ROUTE_SHARE_APP_SCHEME:moodi://route/}
+      # 스토어 버튼만 숨긴다.
       # 카카오톡 미리보기 썸네일. 비워두면 컨트롤러가 요청 호스트 기준으로 static/icon_ios.jpg를
       # 채운다 — moodi.kr 같은 도메인을 여기 고정하면 그 도메인이 다른 프론트로 옮겨갔을 때
       # og:image가 조용히 깨진다.

@@ -18,6 +18,10 @@ public interface RouteRepository {
 
     Optional<Route> findSharedByPublicIdWithDays(UUID publicId);
 
+    Optional<Route> findSharedByShortCodeWithDays(String shortCode);
+
+    boolean existsByShortCode(String shortCode);
+
     void delete(Route route);
 
     /**
