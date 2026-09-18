@@ -72,7 +72,7 @@ class PolicyControllerDocsTest extends RestDocsSupport {
                                 fieldWithPath("data").type(JsonFieldType.OBJECT).description("현재 적용 중인 약관"),
                                 fieldWithPath("data.type").type(JsonFieldType.STRING).description("종류"),
                                 fieldWithPath("data.version").type(JsonFieldType.STRING).description("버전"),
-                                fieldWithPath("data.content").type(JsonFieldType.STRING).description("전문 (plain text, 줄바꿈 \\n 포함)"),
+                                fieldWithPath("data.content").type(JsonFieldType.STRING).description("전문 HTML — 어드민 에디터 서식(p/br/strong/em/u/s/h1~h3/ul/ol/li/span color/a)만 포함. 예전 등록분은 태그 없는 평문일 수 있음"),
                                 fieldWithPath("data.locale").type(JsonFieldType.STRING).description("약관 언어 (ko-KR, en-US)"),
                                 fieldWithPath("data.id").type(JsonFieldType.NUMBER).description("동의 요청에 전달할 약관 ID"),
                                 fieldWithPath("data.effectiveAt").type(JsonFieldType.STRING).description("시행일 (yyyy-MM-dd)")

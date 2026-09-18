@@ -162,7 +162,7 @@ CREATE INDEX idx_member_created ON member (created_at DESC, id DESC);
 |---|---|---|
 | `GET` | `/api/admin/policies?type=` | 버전 전체(미래 시행분 포함), `effectiveAt DESC`. `agreed`(동의한 회원 존재 여부)로 수정 가능 여부 판단 |
 | `GET` | `/api/admin/policies/{id}` | 전문 |
-| `POST` | `/api/admin/policies` | `{ type, version, content, effectiveAt }` → 201. `(type, version)` 중복 → `POLICY_VERSION_DUPLICATE` 409 |
+| `POST` | `/api/admin/policies` | `{ type, version, content, effectiveAt }` → 201. `(type, version)` 중복 → `POLICY_VERSION_DUPLICATE` 409. `content`는 에디터 HTML — 서버가 jsoup 화이트리스트(p/br/strong/em/u/s/h1~h3/ul/ol/li/span color/a)로 정제 |
 | `PUT` | `/api/admin/policies/{id}` | **동의한 회원이 없는 버전(`agreed=false`)만 수정 가능**. 동의가 있으면 `POLICY_ALREADY_AGREED` 409 → 새 버전으로 등록 |
 | `DELETE` | `/api/admin/policies/{id}` | `agreed=false`인 버전만 |
 

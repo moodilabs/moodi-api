@@ -41,6 +41,7 @@ dependencies {
 	// 관리자 비밀번호 BCrypt. Security 필터체인은 쓰지 않고 crypto 모듈만 가져온다.
 	implementation("org.springframework.security:spring-security-crypto")
 	implementation("org.apache.commons:commons-csv:1.12.0")
+	implementation("org.jsoup:jsoup:1.18.3")
 	implementation("com.google.cloud:google-cloud-storage:2.49.0")
 
 	developmentOnly("org.springframework.boot:spring-boot-docker-compose")
