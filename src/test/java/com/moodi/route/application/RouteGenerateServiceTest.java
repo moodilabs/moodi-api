@@ -223,21 +223,27 @@ class RouteGenerateServiceTest {
     }
 
     @Test
-    @DisplayName("areas가 없으면 추천하지 않음")
-    void generate_route_no_recommendation_without_areas() {
+    @DisplayName("areas가 없으면 스팟의 지역 정보로 추천 지역을 자동 생성한다")
+    void generate_route_derives_areas_from_spots_when_areas_empty() {
         // given
         RouteGenerateCommand command = new RouteGenerateCommand(
                 List.of(1L), List.of(), FUTURE_START, FUTURE_END);
 
+        SpotSnapshot baseSpot = createSnapshot(1L, 37.55, 127.05);
         given(spotSnapshotReader.readBySpotIds(command.spotIds()))
-                .willReturn(List.of(createSnapshot(1L, 37.55, 127.05)));
+                .willReturn(List.of(baseSpot));
+        given(spotRecommendationReader.recommend(anyList(), anyList(), anyInt()))
+                .willReturn(List.of());
         given(titleGenerator.generate(any(), any(), anyInt())).willReturn("제목");
 
         // when
         routeGenerateService.generate(command);
 
-        // then
-        verify(spotRecommendationReader, never()).recommend(anyList(), anyList(), anyInt());
+        // then — 스팟의 지역(서울, 성동구)으로 추천을 호출한다
+        verify(spotRecommendationReader).recommend(
+                eq(List.of(1L)),
+                eq(List.of(new AreaCondition("서울", "성동구"))),
+                anyInt());
     }
 
     private SpotSnapshot createSnapshot(Long spotId, double lat, double lng) {

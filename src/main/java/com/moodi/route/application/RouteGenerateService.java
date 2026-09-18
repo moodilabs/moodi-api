@@ -46,9 +46,12 @@ public class RouteGenerateService {
         int neededCount = maxSpots - baseSnapshots.size();
 
         List<SpotSnapshot> recommended = List.of();
-        if (neededCount > 0 && command.areas() != null && !command.areas().isEmpty()) {
+        if (neededCount > 0) {
+            List<AreaCondition> areas = command.areas() != null && !command.areas().isEmpty()
+                    ? command.areas()
+                    : deriveAreasFromSpots(baseSnapshots);
             recommended = spotRecommendationReader.recommend(
-                    command.spotIds(), command.areas(), neededCount)
+                    command.spotIds(), areas, neededCount)
                     .stream().map(SpotSnapshot::asOptional).toList();
         }
 
@@ -222,6 +225,18 @@ public class RouteGenerateService {
         }
 
         return new RouteGenerateResult(title, startDate, endDate, dayResults);
+    }
+
+    /**
+     * areas가 없을 때 사용자가 고른 스팟의 지역 정보로 AreaCondition을 만든다.
+     * 같은 시/도·구/군 조합은 중복 제거한다.
+     */
+    private List<AreaCondition> deriveAreasFromSpots(List<SpotSnapshot> spots) {
+        return spots.stream()
+                .filter(s -> s.area() != null && !s.area().isBlank())
+                .map(s -> new AreaCondition(s.area(), s.district()))
+                .distinct()
+                .toList();
     }
 
     private int calculateTotalDays(LocalDate startDate, LocalDate endDate) {
