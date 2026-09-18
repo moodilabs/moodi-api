@@ -22,7 +22,7 @@ include::{snippets}/support/policy-list/response-fields.adoc[]
 
 === 약관 상세 조회
 
-현재 적용 중인 전문입니다. 글자 크기 토글은 클라이언트 상태입니다.
+현재 적용 중인 전문입니다. `content`는 어드민 에디터가 만든 **HTML**이므로 앱은 HTML 렌더러로 표시합니다(허용 태그: p/br/strong/em/u/s/h1~h3/ul/ol/li/span[color]/a). 글자 크기 토글은 클라이언트 상태입니다.
 
 .HTTP Request
 include::{snippets}/support/policy-detail/http-request.adoc[]

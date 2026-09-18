@@ -81,7 +81,7 @@ class AdminPolicyControllerDocsTest extends AdminRestDocsSupport {
                                 fieldWithPath("data.id").type(JsonFieldType.NUMBER).description("약관 ID"),
                                 fieldWithPath("data.type").type(JsonFieldType.STRING).description("종류"),
                                 fieldWithPath("data.version").type(JsonFieldType.STRING).description("버전"),
-                                fieldWithPath("data.content").type(JsonFieldType.STRING).description("전문"),
+                                fieldWithPath("data.content").type(JsonFieldType.STRING).description("전문 HTML"),
                                 fieldWithPath("data.locale").type(JsonFieldType.STRING).description("약관 언어 (ko-KR, en-US)"),
                                 fieldWithPath("data.enabled").type(JsonFieldType.BOOLEAN).description("시행 활성 여부"),
                                 fieldWithPath("data.visible").type(JsonFieldType.BOOLEAN).description("공개 여부"),
@@ -105,7 +105,7 @@ class AdminPolicyControllerDocsTest extends AdminRestDocsSupport {
                         requestFields(
                                 fieldWithPath("type").type(JsonFieldType.STRING).description("종류 (TERMS_OF_SERVICE, PRIVACY_POLICY)"),
                                 fieldWithPath("version").type(JsonFieldType.STRING).description("버전 (종류 내 중복 불가, ≤20자)"),
-                                fieldWithPath("content").type(JsonFieldType.STRING).description("전문"),
+                                fieldWithPath("content").type(JsonFieldType.STRING).description("전문 HTML — 허용 태그 외(script·이벤트·img·color 외 style)는 서버가 제거"),
                                 fieldWithPath("locale").type(JsonFieldType.STRING).description("약관 언어 (ko-KR, en-US)"),
                                 fieldWithPath("enabled").type(JsonFieldType.BOOLEAN).description("시행 활성 여부"),
                                 fieldWithPath("visible").type(JsonFieldType.BOOLEAN).description("공개 여부"),

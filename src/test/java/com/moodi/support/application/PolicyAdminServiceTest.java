@@ -21,7 +21,9 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,11 +39,15 @@ class PolicyAdminServiceTest {
     @Mock
     private PolicyAgreementReader policyAgreementReader;
 
+    @Mock
+    private HtmlSanitizer htmlSanitizer;
+
     private PolicyAdminService policyAdminService;
 
     @BeforeEach
     void setUp() {
-        policyAdminService = new PolicyAdminService(policyRepository, policyAgreementReader);
+        lenient().when(htmlSanitizer.sanitize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+        policyAdminService = new PolicyAdminService(policyRepository, policyAgreementReader, htmlSanitizer);
     }
 
     @Test

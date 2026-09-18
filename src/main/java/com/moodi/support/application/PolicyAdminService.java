@@ -24,10 +24,13 @@ public class PolicyAdminService {
 
     private final PolicyRepository policyRepository;
     private final PolicyAgreementReader policyAgreementReader;
+    private final HtmlSanitizer htmlSanitizer;
 
-    public PolicyAdminService(PolicyRepository policyRepository, PolicyAgreementReader policyAgreementReader) {
+    public PolicyAdminService(PolicyRepository policyRepository, PolicyAgreementReader policyAgreementReader,
+                              HtmlSanitizer htmlSanitizer) {
         this.policyRepository = policyRepository;
         this.policyAgreementReader = policyAgreementReader;
+        this.htmlSanitizer = htmlSanitizer;
     }
 
     @Transactional(readOnly = true)
@@ -46,7 +49,8 @@ public class PolicyAdminService {
 
     public Long create(PolicyCommand command) {
         validateVersionAvailable(command.type(), command.version(), command.locale());
-        Policy policy = Policy.create(command.type(), command.version(), command.content(), command.effectiveAt(), command.locale(), command.enabled(), command.visible());
+        Policy policy = Policy.create(command.type(), command.version(), htmlSanitizer.sanitize(command.content()),
+                command.effectiveAt(), command.locale(), command.enabled(), command.visible());
         return saveWithVersionConflictCheck(policy).getId();
     }
 
@@ -58,7 +62,7 @@ public class PolicyAdminService {
         }
         boolean agreed = policyAgreementReader.hasAgreement(policyId);
         policy.configure(command.locale(), command.enabled(), command.visible(), agreed);
-        policy.update(command.version(), command.content(), command.effectiveAt(), agreed);
+        policy.update(command.version(), htmlSanitizer.sanitize(command.content()), command.effectiveAt(), agreed);
         saveWithVersionConflictCheck(policy);
     }
 
