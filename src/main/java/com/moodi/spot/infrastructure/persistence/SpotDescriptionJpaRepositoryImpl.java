@@ -36,7 +36,7 @@ public class SpotDescriptionJpaRepositoryImpl {
         return entityManager.createNativeQuery(
                         "SELECT s.id FROM spot s " +
                                 "WHERE s.status = 'PUBLISHED' " +
-                                "AND s.route_excluded = false " +
+                                "AND (s.route_excluded = false OR (s.content_type = 'SHOPPING' AND s.lcls_systm2 = 'SH06')) " +
                                 "AND s.id NOT IN (" +
                                 "  SELECT sd.spot_id FROM spot_description sd WHERE sd.locale = :locale" +
                                 ")")
