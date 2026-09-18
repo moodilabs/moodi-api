@@ -44,6 +44,12 @@ public interface RouteJpaRepository extends RouteRepository, Repository<Route, L
     @Query("SELECT COUNT(r) > 0 FROM Route r WHERE r.shortCode = :shortCode")
     boolean existsByShortCode(@Param("shortCode") String shortCode);
 
+    /** flushAutomatically: 같은 트랜잭션에서 바꾼 is_shared 를 먼저 내보낸다. clearAutomatically: 갱신 뒤 재조회가 DB 값을 읽게 한다. */
+    @Override
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("UPDATE Route r SET r.shortCode = :shortCode WHERE r.id = :id AND r.shortCode IS NULL")
+    int assignShortCodeIfAbsent(@Param("id") Long id, @Param("shortCode") String shortCode);
+
     @Override
     void delete(Route route);
 

@@ -22,6 +22,14 @@ public interface RouteRepository {
 
     boolean existsByShortCode(String shortCode);
 
+    /**
+     * 아직 코드가 없는 루트에만 단축 코드를 붙인다(조건부 갱신). 같은 루트를 동시에 공유하는 두 요청이
+     * 각자 다른 코드를 만들어 마지막 flush 가 먼저 저장된 코드를 덮어쓰지 않도록, 승자를 DB 에서 정한다.
+     *
+     * @return 갱신된 행 수 — 0 이면 다른 요청이 먼저 코드를 붙인 것
+     */
+    int assignShortCodeIfAbsent(Long id, String shortCode);
+
     void delete(Route route);
 
     /**

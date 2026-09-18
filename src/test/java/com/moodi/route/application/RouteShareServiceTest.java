@@ -20,7 +20,9 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -46,13 +48,14 @@ class RouteShareServiceTest {
     }
 
     @Test
-    @DisplayName("루트 공유 활성화 시 단축 코드가 함께 발급된다")
+    @DisplayName("루트 공유 활성화 시 단축 코드가 조건부 갱신으로 발급된다")
     void share_route_success() {
         // given
         UUID publicId = UUID.randomUUID();
         Route route = route();
         given(routeRepository.findByPublicId(publicId)).willReturn(Optional.of(route));
         given(routeRepository.existsByShortCode(anyString())).willReturn(false);
+        given(routeRepository.assignShortCodeIfAbsent(any(), anyString())).willReturn(1);
 
         // when
         Route result = routeShareService.share(publicId, MEMBER_ID);
@@ -62,6 +65,30 @@ class RouteShareServiceTest {
         assertThat(route.isShared()).isTrue();
         assertThat(route.getShortCode()).hasSize(RouteShortCode.LENGTH);
         assertThat(RouteShortCode.isValid(route.getShortCode())).isTrue();
+        verify(routeRepository).assignShortCodeIfAbsent(any(), eq(route.getShortCode()));
+    }
+
+    @Test
+    @DisplayName("동시에 다른 요청이 먼저 코드를 붙였으면 내 코드를 버리고 DB 의 코드를 응답한다")
+    void share_route_loses_race_and_reads_stored_code() {
+        // given
+        UUID publicId = UUID.randomUUID();
+        Route stale = route();
+        Route stored = route();
+        stored.share();
+        stored.assignShortCode("Ab12Cd34");
+        given(routeRepository.findByPublicId(publicId))
+                .willReturn(Optional.of(stale), Optional.of(stored));
+        given(routeRepository.existsByShortCode(anyString())).willReturn(false);
+        given(routeRepository.assignShortCodeIfAbsent(any(), anyString())).willReturn(0);
+
+        // when
+        Route result = routeShareService.share(publicId, MEMBER_ID);
+
+        // then
+        assertThat(result).isSameAs(stored);
+        assertThat(result.getShortCode()).isEqualTo("Ab12Cd34");
+        assertThat(stale.hasShortCode()).isFalse();
     }
 
     @Test
@@ -90,6 +117,7 @@ class RouteShareServiceTest {
         Route route = route();
         given(routeRepository.findByPublicId(publicId)).willReturn(Optional.of(route));
         given(routeRepository.existsByShortCode(anyString())).willReturn(true, false);
+        given(routeRepository.assignShortCodeIfAbsent(any(), anyString())).willReturn(1);
 
         // when
         routeShareService.share(publicId, MEMBER_ID);
