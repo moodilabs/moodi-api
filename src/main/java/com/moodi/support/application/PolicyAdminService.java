@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 어드민의 약관 관리. 회원이 동의한 적 없는 버전만 고치거나 지울 수 있다. 컨트롤러는 관리자 인증(`ADM-F01`)과 함께 붙는다.
+ * 어드민의 약관 관리. 시행·동의 여부와 무관하게 모든 버전을 고치거나 지울 수 있다. 컨트롤러는 관리자 인증(`ADM-F01`)과 함께 붙는다.
  */
 @Service
 @Transactional
@@ -60,9 +60,8 @@ public class PolicyAdminService {
         if (!policy.getVersion().equals(command.version()) || !policy.getLocale().equals(command.locale())) {
             validateVersionAvailable(policy.getType(), command.version(), command.locale());
         }
-        boolean agreed = policyAgreementReader.hasAgreement(policyId);
-        policy.configure(command.locale(), command.enabled(), command.visible(), agreed);
-        policy.update(command.version(), htmlSanitizer.sanitize(command.content()), command.effectiveAt(), agreed);
+        policy.configure(command.locale(), command.enabled(), command.visible());
+        policy.update(command.version(), htmlSanitizer.sanitize(command.content()), command.effectiveAt());
         saveWithVersionConflictCheck(policy);
     }
 
@@ -73,9 +72,7 @@ public class PolicyAdminService {
     }
 
     public void delete(Long policyId) {
-        Policy policy = findPolicy(policyId);
-        policy.requireNotAgreed(policyAgreementReader.hasAgreement(policyId));
-        policyRepository.delete(policy);
+        policyRepository.delete(findPolicy(policyId));
     }
 
     private Policy findPolicy(Long policyId) {

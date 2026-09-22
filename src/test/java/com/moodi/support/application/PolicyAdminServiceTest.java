@@ -93,11 +93,10 @@ class PolicyAdminServiceTest {
     }
 
     @Test
-    @DisplayName("동의한 회원이 없으면 시행 중인 버전도 수정된다")
-    void update_unagreed_policy_succeeds() {
+    @DisplayName("회원이 동의한 시행 중인 버전도 수정된다")
+    void update_agreed_effective_policy_succeeds() {
         Policy policy = PolicyFixture.createWithId(1L, PolicyType.PRIVACY_POLICY, "1.1", TODAY.minusDays(7));
         when(policyRepository.findById(1L)).thenReturn(Optional.of(policy));
-        when(policyAgreementReader.hasAgreement(1L)).thenReturn(false);
         when(policyRepository.save(policy)).thenReturn(policy);
 
         policyAdminService.update(1L, new PolicyCommand(PolicyType.PRIVACY_POLICY, "1.1", "revised",
@@ -108,40 +107,10 @@ class PolicyAdminServiceTest {
     }
 
     @Test
-    @DisplayName("회원이 동의한 버전은 수정할 수 없다")
-    void update_agreed_policy_throws() {
-        Policy policy = PolicyFixture.createWithId(1L, PolicyType.PRIVACY_POLICY, "1.0", TODAY);
-        when(policyRepository.findById(1L)).thenReturn(Optional.of(policy));
-        when(policyAgreementReader.hasAgreement(1L)).thenReturn(true);
-
-        assertThatThrownBy(() -> policyAdminService.update(1L, new PolicyCommand(PolicyType.PRIVACY_POLICY, "1.0",
-                "fix typo", TODAY)))
-                .isInstanceOf(BusinessException.class)
-                .extracting(exception -> ((BusinessException) exception).getErrorCode())
-                .isEqualTo(ErrorCode.POLICY_ALREADY_AGREED);
-        verify(policyRepository, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("회원이 동의한 버전은 삭제할 수 없다")
-    void delete_agreed_policy_throws() {
-        when(policyRepository.findById(1L))
-                .thenReturn(Optional.of(PolicyFixture.createWithId(1L, PolicyType.PRIVACY_POLICY, "1.0", TODAY)));
-        when(policyAgreementReader.hasAgreement(1L)).thenReturn(true);
-
-        assertThatThrownBy(() -> policyAdminService.delete(1L))
-                .isInstanceOf(BusinessException.class)
-                .extracting(exception -> ((BusinessException) exception).getErrorCode())
-                .isEqualTo(ErrorCode.POLICY_ALREADY_AGREED);
-        verify(policyRepository, never()).delete(any());
-    }
-
-    @Test
-    @DisplayName("동의한 회원이 없으면 시행 중인 버전도 삭제된다")
-    void delete_unagreed_policy_succeeds() {
+    @DisplayName("회원이 동의한 시행 중인 버전도 삭제된다")
+    void delete_agreed_effective_policy_succeeds() {
         Policy policy = PolicyFixture.createWithId(1L, PolicyType.PRIVACY_POLICY, "1.0", TODAY.minusDays(1));
         when(policyRepository.findById(1L)).thenReturn(Optional.of(policy));
-        when(policyAgreementReader.hasAgreement(1L)).thenReturn(false);
 
         policyAdminService.delete(1L);
 

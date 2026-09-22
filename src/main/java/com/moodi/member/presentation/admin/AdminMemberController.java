@@ -10,7 +10,6 @@ import com.moodi.member.presentation.dto.admin.AdminMemberDetailResponse;
 import com.moodi.member.presentation.dto.admin.AdminMemberStatusRequest;
 import com.moodi.member.presentation.dto.admin.AdminMemberSummaryResponse;
 import com.moodi.shared.auth.AdminRequired;
-import com.moodi.shared.auth.AdminRole;
 import com.moodi.shared.error.BusinessException;
 import com.moodi.shared.error.ErrorCode;
 import com.moodi.shared.response.CursorResponse;
@@ -32,7 +31,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-/** 회원 관리. 조회는 OPERATOR, 정지·강제 탈퇴는 SUPER. */
+/** 회원 관리. 정지·강제 탈퇴까지 모든 관리자가 할 수 있다. */
 @AdminRequired
 @RestController
 @RequestMapping("/api/admin/members")
@@ -71,7 +70,6 @@ public class AdminMemberController {
         return SuccessResponse.of(AdminMemberDetailResponse.from(memberAdminService.getMember(memberId)));
     }
 
-    @AdminRequired(role = AdminRole.SUPER)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PatchMapping("/{memberId}/status")
     public void changeStatus(@PathVariable UUID memberId, @Valid @RequestBody AdminMemberStatusRequest request) {
@@ -82,7 +80,6 @@ public class AdminMemberController {
         }
     }
 
-    @AdminRequired(role = AdminRole.SUPER)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PostMapping("/{memberId}/withdrawal")
     public void withdraw(@PathVariable UUID memberId) {

@@ -4,7 +4,6 @@ import com.moodi.admin.application.ApiRequestLogService;
 import com.moodi.admin.application.dto.ApiRequestLogFilter;
 import com.moodi.admin.presentation.dto.ApiRequestLogResponse;
 import com.moodi.shared.auth.AdminRequired;
-import com.moodi.shared.auth.AdminRole;
 import com.moodi.shared.error.BusinessException;
 import com.moodi.shared.error.ErrorCode;
 import com.moodi.shared.response.CursorResponse;
@@ -15,8 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
-/** 앱 API 요청 로그 열람. 회원 식별 정보가 붙으므로 SUPER만. */
-@AdminRequired(role = AdminRole.SUPER)
+/** 앱 API 요청 로그 열람. 모든 관리자. */
+@AdminRequired
 @RestController
 public class ApiRequestLogController {
 

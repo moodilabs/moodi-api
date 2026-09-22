@@ -119,7 +119,7 @@ class AdminContentIntegrationTest extends RepositoryTestSupport {
         assertThat(images.getAll()).isEmpty();
     }
 
-    @Test @DisplayName("약관은 언어별 현재 공개 시행본만 조회하고 과거 버전 및 동의 버전을 보존한다")
+    @Test @DisplayName("약관은 언어별 현재 공개 시행본만 조회하고, 동의된 버전도 수정·삭제되며 동의 스냅샷은 남는다")
     void localized_policies_and_consent_snapshot() {
         LocalDate yesterday = LocalDate.now().minusDays(1);
         Long english = policies.create(new PolicyCommand(PolicyType.TERMS_OF_SERVICE, "1.0", "English", yesterday, "en-US", true, true));
@@ -147,8 +147,13 @@ class AdminContentIntegrationTest extends RepositoryTestSupport {
         assertThat(consent.getAgreedAt()).isNotNull();
         assertThat(policyQuery.getCurrentPolicy(PolicyType.TERMS_OF_SERVICE, "ko-KR").id()).isEqualTo(hidden);
         assertThat(policies.get(korean).content()).isEqualTo("국문");
-        assertThatThrownBy(() -> policies.delete(korean)).isInstanceOf(BusinessException.class);
-        assertThatThrownBy(() -> policies.update(korean, new PolicyCommand(PolicyType.TERMS_OF_SERVICE, "1.0", "수정", yesterday, "ko-KR", false, false)))
-                .isInstanceOf(BusinessException.class);
+        assertThat(policies.get(korean).agreed()).isTrue();
+        policies.update(korean, new PolicyCommand(PolicyType.TERMS_OF_SERVICE, "1.0", "수정", yesterday, "ko-KR", false, false));
+        em.flush(); em.clear();
+        assertThat(policies.get(korean).content()).isEqualTo("수정");
+        policies.delete(korean);
+        em.flush(); em.clear();
+        assertThatThrownBy(() -> policies.get(korean)).isInstanceOf(BusinessException.class);
+        assertThat(agreements.findByMemberId(member.getId()).stream().filter(a -> a.getType() == AgreementType.TERMS_OF_SERVICE).findFirst().orElseThrow().getPolicyVersion()).isEqualTo("1.0");
     }
 }
