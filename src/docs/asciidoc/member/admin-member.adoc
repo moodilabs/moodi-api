@@ -1,6 +1,6 @@
 == 회원 관리
 
-조회는 `OPERATOR`, 정지·강제 탈퇴는 `SUPER`입니다.
+모든 API는 `OPERATOR`·`SUPER` 모두 사용할 수 있습니다.
 
 상태는 DB 상태에 "탈퇴"를 더한 4가지입니다.
 
@@ -38,7 +38,7 @@ include::{snippets}/admin/members/detail/http-response.adoc[]
 .Response Fields
 include::{snippets}/admin/members/detail/response-fields.adoc[]
 
-=== 정지 / 해제 (SUPER)
+=== 정지 / 해제
 
 정지하면 리프레시 토큰이 지워져 재발급이 막힙니다. 이미 발급된 액세스 토큰은 30분 내 만료됩니다.
 가입 완료(`ACTIVE`) 회원만 정지할 수 있고, `SUSPENDED` 회원만 해제할 수 있습니다.
@@ -61,7 +61,7 @@ include::{snippets}/admin/members/change-status/http-response.adoc[]
 | `INVALID_REQUEST` | 400 | 상태 전이 불가 (온보딩 중 정지, 정지 아닌 회원 해제) 또는 사유 누락
 |===
 
-=== 강제 탈퇴 (SUPER)
+=== 강제 탈퇴
 
 회원 본인의 탈퇴와 같은 경로(`MemberWithdrawService`)를 탑니다 — 북마크·루트·Pick이 함께 삭제됩니다.
 탈퇴 사유는 `ADMIN_FORCED`로 기록되며 상세의 `withdrawal`에서 볼 수 있습니다.

@@ -19,8 +19,8 @@
 |===
 | 권한 | 범위
 
-| `OPERATOR` | 콘텐츠(공지·FAQ·약관) 관리, 문의 답변, 회원 조회
-| `SUPER` | 전체 + 관리자 계정 관리 + 회원 정지·강제 탈퇴
+| `OPERATOR` | 관리자 계정 관리를 제외한 모든 기능
+| `SUPER` | 전체 + 관리자 계정 관리
 |===
 
 권한이 부족하면 `ADMIN_FORBIDDEN` 403입니다. 로그인 5회 실패 시 15분 잠깁니다(`ADMIN_ACCOUNT_LOCKED` 423).
@@ -176,7 +176,7 @@ include::{snippets}/admin/dashboard/http-response.adoc[]
 .Response Fields
 include::{snippets}/admin/dashboard/response-fields.adoc[]
 
-== 감사 로그 (SUPER)
+== 감사 로그
 
 `/api/admin/**`의 변경 요청(POST/PUT/PATCH/DELETE)이 2xx로 끝나면 자동으로 한 줄 남습니다.
 요청 본문은 저장하지 않으며, 상세가 필요하면 `requestId`로 앱 로그를 찾습니다. 로그인·재발급은 인증 전이라 남지 않습니다.
@@ -193,7 +193,7 @@ include::{snippets}/admin/audit-logs/http-response.adoc[]
 .Response Fields
 include::{snippets}/admin/audit-logs/response-fields.adoc[]
 
-== 앱 API 요청 로그 (SUPER)
+== 앱 API 요청 로그
 
 앱 API(`/api/**`, 관리자 API 제외)의 모든 요청이 결과와 무관하게 한 줄씩 남습니다 — 비회원·인증 실패(401)도 회원 ID 없이 기록됩니다.
 요청 본문·헤더·쿼리스트링은 저장하지 않으며, 상세는 `requestId`로 앱 로그를 찾습니다.

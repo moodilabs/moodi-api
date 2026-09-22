@@ -1,7 +1,6 @@
 package com.moodi.spot.presentation.admin;
 
 import com.moodi.shared.auth.AdminRequired;
-import com.moodi.shared.auth.AdminRole;
 import com.moodi.shared.error.BusinessException;
 import com.moodi.shared.error.ErrorCode;
 import com.moodi.shared.response.CursorResponse;
@@ -27,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 스팟 관리. 조회·태그·설명은 OPERATOR, 노출 상태 변경(삭제 포함)은 SUPER. */
+/** 스팟 관리. 노출 상태 변경(삭제 포함)까지 모든 관리자가 할 수 있다. */
 @AdminRequired
 @RestController
 @RequestMapping("/api/admin/spots")
@@ -57,7 +56,6 @@ public class AdminSpotController {
         return SuccessResponse.of(AdminSpotDetailResponse.from(spotAdminService.getSpot(spotId)));
     }
 
-    @AdminRequired(role = AdminRole.SUPER)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PatchMapping("/{spotId}/status")
     public void changeStatus(@PathVariable Long spotId, @Valid @RequestBody AdminSpotStatusRequest request) {

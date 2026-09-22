@@ -68,7 +68,6 @@ public enum ErrorCode {
     FAQ_CATEGORY_NOT_EMPTY(HttpStatus.CONFLICT, "FAQ_CATEGORY_NOT_EMPTY", "항목이 남아 있는 FAQ 유형은 삭제할 수 없습니다."),
     POLICY_NOT_FOUND(HttpStatus.NOT_FOUND, "POLICY_NOT_FOUND", "약관을 찾을 수 없습니다."),
     POLICY_VERSION_DUPLICATE(HttpStatus.CONFLICT, "POLICY_VERSION_DUPLICATE", "이미 등록된 약관 버전입니다."),
-    POLICY_ALREADY_AGREED(HttpStatus.CONFLICT, "POLICY_ALREADY_AGREED", "회원이 이미 동의한 약관은 수정·삭제할 수 없습니다. 새 버전으로 등록해주세요."),
     INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "INQUIRY_NOT_FOUND", "문의를 찾을 수 없습니다."),
     INQUIRY_FORBIDDEN(HttpStatus.FORBIDDEN, "INQUIRY_FORBIDDEN", "해당 문의에 대한 권한이 없습니다."),
     INQUIRY_TOO_MANY_ATTACHMENTS(HttpStatus.BAD_REQUEST, "INQUIRY_TOO_MANY_ATTACHMENTS", "첨부는 5개까지 올릴 수 있어요."),

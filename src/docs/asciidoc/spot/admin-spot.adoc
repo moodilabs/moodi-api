@@ -12,7 +12,7 @@
 | `DELETED` | 어드민 삭제 처리. 되돌릴 수 없음. 원본 행은 남음(루트·북마크가 ID로 참조)
 |===
 
-조회·무드 보정·설명 수정은 `OPERATOR`, 노출 상태 변경은 `SUPER`입니다.
+모든 API는 `OPERATOR`·`SUPER` 모두 사용할 수 있습니다.
 TourAPI 재동기화와 설명·번역 재생성은 배치 프로필(`spot-pipeline` 등)로 돌리며 여기서 트리거하지 않습니다.
 
 === 목록
@@ -40,7 +40,7 @@ include::{snippets}/admin/spots/detail/http-response.adoc[]
 .Response Fields
 include::{snippets}/admin/spots/detail/response-fields.adoc[]
 
-=== 노출 상태 변경 (SUPER)
+=== 노출 상태 변경
 
 .HTTP Request
 include::{snippets}/admin/spots/change-status/http-request.adoc[]
