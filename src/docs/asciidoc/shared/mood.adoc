@@ -1,0 +1,7 @@
+== 무드 태그
+
+=== 무드 태그 목록 조회
+
+전체 무드 태그 목록을 반환합니다. 필터 UI 구성 등에 사용합니다.
+
+operation::mood/mood-tags[snippets='http-request,http-response,response-fields']
