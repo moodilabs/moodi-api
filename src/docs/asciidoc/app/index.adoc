@@ -11,6 +11,8 @@
 
 include::../shared/overview.adoc[]
 
+include::../shared/mood.adoc[]
+
 include::../member/auth.adoc[]
 
 include::../member/onboarding.adoc[]
