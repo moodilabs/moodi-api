@@ -61,7 +61,7 @@ include::{snippets}/admin/policies/delete/http-response.adoc[]
 
 === 국문·영문 및 공개 상태
 
-`content`는 리치 에디터 HTML로 보냅니다. 서버가 jsoup 화이트리스트로 정제해 `p/br/strong/em/u/s/h1~h3/ul/ol/li/span[style=color]/a[href=http|https|mailto]` 외 태그·속성·스크립트를 제거합니다.
+`content`는 리치 에디터 HTML로 보냅니다. 서버가 jsoup 화이트리스트로 정제해 `p/br/strong/em/u/s/h1~h3/ul/ol/li/span[style=color]/mark[style=background-color]/a[href=http|https|mailto]/table·colgroup·col·thead·tbody·tr/th·td[colspan·rowspan]` 외 태그·속성·스크립트를 제거합니다.
 
 등록·수정 요청에 `locale` (`ko-KR` 또는 `en-US`), `enabled` (시행 활성), `visible` (공개 여부)를 지정합니다.
 생략 시 기존 계약을 유지해 `en-US`, `true`, `true`를 사용합니다. 버전 중복은 `(type, version, locale)` 기준입니다.
