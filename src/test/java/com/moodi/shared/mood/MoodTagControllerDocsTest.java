@@ -27,11 +27,13 @@ class MoodTagControllerDocsTest extends RestDocsSupport {
                 .andExpect(jsonPath("$.data[0].key").exists())
                 .andExpect(jsonPath("$.data[0].label").exists())
                 .andExpect(jsonPath("$.data[0].displayTag").exists())
+                .andExpect(jsonPath("$.data[0].displayName").exists())
                 .andDo(document("mood/mood-tags",
                         responseFields(
                                 fieldWithPath("data[].key").description("필터·저장에 사용하는 키 (예: golden_hour)"),
                                 fieldWithPath("data[].label").description("한국어 라벨 (예: 노을)"),
-                                fieldWithPath("data[].displayTag").description("UI 표시용 해시태그 (예: #GoldenHour)")
+                                fieldWithPath("data[].displayTag").description("UI 표시용 해시태그 (예: #GoldenHour)"),
+                                fieldWithPath("data[].displayName").description("UI 표시용 이름 (예: Golden Hour)")
                         )
                 ));
     }
