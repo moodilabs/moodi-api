@@ -21,6 +21,21 @@ class JsoupHtmlSanitizerTest {
     }
 
     @Test
+    @DisplayName("표는 셀 병합 속성만 남기고 너비 스타일은 제거한다")
+    void keeps_table_with_cell_span_only() {
+        String html = "<table style=\"min-width: 50px\"><colgroup><col style=\"min-width: 25px\"></colgroup><tbody>"
+                + "<tr><th colspan=\"1\" rowspan=\"1\"><p>기관</p></th><th colspan=\"1\" rowspan=\"1\"><p>연락처</p></th></tr>"
+                + "<tr><td colspan=\"2\" rowspan=\"1\" onclick=\"alert(1)\"><p>118</p></td></tr></tbody></table>";
+
+        String result = sanitizer.sanitize(html);
+
+        assertThat(result).contains("<table><colgroup><col></colgroup><tbody>",
+                "<th colspan=\"1\" rowspan=\"1\"><p>기관</p></th>",
+                "<td colspan=\"2\" rowspan=\"1\"><p>118</p></td>");
+        assertThat(result).doesNotContain("min-width", "onclick");
+    }
+
+    @Test
     @DisplayName("스크립트·이벤트 핸들러·글자색 외 인라인 스타일은 제거한다")
     void strips_dangerous_markup() {
         String html = "<p onclick=\"alert(1)\">본문</p><script>alert(1)</script>"

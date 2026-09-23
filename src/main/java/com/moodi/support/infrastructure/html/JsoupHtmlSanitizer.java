@@ -7,7 +7,8 @@ import org.jsoup.safety.Safelist;
 import org.springframework.stereotype.Component;
 
 /**
- * jsoup 화이트리스트 정제. 어드민 에디터(TipTap)가 만드는 서식 — 굵게·기울임·밑줄·취소선·글자색·형광펜·제목·목록·줄바꿈·링크 — 만 남긴다.
+ * jsoup 화이트리스트 정제. 어드민 에디터(TipTap)가 만드는 서식 — 굵게·기울임·밑줄·취소선·글자색·형광펜·제목·목록·표·줄바꿈·링크 — 만 남긴다.
+ * 표는 셀 병합(colspan·rowspan)만 남기고, TipTap이 table·col에 붙이는 너비 style은 앱 레이아웃과 어긋나므로 버린다.
  * {@code style}은 span의 글자색(<code>color</code>)과 mark의 배경색(<code>background-color</code>)만 허용하고 나머지 인라인 스타일은 제거한다.
  */
 @Component
@@ -15,7 +16,10 @@ public class JsoupHtmlSanitizer implements HtmlSanitizer {
 
     private static final Safelist SAFELIST = Safelist.none()
             .addTags("p", "br", "b", "strong", "i", "em", "u", "s", "strike",
-                    "h1", "h2", "h3", "ul", "ol", "li", "span", "mark", "a")
+                    "h1", "h2", "h3", "ul", "ol", "li", "span", "mark", "a",
+                    "table", "colgroup", "col", "thead", "tbody", "tr", "th", "td")
+            .addAttributes("th", "colspan", "rowspan")
+            .addAttributes("td", "colspan", "rowspan")
             .addAttributes("span", "style")
             .addAttributes("mark", "style")
             .addAttributes("a", "href")
