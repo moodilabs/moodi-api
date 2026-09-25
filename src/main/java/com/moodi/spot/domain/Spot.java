@@ -14,6 +14,9 @@ import java.time.LocalDateTime;
 public class Spot extends BaseEntity {
 
     private static final int MAX_STATUS_REASON_LENGTH = 200;
+    private static final int MAX_TAGGING_ERROR_LENGTH = 500;
+    private static final int MAX_RETRY_COUNT = 4;
+    private static final long PROCESSING_TIMEOUT_MINUTES = 20;
 
     private Long id;
     private String contentId;
@@ -34,6 +37,13 @@ public class Spot extends BaseEntity {
     private String statusReason;
     private LocalDateTime statusChangedAt;
 
+    private MoodTaggingStatus moodTaggingStatus;
+    private int moodTaggingAttemptCount;
+    private String moodTaggingLastError;
+    private LocalDateTime moodTaggingLastAttemptedAt;
+    private LocalDateTime moodTaggingNextRetryAt;
+    private LocalDateTime moodTaggingProcessingStartedAt;
+
     private Spot(String contentId, SpotContentType contentType, String area,
                  String district, String neighborhood, String source,
                  Double longitude, Double latitude, String tel,
@@ -49,6 +59,8 @@ public class Spot extends BaseEntity {
         this.tel = tel;
         this.routeExcluded = contentType.isRouteExcluded();
         this.status = SpotStatus.TAGGING_PENDING;
+        this.moodTaggingStatus = MoodTaggingStatus.PENDING;
+        this.moodTaggingAttemptCount = 0;
         this.lclsSystm1 = lclsSystm1;
         this.lclsSystm2 = lclsSystm2;
         this.lclsSystm3 = lclsSystm3;
@@ -114,6 +126,123 @@ public class Spot extends BaseEntity {
 
     public boolean isPublished() {
         return this.status == SpotStatus.PUBLISHED;
+    }
+
+    /**
+     * 배치가 태깅 작업을 선점한다. PENDING 또는 재시도 시각이 지난 RETRY_WAIT에서만 전이 가능.
+     * DB에 커밋한 뒤 LLM 호출을 시작해야 한다.
+     */
+    public void startTagging(LocalDateTime now) {
+        if (this.moodTaggingStatus != MoodTaggingStatus.PENDING
+                && this.moodTaggingStatus != MoodTaggingStatus.RETRY_WAIT) {
+            throw new IllegalStateException(
+                    "PENDING 또는 RETRY_WAIT 상태에서만 태깅을 시작할 수 있습니다. 현재: " + this.moodTaggingStatus);
+        }
+        this.moodTaggingStatus = MoodTaggingStatus.PROCESSING;
+        this.moodTaggingAttemptCount++;
+        this.moodTaggingProcessingStartedAt = now;
+        this.moodTaggingNextRetryAt = null;
+    }
+
+    /** 태깅 성공. SpotMood 저장과 함께 호출한다. */
+    public void completeTagging(LocalDateTime now) {
+        if (this.moodTaggingStatus != MoodTaggingStatus.PROCESSING) {
+            throw new IllegalStateException(
+                    "PROCESSING 상태에서만 태깅을 완료할 수 있습니다. 현재: " + this.moodTaggingStatus);
+        }
+        this.moodTaggingStatus = MoodTaggingStatus.COMPLETED;
+        this.moodTaggingLastAttemptedAt = now;
+        this.moodTaggingLastError = null;
+        this.moodTaggingProcessingStartedAt = null;
+    }
+
+    /**
+     * 일시 오류(timeout, 429, 5xx). 재시도 횟수가 MAX_RETRY_COUNT 이상이면 FAILED로 전환한다.
+     * 재시도 간격: 1회→1분, 2회→5분, 3회→30분, 4회 이상→FAILED.
+     */
+    public void markRetryWait(String error, LocalDateTime now) {
+        if (this.moodTaggingStatus != MoodTaggingStatus.PROCESSING) {
+            throw new IllegalStateException(
+                    "PROCESSING 상태에서만 재시도 대기로 전환할 수 있습니다. 현재: " + this.moodTaggingStatus);
+        }
+        this.moodTaggingLastAttemptedAt = now;
+        this.moodTaggingLastError = truncateError(error);
+        this.moodTaggingProcessingStartedAt = null;
+
+        if (this.moodTaggingAttemptCount >= MAX_RETRY_COUNT) {
+            this.moodTaggingStatus = MoodTaggingStatus.FAILED;
+        } else {
+            this.moodTaggingStatus = MoodTaggingStatus.RETRY_WAIT;
+            this.moodTaggingNextRetryAt = now.plusMinutes(retryDelayMinutes());
+        }
+    }
+
+    /** 데이터 자체 문제(이미지 없음, 파싱 실패 등). 재시도해도 해결되지 않으므로 즉시 FAILED. */
+    public void markFailed(String error, LocalDateTime now) {
+        if (this.moodTaggingStatus != MoodTaggingStatus.PROCESSING) {
+            throw new IllegalStateException(
+                    "PROCESSING 상태에서만 실패 처리할 수 있습니다. 현재: " + this.moodTaggingStatus);
+        }
+        this.moodTaggingStatus = MoodTaggingStatus.FAILED;
+        this.moodTaggingLastAttemptedAt = now;
+        this.moodTaggingLastError = truncateError(error);
+        this.moodTaggingProcessingStartedAt = null;
+    }
+
+    /** 어드민이 FAILED 스팟을 수동 재시도 대상으로 되돌린다. 시도 횟수를 초기화한다. */
+    public void resetForRetry() {
+        if (this.moodTaggingStatus != MoodTaggingStatus.FAILED) {
+            throw new IllegalStateException(
+                    "FAILED 상태에서만 재시도할 수 있습니다. 현재: " + this.moodTaggingStatus);
+        }
+        this.moodTaggingStatus = MoodTaggingStatus.PENDING;
+        this.moodTaggingAttemptCount = 0;
+        this.moodTaggingLastError = null;
+        this.moodTaggingNextRetryAt = null;
+        this.moodTaggingProcessingStartedAt = null;
+    }
+
+    /**
+     * PROCESSING 상태가 일정 시간 이상 지속되면 서버 중단으로 간주하고 복구한다.
+     * 재시도 횟수가 MAX_RETRY_COUNT 이상이면 FAILED로 전환한다.
+     * @return 복구 대상이었으면 true
+     */
+    public boolean recoverStaleProcessing(LocalDateTime now) {
+        if (this.moodTaggingStatus != MoodTaggingStatus.PROCESSING) {
+            return false;
+        }
+        if (this.moodTaggingProcessingStartedAt != null
+                && this.moodTaggingProcessingStartedAt.plusMinutes(PROCESSING_TIMEOUT_MINUTES).isBefore(now)) {
+            this.moodTaggingLastError = "PROCESSING 타임아웃 (" + PROCESSING_TIMEOUT_MINUTES + "분 초과)";
+            this.moodTaggingLastAttemptedAt = now;
+            this.moodTaggingProcessingStartedAt = null;
+
+            if (this.moodTaggingAttemptCount >= MAX_RETRY_COUNT) {
+                this.moodTaggingStatus = MoodTaggingStatus.FAILED;
+            } else {
+                this.moodTaggingStatus = MoodTaggingStatus.RETRY_WAIT;
+                this.moodTaggingNextRetryAt = now.plusMinutes(retryDelayMinutes());
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private long retryDelayMinutes() {
+        return switch (this.moodTaggingAttemptCount) {
+            case 1 -> 1;
+            case 2 -> 5;
+            case 3 -> 30;
+            default -> 60;
+        };
+    }
+
+    private static String truncateError(String error) {
+        if (error == null) {
+            return null;
+        }
+        return error.length() > MAX_TAGGING_ERROR_LENGTH
+                ? error.substring(0, MAX_TAGGING_ERROR_LENGTH) : error;
     }
 
     private static void validateReason(String reason) {
