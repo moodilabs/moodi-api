@@ -1,5 +1,7 @@
 package com.moodi.spot.application;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -10,13 +12,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.moodi.spot.domain.Spot;
-import com.moodi.spot.domain.SpotMoodRepository;
 import com.moodi.spot.domain.SpotRepository;
-import com.moodi.spot.domain.SpotStatus;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -24,33 +25,29 @@ import org.springframework.stereotype.Service;
 public class SpotMoodTaggingService {
 
     private final SpotRepository spotRepository;
-    private final SpotMoodRepository spotMoodRepository;
     private final SpotMoodTagger spotMoodTagger;
     private final MoodAnalysisClient moodAnalysisClient;
+    private final Clock clock;
 
     public TaggingResult tagAll(int limit) {
-        List<Spot> pendingSpots = spotRepository.findByStatusAndRouteExcluded(SpotStatus.TAGGING_PENDING, false);
-        if (limit > 0) {
-            pendingSpots = pendingSpots.subList(0, Math.min(limit, pendingSpots.size()));
-        }
-        log.info("태깅 대상 스팟 {}건 조회 (limit={})", pendingSpots.size(), limit);
+        int effectiveLimit = limit > 0 ? limit : Integer.MAX_VALUE;
 
-        // 이미 태깅된 스팟 필터링
-        List<Spot> targets = new ArrayList<>();
-        int skipped = 0;
-        for (Spot spot : pendingSpots) {
-            if (spotMoodRepository.existsBySpotId(spot.getId())) {
-                skipped++;
-            } else {
-                targets.add(spot);
-            }
+        // 1. stale PROCESSING 복구
+        int recovered = recoverStaleProcessing();
+        if (recovered > 0) {
+            log.info("stale PROCESSING {}건 복구 완료", recovered);
         }
+
+        // 2. 태깅 대상 조회 (PENDING + 재시도 시각이 지난 RETRY_WAIT)
+        LocalDateTime now = LocalDateTime.now(clock);
+        List<Spot> targets = spotRepository.findTaggingTargets(now, effectiveLimit);
 
         if (targets.isEmpty()) {
-            log.info("태깅 대상 없음 (스킵 {}건)", skipped);
-            return new TaggingResult(0, skipped, 0, 0, 0, 0, List.of());
+            log.info("태깅 대상 없음");
+            return new TaggingResult(0, 0, 0, 0, 0, List.of());
         }
 
+        log.info("태깅 대상 스팟 {}건 조회 (limit={})", targets.size(), limit);
         moodAnalysisClient.resetCounters();
         long startNanos = System.nanoTime();
 
@@ -70,10 +67,12 @@ public class SpotMoodTaggingService {
                     futures.add(executor.submit(() -> {
                         try {
                             long latencyMs = spotMoodTagger.tagSpot(spot);
-                            llmLatencies.add(latencyMs);
-                            int count = tagged.incrementAndGet();
-                            if (count % 50 == 0 || count == targets.size()) {
-                                log.info("태깅 진행 {}/{}", count, targets.size());
+                            if (latencyMs >= 0) {
+                                llmLatencies.add(latencyMs);
+                                int count = tagged.incrementAndGet();
+                                if (count % 50 == 0 || count == targets.size()) {
+                                    log.info("태깅 진행 {}/{}", count, targets.size());
+                                }
                             }
                         } catch (RateLimitException e) {
                             rateLimited.incrementAndGet();
@@ -101,17 +100,35 @@ public class SpotMoodTaggingService {
         int rateLimitCount = rateLimited.get();
         List<Long> latencyList = new ArrayList<>(llmLatencies);
 
-        logMetrics(tagged.get(), skipped, failed.get(), retryCount, rateLimitCount,
+        logMetrics(tagged.get(), failed.get(), retryCount, rateLimitCount,
                 elapsedMs, targets.size(), latencyList);
 
         return new TaggingResult(
-                tagged.get(), skipped, failed.get(),
+                tagged.get(), failed.get(),
                 retryCount, rateLimitCount,
                 elapsedMs, latencyList
         );
     }
 
-    private void logMetrics(int tagged, int skipped, int failed, int retryCount,
+    @Transactional
+    public int recoverStaleProcessing() {
+        LocalDateTime threshold = LocalDateTime.now(clock).minusMinutes(20);
+        List<Spot> staleSpots = spotRepository.findStaleProcessing(threshold);
+
+        int recovered = 0;
+        LocalDateTime now = LocalDateTime.now(clock);
+        for (Spot spot : staleSpots) {
+            if (spot.recoverStaleProcessing(now)) {
+                spotRepository.save(spot);
+                recovered++;
+                log.warn("stale PROCESSING 복구 spotId={}, attemptCount={}",
+                        spot.getId(), spot.getMoodTaggingAttemptCount());
+            }
+        }
+        return recovered;
+    }
+
+    private void logMetrics(int tagged, int failed, int retryCount,
                             int rateLimitCount, long elapsedMs, int totalTargets,
                             List<Long> latencies) {
         double elapsedSec = elapsedMs / 1000.0;
@@ -120,8 +137,8 @@ public class SpotMoodTaggingService {
         log.info("═══════════════════════════════════════════════════════════");
         log.info("태깅 완료 — 결과 요약");
         log.info("───────────────────────────────────────────────────────────");
-        log.info("  대상: {}건 | 성공: {}건 | 스킵: {}건 | 실패: {}건",
-                totalTargets, tagged, skipped, failed);
+        log.info("  대상: {}건 | 성공: {}건 | 실패: {}건",
+                totalTargets, tagged, failed);
         log.info("  전체 처리 시간: {}초", String.format("%.1f", elapsedSec));
         log.info("  throughput: {} spots/sec", String.format("%.2f", throughput));
         log.info("  retry: {}건 | 429: {}건", retryCount, rateLimitCount);
@@ -140,7 +157,7 @@ public class SpotMoodTaggingService {
     }
 
     public record TaggingResult(
-            int tagged, int skipped, int failed,
+            int tagged, int failed,
             int retryCount, int rateLimitCount,
             long elapsedMs, List<Long> llmLatencies
     ) {}

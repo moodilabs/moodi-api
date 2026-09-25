@@ -32,8 +32,8 @@ public class SpotMoodTaggingRunner implements ApplicationRunner {
         int[] exitCode = {0};
         try {
             SpotMoodTaggingService.TaggingResult result = taggingService.tagAll(limit);
-            log.info("스팟 무드 태깅 결과: 성공 {}건, 스킵 {}건, 실패 {}건 (retry {}건, 429 {}건, 소요 {}ms)",
-                    result.tagged(), result.skipped(), result.failed(),
+            log.info("스팟 무드 태깅 결과: 성공 {}건, 실패 {}건 (retry {}건, 429 {}건, 소요 {}ms)",
+                    result.tagged(), result.failed(),
                     result.retryCount(), result.rateLimitCount(), result.elapsedMs());
 
             if (result.failed() > 0) {
