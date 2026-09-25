@@ -1,5 +1,7 @@
 package com.moodi.spot.application;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 
@@ -34,6 +36,7 @@ public class SpotMoodTagger {
     private final MoodTagRuleEngine moodTagRuleEngine;
     private final TransactionTemplate transactionTemplate;
     private final Semaphore llmSemaphore;
+    private final Clock clock;
 
     public SpotMoodTagger(
             SpotRepository spotRepository,
@@ -43,6 +46,7 @@ public class SpotMoodTagger {
             MoodAnalysisClient moodAnalysisClient,
             MoodTagRuleEngine moodTagRuleEngine,
             PlatformTransactionManager transactionManager,
+            Clock clock,
             @Value("${spot-tagging.concurrency:1}") int concurrency
     ) {
         if (concurrency < 1) {
@@ -55,14 +59,26 @@ public class SpotMoodTagger {
         this.moodAnalysisClient = moodAnalysisClient;
         this.moodTagRuleEngine = moodTagRuleEngine;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.clock = clock;
         this.llmSemaphore = new Semaphore(concurrency);
     }
 
     /**
-     * @return LLM 호출 소요시간 (ms)
+     * 1. DB에서 PROCESSING으로 선점 (짧은 트랜잭션, 커밋)
+     * 2. LLM 호출 (트랜잭션 밖)
+     * 3. 결과 저장 + 상태 전이 (짧은 트랜잭션)
+     *
+     * @return LLM 호출 소요시간 (ms), 선점 실패 시 -1
      */
     public long tagSpot(Spot spot) {
-        // 1. DB 조회 (트랜잭션 없이 auto-commit)
+        // 1. PROCESSING 선점
+        boolean claimed = claimForProcessing(spot);
+        if (!claimed) {
+            log.debug("선점 실패 spotId={} (이미 다른 작업자가 처리 중)", spot.getId());
+            return -1;
+        }
+
+        // 2. DB 조회 (트랜잭션 없이 auto-commit)
         List<String> imageUrls = spotImageRepository.findBySpotId(spot.getId()).stream()
                 .map(SpotImage::getImageUrl)
                 .toList();
@@ -71,12 +87,21 @@ public class SpotMoodTagger {
                 .map(SpotTranslation::getOverview)
                 .orElse("");
 
-        // 2. LLM 호출 (트랜잭션 밖, Semaphore로 동시 요청 수 제한)
+        // 3. LLM 호출 (트랜잭션 밖, Semaphore로 동시 요청 수 제한)
         MoodAnalysisResult result;
         llmSemaphore.acquireUninterruptibly();
         long llmStartNanos = System.nanoTime();
         try {
             result = moodAnalysisClient.analyze(imageUrls, overview);
+        } catch (RateLimitException e) {
+            handleTransientError(spot, "429 Rate Limit: " + e.getMessage());
+            throw e;
+        } catch (IllegalStateException e) {
+            handleDataError(spot, "LLM 응답 오류: " + e.getMessage());
+            return -1;
+        } catch (Exception e) {
+            handleTransientError(spot, e.getClass().getSimpleName() + ": " + e.getMessage());
+            return -1;
         } finally {
             llmSemaphore.release();
         }
@@ -85,15 +110,56 @@ public class SpotMoodTagger {
         MoodVector vector = result.moodVector();
         List<MoodTag> tags = moodTagRuleEngine.deriveTags(vector, result.seasonalScore());
 
-        // 3. DB 저장 (짧은 트랜잭션)
+        // 4. DB 저장 + 상태 전이 (짧은 트랜잭션)
         transactionTemplate.executeWithoutResult(status -> {
-            SpotMood spotMood = SpotMood.create(spot.getId(), vector, tags, result.confidence());
+            Spot freshSpot = spotRepository.findById(spot.getId()).orElseThrow();
+
+            SpotMood spotMood = SpotMood.create(freshSpot.getId(), vector, tags, result.confidence());
             spotMoodRepository.save(spotMood);
 
-            spot.publish();
-            spotRepository.save(spot);
+            freshSpot.completeTagging(LocalDateTime.now(clock));
+            freshSpot.publish();
+            spotRepository.save(freshSpot);
         });
 
         return llmLatencyMs;
+    }
+
+    private boolean claimForProcessing(Spot spot) {
+        try {
+            return Boolean.TRUE.equals(transactionTemplate.execute(status -> {
+                Spot freshSpot = spotRepository.findById(spot.getId()).orElseThrow();
+                freshSpot.startTagging(LocalDateTime.now(clock));
+                spotRepository.save(freshSpot);
+                return true;
+            }));
+        } catch (IllegalStateException e) {
+            log.debug("선점 실패 spotId={}: {}", spot.getId(), e.getMessage());
+            return false;
+        }
+    }
+
+    private void handleTransientError(Spot spot, String error) {
+        try {
+            transactionTemplate.executeWithoutResult(status -> {
+                Spot freshSpot = spotRepository.findById(spot.getId()).orElseThrow();
+                freshSpot.markRetryWait(error, LocalDateTime.now(clock));
+                spotRepository.save(freshSpot);
+            });
+        } catch (Exception e) {
+            log.error("일시 오류 상태 저장 실패 spotId={}: {}", spot.getId(), e.getMessage());
+        }
+    }
+
+    private void handleDataError(Spot spot, String error) {
+        try {
+            transactionTemplate.executeWithoutResult(status -> {
+                Spot freshSpot = spotRepository.findById(spot.getId()).orElseThrow();
+                freshSpot.markFailed(error, LocalDateTime.now(clock));
+                spotRepository.save(freshSpot);
+            });
+        } catch (Exception e) {
+            log.error("실패 상태 저장 실패 spotId={}: {}", spot.getId(), e.getMessage());
+        }
     }
 }
