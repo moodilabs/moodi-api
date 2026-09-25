@@ -1,0 +1,38 @@
+== 무드 태깅 관리
+
+태깅 배치의 처리 현황을 확인하고, 실패한 스팟을 수동 재시도할 수 있습니다.
+
+=== 현황 요약
+
+.HTTP Request
+include::{snippets}/admin/mood-tagging/summary/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/mood-tagging/summary/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/admin/mood-tagging/summary/response-fields.adoc[]
+
+=== 실패 목록
+
+.HTTP Request
+include::{snippets}/admin/mood-tagging/failed/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/mood-tagging/failed/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/admin/mood-tagging/failed/response-fields.adoc[]
+
+=== 수동 재시도
+
+FAILED 상태의 스팟을 PENDING으로 되돌립니다. 시도 횟수가 초기화됩니다.
+
+.HTTP Request
+include::{snippets}/admin/mood-tagging/retry/http-request.adoc[]
+
+.Path Parameters
+include::{snippets}/admin/mood-tagging/retry/path-parameters.adoc[]
+
+.HTTP Response
+include::{snippets}/admin/mood-tagging/retry/http-response.adoc[]

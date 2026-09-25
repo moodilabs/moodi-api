@@ -215,6 +215,8 @@ include::../member/admin-member.adoc[]
 
 include::../spot/admin-spot.adoc[]
 
+include::../spot/admin-mood-tagging.adoc[]
+
 include::../support/admin-notice.adoc[]
 
 include::../support/admin-faq.adoc[]
