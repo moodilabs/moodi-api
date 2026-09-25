@@ -17,7 +17,7 @@ import com.moodi.spot.domain.SpotRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Slf4j
 @Service
@@ -28,6 +28,7 @@ public class SpotMoodTaggingService {
     private final SpotMoodTagger spotMoodTagger;
     private final MoodAnalysisClient moodAnalysisClient;
     private final Clock clock;
+    private final TransactionTemplate transactionTemplate;
 
     public TaggingResult tagAll(int limit) {
         int effectiveLimit = limit > 0 ? limit : Integer.MAX_VALUE;
@@ -110,22 +111,24 @@ public class SpotMoodTaggingService {
         );
     }
 
-    @Transactional
     public int recoverStaleProcessing() {
-        LocalDateTime threshold = LocalDateTime.now(clock).minusMinutes(20);
-        List<Spot> staleSpots = spotRepository.findStaleProcessing(threshold);
+        Integer recovered = transactionTemplate.execute(status -> {
+            LocalDateTime threshold = LocalDateTime.now(clock).minusMinutes(20);
+            List<Spot> staleSpots = spotRepository.findStaleProcessing(threshold);
 
-        int recovered = 0;
-        LocalDateTime now = LocalDateTime.now(clock);
-        for (Spot spot : staleSpots) {
-            if (spot.recoverStaleProcessing(now)) {
-                spotRepository.save(spot);
-                recovered++;
-                log.warn("stale PROCESSING 복구 spotId={}, attemptCount={}",
-                        spot.getId(), spot.getMoodTaggingAttemptCount());
+            int count = 0;
+            LocalDateTime now = LocalDateTime.now(clock);
+            for (Spot spot : staleSpots) {
+                if (spot.recoverStaleProcessing(now)) {
+                    spotRepository.save(spot);
+                    count++;
+                    log.warn("stale PROCESSING 복구 spotId={}, attemptCount={}",
+                            spot.getId(), spot.getMoodTaggingAttemptCount());
+                }
             }
-        }
-        return recovered;
+            return count;
+        });
+        return recovered != null ? recovered : 0;
     }
 
     private void logMetrics(int tagged, int failed, int retryCount,

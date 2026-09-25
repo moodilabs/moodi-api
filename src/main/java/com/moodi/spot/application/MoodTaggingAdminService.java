@@ -24,8 +24,12 @@ public class MoodTaggingAdminService {
     }
 
     public Map<String, Long> getSummary() {
-        List<MoodTaggingStatusCount> counts = spotRepository.countByMoodTaggingStatus();
         Map<String, Long> statusCounts = new LinkedHashMap<>();
+        for (MoodTaggingStatus status : MoodTaggingStatus.values()) {
+            statusCounts.put(status.name(), 0L);
+        }
+
+        List<MoodTaggingStatusCount> counts = spotRepository.countByMoodTaggingStatus();
         for (MoodTaggingStatusCount count : counts) {
             statusCounts.put(count.status().name(), count.count());
         }
@@ -40,6 +44,9 @@ public class MoodTaggingAdminService {
     public void retrySpot(Long spotId) {
         Spot spot = spotRepository.findById(spotId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SPOT_NOT_FOUND));
+        if (spot.getMoodTaggingStatus() != MoodTaggingStatus.FAILED) {
+            throw new BusinessException(ErrorCode.SPOT_NOT_FAILED);
+        }
         spot.resetForRetry();
         spotRepository.save(spot);
     }

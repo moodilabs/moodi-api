@@ -5,13 +5,15 @@ import com.moodi.spot.domain.Spot;
 import com.moodi.spot.domain.SpotContentType;
 import com.moodi.spot.domain.SpotRepository;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -41,11 +43,25 @@ class SpotMoodTaggingServiceTest {
     @Mock
     private Clock clock;
 
-    @InjectMocks
+    @Mock
+    private TransactionTemplate transactionTemplate;
+
     private SpotMoodTaggingService taggingService;
 
     private static final Instant FIXED_INSTANT = LocalDateTime.of(2026, 9, 25, 10, 0)
             .atZone(ZoneId.systemDefault()).toInstant();
+
+    @SuppressWarnings("unchecked")
+    @BeforeEach
+    void setUp() {
+        when(transactionTemplate.execute(any(TransactionCallback.class)))
+                .thenAnswer(invocation -> {
+                    TransactionCallback<Object> callback = invocation.getArgument(0);
+                    return callback.doInTransaction(null);
+                });
+        taggingService = new SpotMoodTaggingService(
+                spotRepository, spotMoodTagger, moodAnalysisClient, clock, transactionTemplate);
+    }
 
     private void setupClock() {
         when(clock.instant()).thenReturn(FIXED_INSTANT);
