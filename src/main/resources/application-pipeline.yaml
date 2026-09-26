@@ -18,3 +18,9 @@ gcs:
 
 spot-tagging:
   concurrency: 1
+
+spot-translation:
+  concurrency: 3
+
+spot-description:
+  concurrency: 3
