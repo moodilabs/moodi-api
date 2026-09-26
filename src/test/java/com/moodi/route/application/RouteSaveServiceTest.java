@@ -73,16 +73,16 @@ class RouteSaveServiceTest {
                 .willAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        Route result = routeSaveService.save(command);
+        RouteSaveResult result = routeSaveService.save(command);
 
         // then
-        assertThat(result.getTitle()).isEqualTo("서울 감성 여행");
-        assertThat(result.getDays()).hasSize(2);
-        assertThat(result.getDays().get(0).getSpots()).hasSize(2);
-        assertThat(result.getDays().get(0).getLegs()).hasSize(1);
-        assertThat(result.getDays().get(1).getSpots()).hasSize(1);
-        assertThat(result.getDays().get(1).getLegs()).isEmpty();
-        assertThat(result.getPublicId()).isNotNull();
+        assertThat(result.title()).isEqualTo("서울 감성 여행");
+        assertThat(result.days()).hasSize(2);
+        assertThat(result.days().get(0).spots()).hasSize(2);
+        assertThat(result.days().get(0).legs()).hasSize(1);
+        assertThat(result.days().get(1).spots()).hasSize(1);
+        assertThat(result.days().get(1).legs()).isEmpty();
+        assertThat(result.publicId()).isNotNull();
     }
 
     @Test
@@ -142,19 +142,19 @@ class RouteSaveServiceTest {
                 .willReturn(Optional.of(new LegResult(TravelMode.PUBLIC_TRANSIT, 1200, 5000, "https://map.kakao.com")));
 
         // when
-        Route result = routeSaveService.update(publicId, command);
+        RouteSaveResult result = routeSaveService.update(publicId, command);
 
         // then
-        assertThat(result.getTitle()).isEqualTo("수정된 제목");
-        assertThat(result.getDays()).hasSize(2);
+        assertThat(result.title()).isEqualTo("수정된 제목");
+        assertThat(result.days()).hasSize(2);
 
         // Day 1은 기존 그대로
-        assertThat(result.getDays().get(0).getSpots().get(0).getSpotId())
+        assertThat(result.days().get(0).spots().get(0).spotId())
                 .isEqualTo(existingDay1SpotIds.get(0));
 
         // Day 2는 새로 조립
-        assertThat(result.getDays().get(1).getSpots().get(0).getSpotId()).isEqualTo(3L);
-        assertThat(result.getDays().get(1).getSpots().get(1).getSpotId()).isEqualTo(4L);
+        assertThat(result.days().get(1).spots().get(0).spotId()).isEqualTo(3L);
+        assertThat(result.days().get(1).spots().get(1).spotId()).isEqualTo(4L);
     }
 
     @Test
@@ -187,10 +187,10 @@ class RouteSaveServiceTest {
         );
 
         // when
-        Route result = routeSaveService.update(publicId, command);
+        RouteSaveResult result = routeSaveService.update(publicId, command);
 
         // then
-        assertThat(result.getTitle()).isEqualTo("새 제목");
+        assertThat(result.title()).isEqualTo("새 제목");
         verify(spotSnapshotReader, never()).readBySpotIds(anyList());
         verify(legCalculator, never()).calculate(anyDouble(), anyDouble(), anyDouble(), anyDouble());
     }
@@ -226,14 +226,15 @@ class RouteSaveServiceTest {
         );
 
         // when
-        Route result = routeSaveService.update(publicId, command);
+        RouteSaveResult result = routeSaveService.update(publicId, command);
 
         // then: 같은 day_number 를 새 Day 로 갈아끼우면 uk_route_day_route_day_number 에 걸린다 —
         // 엔티티는 그대로 두고 안의 일정만 바뀌어야 한다.
-        assertThat(result.getDays().get(0)).isSameAs(day1Before);
-        assertThat(result.getDays().get(0).getSpots()).hasSize(1);
-        assertThat(result.getDays().get(0).getSpots().get(0).getSpotId()).isEqualTo(7L);
-        assertThat(result.getDays().get(0).getSpots().get(0).getSequence()).isEqualTo(1);
+        // RouteSaveResult 변환 후에는 엔티티 동일성(isSameAs) 대신 원본 엔티티로 검증한다.
+        assertThat(existingRoute.getDays().get(0)).isSameAs(day1Before);
+        assertThat(result.days().get(0).spots()).hasSize(1);
+        assertThat(result.days().get(0).spots().get(0).spotId()).isEqualTo(7L);
+        assertThat(result.days().get(0).spots().get(0).sequence()).isEqualTo(1);
         // 비운 스팟의 DELETE 가 새 INSERT 보다 먼저 나가야 uk_route_spot_day_sequence 를 피한다.
         verify(routeRepository).flush();
     }
@@ -312,19 +313,19 @@ class RouteSaveServiceTest {
         RouteDay lastDayBefore = existingRoute.getDays().get(1);
 
         // when
-        Route result = routeSaveService.addSpotToLastDay(publicId, MEMBER_ID, newSpotId);
+        RouteSaveResult result = routeSaveService.addSpotToLastDay(publicId, MEMBER_ID, newSpotId);
 
         // then
-        assertThat(result.getDays().get(1).getSpots()).hasSize(2);
-        assertThat(result.getDays().get(1).getSpots().get(1).getSpotId()).isEqualTo(newSpotId);
-        assertThat(result.getDays().get(1).getSpots().get(1).getSequence()).isEqualTo(2);
-        assertThat(result.getDays().get(1).getLegs()).hasSize(1);
-        assertThat(result.getDays().get(1).getLegs().get(0).getFromSequence()).isEqualTo(1);
-        assertThat(result.getDays().get(1).getLegs().get(0).getToSequence()).isEqualTo(2);
+        assertThat(result.days().get(1).spots()).hasSize(2);
+        assertThat(result.days().get(1).spots().get(1).spotId()).isEqualTo(newSpotId);
+        assertThat(result.days().get(1).spots().get(1).sequence()).isEqualTo(2);
+        assertThat(result.days().get(1).legs()).hasSize(1);
+        assertThat(result.days().get(1).legs().get(0).fromSequence()).isEqualTo(1);
+        assertThat(result.days().get(1).legs().get(0).toSequence()).isEqualTo(2);
         // 영속 상태의 Day를 새 인스턴스로 갈아끼우지 않고 그대로 덧붙인다 (day_number 유니크 제약 회피)
-        assertThat(result.getDays().get(1)).isSameAs(lastDayBefore);
+        assertThat(existingRoute.getDays().get(1)).isSameAs(lastDayBefore);
         // Day 1은 변경 없음
-        assertThat(result.getDays().get(0).getSpots()).hasSize(2);
+        assertThat(result.days().get(0).spots()).hasSize(2);
     }
 
     @Test
@@ -349,13 +350,13 @@ class RouteSaveServiceTest {
                 )));
 
         // when
-        Route result = routeSaveService.addSpotToLastDay(publicId, MEMBER_ID, newSpotId);
+        RouteSaveResult result = routeSaveService.addSpotToLastDay(publicId, MEMBER_ID, newSpotId);
 
         // then
-        RouteDay lastDay = result.getDays().get(0);
-        assertThat(lastDay.getSpots()).hasSize(2);
-        assertThat(lastDay.getLegs()).hasSize(1);
-        assertThat(lastDay.getLegs().get(0).getTravelMode()).isEqualTo(TravelMode.UNAVAILABLE);
+        RouteSaveResult.DayResult lastDay = result.days().get(0);
+        assertThat(lastDay.spots()).hasSize(2);
+        assertThat(lastDay.legs()).hasSize(1);
+        assertThat(lastDay.legs().get(0).travelMode()).isEqualTo(TravelMode.UNAVAILABLE);
         verify(legCalculator, never()).calculate(anyDouble(), anyDouble(), anyDouble(), anyDouble());
     }
 
@@ -377,13 +378,13 @@ class RouteSaveServiceTest {
                 .willReturn(List.of(createSnapshot(newSpotId, 37.58, 127.08)));
 
         // when
-        Route result = routeSaveService.addSpotToLastDay(publicId, MEMBER_ID, newSpotId);
+        RouteSaveResult result = routeSaveService.addSpotToLastDay(publicId, MEMBER_ID, newSpotId);
 
         // then
-        RouteDay lastDay = result.getDays().get(0);
-        assertThat(lastDay.getSpots()).hasSize(1);
-        assertThat(lastDay.getSpots().get(0).getSequence()).isEqualTo(1);
-        assertThat(lastDay.getLegs()).isEmpty();
+        RouteSaveResult.DayResult lastDay = result.days().get(0);
+        assertThat(lastDay.spots()).hasSize(1);
+        assertThat(lastDay.spots().get(0).sequence()).isEqualTo(1);
+        assertThat(lastDay.legs()).isEmpty();
         verify(legCalculator, never()).calculate(anyDouble(), anyDouble(), anyDouble(), anyDouble());
     }
 

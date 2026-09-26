@@ -14,6 +14,7 @@ import com.moodi.route.application.RouteGenerateService;
 import com.moodi.route.application.RouteListRow;
 import com.moodi.route.application.RouteQueryService;
 import com.moodi.route.application.RouteSaveCommand;
+import com.moodi.route.application.RouteSaveResult;
 import com.moodi.route.application.RouteCopyService;
 import com.moodi.route.application.RouteSaveService;
 import com.moodi.route.application.RouteShareLinkBuilder;
@@ -160,16 +161,16 @@ class RouteControllerDocsTest extends AuthenticatedRestDocsSupport {
                 )
         );
 
-        Route route = RouteFixture.createRoute(
+        RouteSaveResult saveResult = RouteSaveResult.from(RouteFixture.createRoute(
                 memberId, "Retro mood trip in Seongsu",
                 LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 11),
                 List.of(
                         RouteFixture.createDay(1, LocalDate.of(2026, 8, 10), 2),
                         RouteFixture.createDay(2, LocalDate.of(2026, 8, 11), 2)
                 )
-        );
+        ));
 
-        given(routeSaveService.save(any(RouteSaveCommand.class))).willReturn(route);
+        given(routeSaveService.save(any(RouteSaveCommand.class))).willReturn(saveResult);
 
         // when & then
         mockMvc.perform(post("/api/routes")
@@ -203,16 +204,16 @@ class RouteControllerDocsTest extends AuthenticatedRestDocsSupport {
                 )
         );
 
-        Route route = RouteFixture.createRoute(
+        RouteSaveResult updateResult = RouteSaveResult.from(RouteFixture.createRoute(
                 memberId, "Updated Seoul trip",
                 LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 11),
                 List.of(
                         RouteFixture.createDay(1, LocalDate.of(2026, 8, 10), 2),
                         RouteFixture.createDay(2, LocalDate.of(2026, 8, 11), 2)
                 )
-        );
+        ));
 
-        given(routeSaveService.update(any(UUID.class), any(RouteSaveCommand.class))).willReturn(route);
+        given(routeSaveService.update(any(UUID.class), any(RouteSaveCommand.class))).willReturn(updateResult);
 
         // when & then
         mockMvc.perform(put("/api/routes/{publicId}", publicId)
@@ -367,17 +368,17 @@ class RouteControllerDocsTest extends AuthenticatedRestDocsSupport {
     void add_spot_to_route() throws Exception {
         // given
         UUID publicId = UUID.randomUUID();
-        Route route = RouteFixture.createRoute(
+        RouteSaveResult addSpotResult = RouteSaveResult.from(RouteFixture.createRoute(
                 memberId, "Retro mood trip in Seongsu",
                 LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 11),
                 List.of(
                         RouteFixture.createDay(1, LocalDate.of(2026, 8, 10), 2),
                         RouteFixture.createDay(2, LocalDate.of(2026, 8, 11), 2)
                 )
-        );
+        ));
 
         given(routeSaveService.addSpotToLastDay(any(UUID.class), any(UUID.class), eq(5L)))
-                .willReturn(route);
+                .willReturn(addSpotResult);
 
         // when & then
         mockMvc.perform(post("/api/routes/{publicId}/spots", publicId)
