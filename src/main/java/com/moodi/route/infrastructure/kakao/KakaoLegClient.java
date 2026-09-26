@@ -8,12 +8,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
+import java.util.Comparator;
 import java.util.Optional;
 
 @Slf4j
@@ -23,7 +20,6 @@ public class KakaoLegClient implements LegClient {
     private static final String BASE_URL = "https://dapi.kakao.com";
     private static final String TRANSIT_PATH = "/v2/routing/publictraffic";
     private static final String WALK_PATH = "/v2/routing/walk";
-    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final RestClient restClient;
 
@@ -43,7 +39,7 @@ public class KakaoLegClient implements LegClient {
     public Optional<LegResult> findTransitRoute(double startLongitude, double startLatitude,
                                                  double endLongitude, double endLatitude) {
         try {
-            String response = restClient.get()
+            KakaoTransitResponse response = restClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .path(TRANSIT_PATH)
                             .queryParam("start_x", startLongitude)
@@ -52,7 +48,7 @@ public class KakaoLegClient implements LegClient {
                             .queryParam("end_y", endLatitude)
                             .build())
                     .retrieve()
-                    .body(String.class);
+                    .body(KakaoTransitResponse.class);
 
             String landingUrl = buildLandingUrl(startLatitude, startLongitude, endLatitude, endLongitude);
             return parseTransitResponse(response, landingUrl);
@@ -67,7 +63,7 @@ public class KakaoLegClient implements LegClient {
     public Optional<LegResult> findWalkRoute(double startLongitude, double startLatitude,
                                               double endLongitude, double endLatitude) {
         try {
-            String response = restClient.get()
+            KakaoWalkResponse response = restClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .path(WALK_PATH)
                             .queryParam("start_x", startLongitude)
@@ -77,7 +73,7 @@ public class KakaoLegClient implements LegClient {
                             .queryParam("route_mode", "SHORTEST")
                             .build())
                     .retrieve()
-                    .body(String.class);
+                    .body(KakaoWalkResponse.class);
 
             String landingUrl = buildLandingUrl(startLatitude, startLongitude, endLatitude, endLongitude);
             return parseWalkResponse(response, landingUrl);
@@ -88,93 +84,39 @@ public class KakaoLegClient implements LegClient {
         }
     }
 
-    /**
-     * 대중교통 응답 구조:
-     * { "routes": [ { "properties": { "totalDistance": m, "totalTime": sec, "transfers": n, "fare": {...} }, "steps": [...] } ] }
-     * routes가 여러 개 → totalTime 가장 짧은 경로 선택
-     */
-    @SuppressWarnings("unchecked")
-    private Optional<LegResult> parseTransitResponse(String responseJson, String landingUrl) {
-        try {
-            Map<String, Object> response = MAPPER.readValue(responseJson, new TypeReference<>() {});
-            List<Map<String, Object>> routes = (List<Map<String, Object>>) response.get("routes");
-
-            if (routes == null || routes.isEmpty()) {
-                return Optional.empty();
-            }
-
-            Map<String, Object> bestRoute = routes.stream()
-                    .min((a, b) -> {
-                        int timeA = extractTransitTotalTime(a);
-                        int timeB = extractTransitTotalTime(b);
-                        return Integer.compare(timeA, timeB);
-                    })
-                    .orElse(null);
-
-            if (bestRoute == null) {
-                return Optional.empty();
-            }
-
-            Map<String, Object> properties = (Map<String, Object>) bestRoute.get("properties");
-            int totalTime = ((Number) properties.get("totalTime")).intValue();
-            int totalDistance = ((Number) properties.get("totalDistance")).intValue();
-
-            return Optional.of(new LegResult(
-                    TravelMode.PUBLIC_TRANSIT,
-                    totalTime,
-                    totalDistance,
-                    landingUrl
-            ));
-        } catch (Exception e) {
-            log.warn("카카오 대중교통 응답 파싱 실패: {}", e.getMessage());
+    private Optional<LegResult> parseTransitResponse(KakaoTransitResponse response, String landingUrl) {
+        if (response == null || response.routes() == null || response.routes().isEmpty()) {
             return Optional.empty();
         }
+
+        return response.routes().stream()
+                .min(Comparator.comparingInt(r -> r.properties().totalTime()))
+                .map(best -> new LegResult(
+                        TravelMode.PUBLIC_TRANSIT,
+                        best.properties().totalTime(),
+                        best.properties().totalDistance(),
+                        landingUrl
+                ));
     }
 
-    /**
-     * 도보 응답 구조:
-     * { "route": { "legs": [ { "properties": { "distance": m, "time": sec }, "steps": [...] } ] } }
-     */
-    @SuppressWarnings("unchecked")
-    private Optional<LegResult> parseWalkResponse(String responseJson, String landingUrl) {
-        try {
-            Map<String, Object> response = MAPPER.readValue(responseJson, new TypeReference<>() {});
-            Map<String, Object> route = (Map<String, Object>) response.get("route");
-
-            if (route == null) {
-                return Optional.empty();
-            }
-
-            List<Map<String, Object>> legs = (List<Map<String, Object>>) route.get("legs");
-            if (legs == null || legs.isEmpty()) {
-                return Optional.empty();
-            }
-
-            Map<String, Object> properties = (Map<String, Object>) legs.getFirst().get("properties");
-            int totalTime = ((Number) properties.get("time")).intValue();
-            int totalDistance = ((Number) properties.get("distance")).intValue();
-
-            return Optional.of(new LegResult(
-                    TravelMode.WALK,
-                    totalTime,
-                    totalDistance,
-                    landingUrl
-            ));
-        } catch (Exception e) {
-            log.warn("카카오 도보 응답 파싱 실패: {}", e.getMessage());
+    private Optional<LegResult> parseWalkResponse(KakaoWalkResponse response, String landingUrl) {
+        if (response == null || response.route() == null
+                || response.route().legs() == null || response.route().legs().isEmpty()) {
             return Optional.empty();
         }
+
+        KakaoWalkResponse.Properties properties = response.route().legs().getFirst().properties();
+        return Optional.of(new LegResult(
+                TravelMode.WALK,
+                properties.time(),
+                properties.distance(),
+                landingUrl
+        ));
     }
 
     private String buildLandingUrl(double startLatitude, double startLongitude,
                                     double endLatitude, double endLongitude) {
         return "https://map.kakao.com/link/from/출발," + startLatitude + "," + startLongitude
                 + "/to/도착," + endLatitude + "," + endLongitude;
-    }
-
-    @SuppressWarnings("unchecked")
-    private int extractTransitTotalTime(Map<String, Object> route) {
-        Map<String, Object> properties = (Map<String, Object>) route.get("properties");
-        return ((Number) properties.get("totalTime")).intValue();
     }
 }
