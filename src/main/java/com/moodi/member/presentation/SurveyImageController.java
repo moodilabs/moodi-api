@@ -1,6 +1,7 @@
 package com.moodi.member.presentation;
 
 import com.moodi.member.application.SurveyImageService;
+import com.moodi.member.presentation.dto.SurveyImageResponse;
 import com.moodi.shared.response.SuccessResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,8 +16,12 @@ public class SurveyImageController {
     public SurveyImageController(SurveyImageService service) {
         this.service = service;
     }
+
     @GetMapping("/api/v1/members/survey-images")
-    public SuccessResponse<List<SurveyImageService.View>> list() {
-        return SuccessResponse.of(service.getPublished());
+    public SuccessResponse<List<SurveyImageResponse>> list() {
+        List<SurveyImageResponse> responses = service.getPublished().stream()
+                .map(SurveyImageResponse::from)
+                .toList();
+        return SuccessResponse.of(responses);
     }
 }

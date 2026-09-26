@@ -1,6 +1,8 @@
 package com.moodi.member.presentation.admin;
 
 import com.moodi.member.application.SurveyImageService;
+import com.moodi.member.presentation.dto.SurveyImageRequest;
+import com.moodi.member.presentation.dto.SurveyImageResponse;
 import com.moodi.shared.auth.AdminRequired;
 import com.moodi.shared.response.SuccessResponse;
 import jakarta.validation.Valid;
@@ -32,29 +34,38 @@ public class AdminSurveyImageController {
     public record IdResponse(Long id) {}
 
     public record OrderRequest(@NotNull List<Long> ids) {}
+
     @GetMapping
-    public SuccessResponse<List<SurveyImageService.View>> list() {
-        return SuccessResponse.of(service.getAll());
+    public SuccessResponse<List<SurveyImageResponse>> list() {
+        List<SurveyImageResponse> responses = service.getAll().stream()
+                .map(SurveyImageResponse::from)
+                .toList();
+        return SuccessResponse.of(responses);
     }
+
     @GetMapping("/{id}")
-    public SuccessResponse<SurveyImageService.View> get(@PathVariable Long id) {
-        return SuccessResponse.of(service.get(id));
+    public SuccessResponse<SurveyImageResponse> get(@PathVariable Long id) {
+        return SuccessResponse.of(SurveyImageResponse.from(service.get(id)));
     }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public SuccessResponse<IdResponse> create(@RequestBody SurveyImageService.Command request) {
-        return SuccessResponse.of(new IdResponse(service.create(request)));
+    public SuccessResponse<IdResponse> create(@RequestBody SurveyImageRequest request) {
+        return SuccessResponse.of(new IdResponse(service.create(request.toCommand())));
     }
+
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void update(@PathVariable Long id, @RequestBody SurveyImageService.Command request) {
-        service.update(id, request);
+    public void update(@PathVariable Long id, @RequestBody SurveyImageRequest request) {
+        service.update(id, request.toCommand());
     }
+
     @PutMapping("/order")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void reorder(@Valid @RequestBody OrderRequest request) {
         service.reorder(request.ids());
     }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
