@@ -4,7 +4,10 @@ import com.moodi.shared.error.BusinessException;
 import com.moodi.shared.error.ErrorCode;
 import com.moodi.spot.support.SpotFixture;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -144,5 +147,141 @@ class SpotTest {
 
         assertThat(spot.isRouteExcluded()).isTrue();
         assertThat(spot.getStatus()).isEqualTo(SpotStatus.TAGGING_PENDING);
+    }
+
+    @Test
+    @DisplayName("Spot 생성 시 moodTaggingStatus는 PENDING이다")
+    void create_sets_mood_tagging_pending() {
+        Spot spot = SpotFixture.create();
+
+        assertThat(spot.getMoodTaggingStatus()).isEqualTo(MoodTaggingStatus.PENDING);
+        assertThat(spot.getMoodTaggingAttemptCount()).isZero();
+    }
+
+    @Nested
+    @DisplayName("무드 태깅 상태 전이")
+    class MoodTaggingStatusTransition {
+
+        private static final LocalDateTime NOW = LocalDateTime.of(2026, 9, 25, 10, 0);
+
+        @Test
+        @DisplayName("PENDING에서 startTagging하면 PROCESSING이 되고 시도 횟수가 증가한다")
+        void start_tagging_from_pending() {
+            Spot spot = SpotFixture.create();
+
+            spot.startTagging(NOW);
+
+            assertThat(spot.getMoodTaggingStatus()).isEqualTo(MoodTaggingStatus.PROCESSING);
+            assertThat(spot.getMoodTaggingAttemptCount()).isEqualTo(1);
+            assertThat(spot.getMoodTaggingProcessingStartedAt()).isEqualTo(NOW);
+        }
+
+        @Test
+        @DisplayName("PROCESSING에서 completeTagging하면 COMPLETED가 된다")
+        void complete_tagging() {
+            Spot spot = SpotFixture.create();
+            spot.startTagging(NOW);
+
+            spot.completeTagging(NOW.plusMinutes(5));
+
+            assertThat(spot.getMoodTaggingStatus()).isEqualTo(MoodTaggingStatus.COMPLETED);
+            assertThat(spot.getMoodTaggingProcessingStartedAt()).isNull();
+            assertThat(spot.getMoodTaggingLastError()).isNull();
+        }
+
+        @Test
+        @DisplayName("일시 오류 시 RETRY_WAIT가 되고 재시도 시각이 설정된다")
+        void mark_retry_wait_on_transient_error() {
+            Spot spot = SpotFixture.create();
+            spot.startTagging(NOW);
+
+            spot.markRetryWait("429 Rate Limit", NOW.plusMinutes(1));
+
+            assertThat(spot.getMoodTaggingStatus()).isEqualTo(MoodTaggingStatus.RETRY_WAIT);
+            assertThat(spot.getMoodTaggingLastError()).isEqualTo("429 Rate Limit");
+            assertThat(spot.getMoodTaggingNextRetryAt()).isEqualTo(NOW.plusMinutes(2));
+        }
+
+        @Test
+        @DisplayName("재시도 4회 초과 시 FAILED로 전환된다")
+        void mark_retry_wait_exceeds_max_becomes_failed() {
+            Spot spot = SpotFixture.create();
+            LocalDateTime time = NOW;
+
+            for (int i = 0; i < 3; i++) {
+                spot.startTagging(time);
+                spot.markRetryWait("timeout", time.plusMinutes(1));
+                time = spot.getMoodTaggingNextRetryAt().plusMinutes(1);
+            }
+
+            // 4번째 시도
+            spot.startTagging(time);
+            spot.markRetryWait("timeout", time.plusMinutes(1));
+
+            assertThat(spot.getMoodTaggingStatus()).isEqualTo(MoodTaggingStatus.FAILED);
+            assertThat(spot.getMoodTaggingAttemptCount()).isEqualTo(4);
+        }
+
+        @Test
+        @DisplayName("데이터 문제 시 즉시 FAILED가 된다")
+        void mark_failed_on_data_error() {
+            Spot spot = SpotFixture.create();
+            spot.startTagging(NOW);
+
+            spot.markFailed("이미지 없음", NOW.plusMinutes(1));
+
+            assertThat(spot.getMoodTaggingStatus()).isEqualTo(MoodTaggingStatus.FAILED);
+            assertThat(spot.getMoodTaggingLastError()).isEqualTo("이미지 없음");
+        }
+
+        @Test
+        @DisplayName("FAILED에서 resetForRetry하면 PENDING으로 돌아간다")
+        void reset_for_retry() {
+            Spot spot = SpotFixture.create();
+            spot.startTagging(NOW);
+            spot.markFailed("파싱 실패", NOW.plusMinutes(1));
+
+            spot.resetForRetry();
+
+            assertThat(spot.getMoodTaggingStatus()).isEqualTo(MoodTaggingStatus.PENDING);
+            assertThat(spot.getMoodTaggingAttemptCount()).isZero();
+            assertThat(spot.getMoodTaggingLastError()).isNull();
+        }
+
+        @Test
+        @DisplayName("COMPLETED에서 startTagging하면 예외가 발생한다")
+        void start_tagging_rejects_completed() {
+            Spot spot = SpotFixture.create();
+            spot.startTagging(NOW);
+            spot.completeTagging(NOW.plusMinutes(5));
+
+            assertThatThrownBy(() -> spot.startTagging(NOW.plusMinutes(10)))
+                    .isInstanceOf(IllegalStateException.class);
+        }
+
+        @Test
+        @DisplayName("PROCESSING이 20분 이상 지속되면 stale로 복구된다")
+        void recover_stale_processing() {
+            Spot spot = SpotFixture.create();
+            spot.startTagging(NOW);
+
+            boolean recovered = spot.recoverStaleProcessing(NOW.plusMinutes(25));
+
+            assertThat(recovered).isTrue();
+            assertThat(spot.getMoodTaggingStatus()).isEqualTo(MoodTaggingStatus.RETRY_WAIT);
+            assertThat(spot.getMoodTaggingLastError()).contains("타임아웃");
+        }
+
+        @Test
+        @DisplayName("PROCESSING이 20분 미만이면 복구되지 않는다")
+        void recover_stale_processing_not_yet() {
+            Spot spot = SpotFixture.create();
+            spot.startTagging(NOW);
+
+            boolean recovered = spot.recoverStaleProcessing(NOW.plusMinutes(10));
+
+            assertThat(recovered).isFalse();
+            assertThat(spot.getMoodTaggingStatus()).isEqualTo(MoodTaggingStatus.PROCESSING);
+        }
     }
 }

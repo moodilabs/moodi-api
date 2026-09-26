@@ -39,6 +39,7 @@ public enum ErrorCode {
     INSUFFICIENT_MOOD_SELECTION(HttpStatus.BAD_REQUEST, "INSUFFICIENT_MOOD_SELECTION", "무드는 3개 이상 선택해주세요."),
 
     SPOT_NOT_FOUND(HttpStatus.NOT_FOUND, "SPOT_NOT_FOUND", "스팟을 찾을 수 없습니다."),
+    SPOT_NOT_FAILED(HttpStatus.CONFLICT, "SPOT_NOT_FAILED", "FAILED 상태의 스팟만 재시도할 수 있습니다."),
     SPOT_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "SPOT_NOT_AVAILABLE", "북마크할 수 없는 스팟입니다."),
     SPOT_MOOD_NOT_FOUND(HttpStatus.NOT_FOUND, "SPOT_MOOD_NOT_FOUND", "아직 무드 태깅이 되지 않은 스팟입니다."),
 

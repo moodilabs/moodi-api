@@ -229,6 +229,25 @@
             <basic name="statusChangedAt">
                 <column name="status_changed_at"/>
             </basic>
+            <basic name="moodTaggingStatus">
+                <column name="mood_tagging_status" nullable="false" length="20"/>
+                <enumerated>STRING</enumerated>
+            </basic>
+            <basic name="moodTaggingAttemptCount">
+                <column name="mood_tagging_attempt_count" nullable="false"/>
+            </basic>
+            <basic name="moodTaggingLastError">
+                <column name="mood_tagging_last_error" length="500"/>
+            </basic>
+            <basic name="moodTaggingLastAttemptedAt">
+                <column name="mood_tagging_last_attempted_at"/>
+            </basic>
+            <basic name="moodTaggingNextRetryAt">
+                <column name="mood_tagging_next_retry_at"/>
+            </basic>
+            <basic name="moodTaggingProcessingStartedAt">
+                <column name="mood_tagging_processing_started_at"/>
+            </basic>
         </attributes>
     </entity>
 
