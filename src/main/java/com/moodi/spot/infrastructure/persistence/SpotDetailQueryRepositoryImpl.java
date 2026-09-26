@@ -7,12 +7,15 @@ import com.moodi.spot.application.dto.SimilarMoodSpotItem;
 import com.moodi.spot.application.RegionDictionary;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Repository;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Repository
 public class SpotDetailQueryRepositoryImpl implements SpotDetailQueryRepository {
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final EntityManager em;
 
@@ -118,14 +121,14 @@ public class SpotDetailQueryRepositoryImpl implements SpotDetailQueryRepository 
         if (moodTagsJson == null) {
             return List.of();
         }
-        String stripped = moodTagsJson.replaceAll("[\\[\\]\"]", "");
-        if (stripped.isBlank()) {
+        try {
+            List<String> keys = MAPPER.readValue(moodTagsJson, new TypeReference<List<String>>() {});
+            return keys.stream()
+                    .map(MoodTag::fromKey)
+                    .map(MoodTag::getDisplayTag)
+                    .toList();
+        } catch (Exception e) {
             return List.of();
         }
-        return Arrays.stream(stripped.split(","))
-                .map(String::trim)
-                .map(MoodTag::fromKey)
-                .map(MoodTag::getDisplayTag)
-                .toList();
     }
 }
