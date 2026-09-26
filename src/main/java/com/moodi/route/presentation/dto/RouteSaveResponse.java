@@ -1,9 +1,6 @@
 package com.moodi.route.presentation.dto;
 
-import com.moodi.route.domain.Route;
-import com.moodi.route.domain.RouteDay;
-import com.moodi.route.domain.RouteLeg;
-import com.moodi.route.domain.RouteSpot;
+import com.moodi.route.application.RouteSaveResult;
 import com.moodi.route.domain.TravelMode;
 
 import java.time.LocalDate;
@@ -50,48 +47,48 @@ public record RouteSaveResponse(
     ) {
     }
 
-    public static RouteSaveResponse from(Route route) {
-        List<DayPlan> dayPlans = route.getDays().stream()
+    public static RouteSaveResponse from(RouteSaveResult result) {
+        List<DayPlan> dayPlans = result.days().stream()
                 .map(RouteSaveResponse::toDayPlan)
                 .toList();
 
         return new RouteSaveResponse(
-                route.getPublicId(),
-                route.getTitle(),
-                route.getStartDate(),
-                route.getEndDate(),
+                result.publicId(),
+                result.title(),
+                result.startDate(),
+                result.endDate(),
                 dayPlans
         );
     }
 
-    private static DayPlan toDayPlan(RouteDay day) {
-        List<SpotPlan> spots = day.getSpots().stream()
+    private static DayPlan toDayPlan(RouteSaveResult.DayResult day) {
+        List<SpotPlan> spots = day.spots().stream()
                 .map(RouteSaveResponse::toSpotPlan)
                 .toList();
 
-        List<LegPlan> legs = day.getLegs().stream()
+        List<LegPlan> legs = day.legs().stream()
                 .map(RouteSaveResponse::toLegPlan)
                 .toList();
 
-        return new DayPlan(day.getDayNumber(), day.getDate(), spots, legs);
+        return new DayPlan(day.dayNumber(), day.date(), spots, legs);
     }
 
-    private static SpotPlan toSpotPlan(RouteSpot spot) {
+    private static SpotPlan toSpotPlan(RouteSaveResult.SpotResult spot) {
         return new SpotPlan(
-                spot.getSpotId(), spot.getSequence(), spot.getEstimatedMinutes(),
-                spot.getSpotTitle(), spot.getSpotImageUrl(),
-                spot.getSpotArea(), spot.getSpotDistrict(),
-                spot.getSpotLatitude(), spot.getSpotLongitude(),
-                spot.getSpotContentType(), spot.getSpotDescription()
+                spot.spotId(), spot.sequence(), spot.estimatedMinutes(),
+                spot.title(), spot.imageUrl(),
+                spot.area(), spot.district(),
+                spot.latitude(), spot.longitude(),
+                spot.contentType(), spot.description()
         );
     }
 
-    private static LegPlan toLegPlan(RouteLeg leg) {
+    private static LegPlan toLegPlan(RouteSaveResult.LegResult leg) {
         return new LegPlan(
-                leg.getFromSequence(), leg.getToSequence(),
-                leg.getTravelMode() != TravelMode.UNAVAILABLE ? leg.getTravelMode().name() : null,
-                leg.getDurationSeconds(), leg.getDistanceMeters(),
-                leg.getLandingUrl()
+                leg.fromSequence(), leg.toSequence(),
+                leg.travelMode() != TravelMode.UNAVAILABLE ? leg.travelMode().name() : null,
+                leg.durationSeconds(), leg.distanceMeters(),
+                leg.landingUrl()
         );
     }
 }
