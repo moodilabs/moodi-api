@@ -2,6 +2,7 @@ package com.moodi.spot.infrastructure.translation;
 
 import com.moodi.spot.application.RateLimitException;
 import com.moodi.spot.application.SpotTranslationClient;
+import com.moodi.spot.infrastructure.openai.ChatCompletionResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
@@ -127,13 +128,13 @@ public class LlmSpotTranslationClient implements SpotTranslationClient {
                 "temperature", 0.3
         );
 
-        String responseJson = restClient.post()
+        ChatCompletionResponse response = restClient.post()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(requestBody)
                 .retrieve()
-                .body(String.class);
+                .body(ChatCompletionResponse.class);
 
-        return extractContent(responseJson);
+        return response.extractContent();
     }
 
     @SuppressWarnings("unchecked")
@@ -166,17 +167,6 @@ public class LlmSpotTranslationClient implements SpotTranslationClient {
         return value == null || value.isBlank() ? null : value;
     }
 
-    @SuppressWarnings("unchecked")
-    private String extractContent(String responseJson) {
-        try {
-            Map<String, Object> response = MAPPER.readValue(responseJson, new TypeReference<Map<String, Object>>() {});
-            List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
-            Map<String, Object> message = (Map<String, Object>) choices.getFirst().get("message");
-            return ((String) message.get("content")).strip();
-        } catch (Exception e) {
-            throw new IllegalStateException("LLM 응답 추출 실패: " + e.getMessage(), e);
-        }
-    }
 
     private void sleep(long millis) {
         try {

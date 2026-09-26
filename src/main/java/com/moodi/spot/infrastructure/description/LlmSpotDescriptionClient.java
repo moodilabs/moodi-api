@@ -2,6 +2,7 @@ package com.moodi.spot.infrastructure.description;
 
 import com.moodi.spot.application.RateLimitException;
 import com.moodi.spot.application.SpotDescriptionClient;
+import com.moodi.spot.infrastructure.openai.ChatCompletionResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
@@ -9,8 +10,6 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -21,7 +20,6 @@ import java.util.Map;
 public class LlmSpotDescriptionClient implements SpotDescriptionClient {
 
     private static final String OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
-    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final int MAX_RETRIES = 3;
     private static final long BASE_DELAY_MS = 1000;
 
@@ -93,13 +91,13 @@ public class LlmSpotDescriptionClient implements SpotDescriptionClient {
                 "temperature", 0.7
         );
 
-        String responseJson = restClient.post()
+        ChatCompletionResponse response = restClient.post()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(requestBody)
                 .retrieve()
-                .body(String.class);
+                .body(ChatCompletionResponse.class);
 
-        return extractContent(responseJson);
+        return response.extractContent();
     }
 
     private String buildKoPrompt(String spotName, String contentType, String area,
@@ -168,15 +166,4 @@ public class LlmSpotDescriptionClient implements SpotDescriptionClient {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private String extractContent(String responseJson) {
-        try {
-            Map<String, Object> response = MAPPER.readValue(responseJson, new TypeReference<Map<String, Object>>() {});
-            List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
-            Map<String, Object> message = (Map<String, Object>) choices.getFirst().get("message");
-            return ((String) message.get("content")).strip();
-        } catch (Exception e) {
-            throw new IllegalStateException("LLM 응답 추출 실패: " + e.getMessage(), e);
-        }
-    }
 }

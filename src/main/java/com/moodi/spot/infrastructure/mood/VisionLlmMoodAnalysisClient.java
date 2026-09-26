@@ -15,6 +15,7 @@ import com.moodi.shared.mood.Space;
 import com.moodi.shared.mood.Structure;
 import com.moodi.spot.application.MoodAnalysisClient;
 import com.moodi.spot.application.RateLimitException;
+import com.moodi.spot.infrastructure.openai.ChatCompletionResponse;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -73,8 +74,7 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
         messages.add(Map.of("role", "user", "content", buildContentParts(imageUrls, overview)));
 
         for (int attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-            String responseJson = callApi(messages);
-            String content = extractContent(responseJson);
+            String content = callApi(messages);
 
             try {
                 MoodVector vector = parseVector(content);
@@ -174,28 +174,17 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
                 "temperature", 0.2
         );
 
-        return restClient.post()
+        ChatCompletionResponse response = restClient.post()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(requestBody)
                 .retrieve()
-                .body(String.class);
-    }
+                .body(ChatCompletionResponse.class);
 
-    @SuppressWarnings("unchecked")
-    private String extractContent(String responseJson) {
-        try {
-            Map<String, Object> response = MAPPER.readValue(responseJson, new TypeReference<Map<String, Object>>() {});
-            List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
-            Map<String, Object> message = (Map<String, Object>) choices.getFirst().get("message");
-            String content = ((String) message.get("content")).strip();
-
-            if (content.startsWith("```")) {
-                content = content.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "");
-            }
-            return content;
-        } catch (Exception e) {
-            throw new IllegalStateException("LLM 응답 추출 실패: " + e.getMessage(), e);
+        String content = response.extractContent();
+        if (content.startsWith("```")) {
+            content = content.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "");
         }
+        return content;
     }
 
     private MoodVector parseVector(String content) {
