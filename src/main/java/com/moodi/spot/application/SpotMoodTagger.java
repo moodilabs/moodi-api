@@ -83,14 +83,19 @@ public class SpotMoodTagger {
             return CLAIM_SKIPPED;
         }
 
-        // 2. DB 조회 (트랜잭션 없이 auto-commit)
-        List<String> imageUrls = spotImageRepository.findBySpotId(spot.getId()).stream()
-                .map(SpotImage::getImageUrl)
-                .toList();
-
-        String overview = spotTranslationRepository.findBySpotIdAndLocale(spot.getId(), "ko-KR")
-                .map(SpotTranslation::getOverview)
-                .orElse("");
+        // 2. DB 조회 — 선점 후이므로 실패 시 상태 전이 필요
+        List<String> imageUrls;
+        String overview;
+        try {
+            imageUrls = spotImageRepository.findBySpotId(spot.getId()).stream()
+                    .map(SpotImage::getImageUrl)
+                    .toList();
+            overview = spotTranslationRepository.findBySpotIdAndLocale(spot.getId(), "ko-KR")
+                    .map(SpotTranslation::getOverview)
+                    .orElse("");
+        } catch (Exception e) {
+            return handleErrorAndReturn(spot, "DB 조회 실패: " + e.getMessage(), false);
+        }
 
         // 3. LLM 호출 (트랜잭션 밖, Semaphore로 동시 요청 수 제한)
         MoodAnalysisResult result;
@@ -99,14 +104,12 @@ public class SpotMoodTagger {
         try {
             result = moodAnalysisClient.analyze(imageUrls, overview);
         } catch (RateLimitException e) {
-            handleTransientError(spot, "429 Rate Limit: " + e.getMessage());
+            tryTransientError(spot, "429 Rate Limit: " + e.getMessage());
             throw e;
         } catch (IllegalStateException e) {
-            handleDataError(spot, "LLM 응답 오류: " + e.getMessage());
-            return HANDLED_ERROR;
+            return handleErrorAndReturn(spot, "LLM 응답 오류: " + e.getMessage(), true);
         } catch (Exception e) {
-            handleTransientError(spot, e.getClass().getSimpleName() + ": " + e.getMessage());
-            return HANDLED_ERROR;
+            return handleErrorAndReturn(spot, e.getClass().getSimpleName() + ": " + e.getMessage(), false);
         } finally {
             llmSemaphore.release();
         }
@@ -144,27 +147,40 @@ public class SpotMoodTagger {
         }
     }
 
-    private void handleTransientError(Spot spot, String error) {
-        try {
-            transactionTemplate.executeWithoutResult(status -> {
-                Spot freshSpot = spotRepository.findById(spot.getId()).orElseThrow();
-                freshSpot.markRetryWait(error, LocalDateTime.now(clock));
-                spotRepository.save(freshSpot);
-            });
-        } catch (Exception e) {
-            log.error("일시 오류 상태 저장 실패 spotId={}: {}", spot.getId(), e.getMessage());
+    /**
+     * 오류 상태 저장 후 적절한 반환값을 결정한다.
+     * 저장 성공 시 HANDLED_ERROR, 저장 실패 시 RuntimeException을 던져 tagAll이 예외로 집계하도록 한다.
+     *
+     * @param dataError true면 FAILED (데이터 문제), false면 RETRY_WAIT (일시 오류)
+     */
+    private long handleErrorAndReturn(Spot spot, String error, boolean dataError) {
+        if (saveErrorState(spot, error, dataError)) {
+            return HANDLED_ERROR;
         }
+        throw new RuntimeException("태깅 오류 상태 저장 실패 spotId=" + spot.getId() + ": " + error);
     }
 
-    private void handleDataError(Spot spot, String error) {
+    /** RateLimitException 전용 — 항상 예외를 다시 던지므로 저장 실패 여부만 로그로 남긴다. */
+    private void tryTransientError(Spot spot, String error) {
+        saveErrorState(spot, error, false);
+    }
+
+    /** @return 상태 저장 성공 여부 */
+    private boolean saveErrorState(Spot spot, String error, boolean dataError) {
         try {
             transactionTemplate.executeWithoutResult(status -> {
                 Spot freshSpot = spotRepository.findById(spot.getId()).orElseThrow();
-                freshSpot.markFailed(error, LocalDateTime.now(clock));
+                if (dataError) {
+                    freshSpot.markFailed(error, LocalDateTime.now(clock));
+                } else {
+                    freshSpot.markRetryWait(error, LocalDateTime.now(clock));
+                }
                 spotRepository.save(freshSpot);
             });
+            return true;
         } catch (Exception e) {
-            log.error("실패 상태 저장 실패 spotId={}: {}", spot.getId(), e.getMessage());
+            log.error("오류 상태 저장 실패 spotId={}: {}", spot.getId(), e.getMessage());
+            return false;
         }
     }
 }
