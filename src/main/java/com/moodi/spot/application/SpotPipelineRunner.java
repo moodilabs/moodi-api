@@ -16,9 +16,13 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class SpotPipelineRunner implements ApplicationRunner {
 
+    private static final String TARGET_LOCALE = "en-US";
+
     private final SpotImportService importService;
     private final SpotImageMigrationService imageMigrationService;
     private final SpotMoodTaggingService taggingService;
+    private final SpotTranslationBatchService translationBatchService;
+    private final SpotDescriptionBatchService descriptionBatchService;
     private final ApplicationContext applicationContext;
 
     @Value("${spot-pipeline.path}")
@@ -31,41 +35,69 @@ public class SpotPipelineRunner implements ApplicationRunner {
         boolean allSuccess = true;
 
         // 1단계: CSV 적재
-        log.info("[1/3] CSV 적재");
+        log.info("[1/5] CSV 적재");
         try {
             SpotImportService.ImportResult importResult = importService.run(csvPath);
             if (!importResult.success()) {
-                log.warn("[1/3] CSV 적재 일부 실패 — 다음 단계 계속 진행");
+                log.warn("[1/5] CSV 적재 일부 실패 — 다음 단계 계속 진행");
                 allSuccess = false;
             }
         } catch (Exception e) {
-            log.error("[1/3] CSV 적재 예외 발생 — 다음 단계 계속 진행", e);
+            log.error("[1/5] CSV 적재 예외 발생 — 다음 단계 계속 진행", e);
             allSuccess = false;
         }
 
         // 2단계: 이미지 GCS 업로드
-        log.info("[2/3] 이미지 GCS 마이그레이션");
+        log.info("[2/5] 이미지 GCS 마이그레이션");
         try {
             SpotImageMigrationService.MigrationResult migrationResult = imageMigrationService.run();
             if (!migrationResult.success()) {
-                log.warn("[2/3] 이미지 마이그레이션 일부 실패 — 다음 단계 계속 진행");
+                log.warn("[2/5] 이미지 마이그레이션 일부 실패 — 다음 단계 계속 진행");
                 allSuccess = false;
             }
         } catch (Exception e) {
-            log.error("[2/3] 이미지 마이그레이션 예외 발생 — 다음 단계 계속 진행", e);
+            log.error("[2/5] 이미지 마이그레이션 예외 발생 — 다음 단계 계속 진행", e);
             allSuccess = false;
         }
 
         // 3단계: 무드 태깅
-        log.info("[3/3] 무드 태깅");
+        log.info("[3/5] 무드 태깅");
         try {
             SpotMoodTaggingService.TaggingResult taggingResult = taggingService.tagAll(0);
             if (taggingResult.failed() > 0) {
-                log.warn("[3/3] 무드 태깅 일부 실패");
+                log.warn("[3/5] 무드 태깅 일부 실패 — 다음 단계 계속 진행");
                 allSuccess = false;
             }
         } catch (Exception e) {
-            log.error("[3/3] 무드 태깅 예외 발생", e);
+            log.error("[3/5] 무드 태깅 예외 발생 — 다음 단계 계속 진행", e);
+            allSuccess = false;
+        }
+
+        // 4단계: 영문 번역
+        log.info("[4/5] 영문 번역");
+        try {
+            SpotTranslationBatchService.BatchResult translationResult =
+                    translationBatchService.translateAll(TARGET_LOCALE, 0);
+            if (translationResult.failed() > 0) {
+                log.warn("[4/5] 영문 번역 일부 실패 — 다음 단계 계속 진행");
+                allSuccess = false;
+            }
+        } catch (Exception e) {
+            log.error("[4/5] 영문 번역 예외 발생 — 다음 단계 계속 진행", e);
+            allSuccess = false;
+        }
+
+        // 5단계: 영문 설명 생성
+        log.info("[5/5] 영문 설명 생성");
+        try {
+            SpotDescriptionBatchService.BatchResult descriptionResult =
+                    descriptionBatchService.generateAll(TARGET_LOCALE, 0);
+            if (descriptionResult.failed() > 0) {
+                log.warn("[5/5] 영문 설명 생성 일부 실패");
+                allSuccess = false;
+            }
+        } catch (Exception e) {
+            log.error("[5/5] 영문 설명 생성 예외 발생", e);
             allSuccess = false;
         }
 
