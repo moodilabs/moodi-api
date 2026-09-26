@@ -74,6 +74,8 @@ public class SpotMoodTaggingService {
                                 if (count % 50 == 0 || count == targets.size()) {
                                     log.info("태깅 진행 {}/{}", count, targets.size());
                                 }
+                            } else if (latencyMs == SpotMoodTagger.HANDLED_ERROR) {
+                                failed.incrementAndGet();
                             }
                         } catch (RateLimitException e) {
                             rateLimited.incrementAndGet();

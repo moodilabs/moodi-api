@@ -63,19 +63,24 @@ public class SpotMoodTagger {
         this.llmSemaphore = new Semaphore(concurrency);
     }
 
+    /** 선점 실패 (이미 다른 작업자가 처리 중) — 정상 skip. */
+    public static final long CLAIM_SKIPPED = -1;
+    /** 태깅 오류 처리 완료 (RETRY_WAIT 또는 FAILED 전이됨) — 실패 카운트 대상. */
+    public static final long HANDLED_ERROR = -2;
+
     /**
      * 1. DB에서 PROCESSING으로 선점 (짧은 트랜잭션, 커밋)
      * 2. LLM 호출 (트랜잭션 밖)
      * 3. 결과 저장 + 상태 전이 (짧은 트랜잭션)
      *
-     * @return LLM 호출 소요시간 (ms), 선점 실패 시 -1
+     * @return LLM 호출 소요시간 (ms), 선점 실패 시 CLAIM_SKIPPED, 오류 처리 시 HANDLED_ERROR
      */
     public long tagSpot(Spot spot) {
         // 1. PROCESSING 선점
         boolean claimed = claimForProcessing(spot);
         if (!claimed) {
             log.debug("선점 실패 spotId={} (이미 다른 작업자가 처리 중)", spot.getId());
-            return -1;
+            return CLAIM_SKIPPED;
         }
 
         // 2. DB 조회 (트랜잭션 없이 auto-commit)
@@ -98,10 +103,10 @@ public class SpotMoodTagger {
             throw e;
         } catch (IllegalStateException e) {
             handleDataError(spot, "LLM 응답 오류: " + e.getMessage());
-            return -1;
+            return HANDLED_ERROR;
         } catch (Exception e) {
             handleTransientError(spot, e.getClass().getSimpleName() + ": " + e.getMessage());
-            return -1;
+            return HANDLED_ERROR;
         } finally {
             llmSemaphore.release();
         }
