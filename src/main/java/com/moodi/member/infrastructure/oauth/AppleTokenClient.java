@@ -17,7 +17,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.Date;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -63,13 +62,14 @@ public class AppleTokenClient implements SocialTokenClient {
         form.add("grant_type", "authorization_code");
         form.add("code", authorizationCode);
         try {
-            Map<?, ?> body = restClient.post().uri(tokenUri)
+            OAuthTokenResponse body = restClient.post().uri(tokenUri)
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                     .body(form)
                     .retrieve()
-                    .body(Map.class);
-            Object refreshToken = body == null ? null : body.get("refresh_token");
-            return Optional.ofNullable(refreshToken).map(Object::toString).filter(token -> !token.isBlank());
+                    .body(OAuthTokenResponse.class);
+            return Optional.ofNullable(body)
+                    .map(OAuthTokenResponse::refreshToken)
+                    .filter(token -> !token.isBlank());
         } catch (RestClientResponseException e) {
             log.warn("Apple 토큰 교환 거절: status={}, body={}", e.getStatusCode().value(), e.getResponseBodyAsString());
             return Optional.empty();

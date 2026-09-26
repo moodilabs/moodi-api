@@ -9,7 +9,6 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -53,18 +52,17 @@ public class GoogleTokenClient implements SocialTokenClient {
         form.add("code", authorizationCode);
         form.add("redirect_uri", redirectUri == null ? "" : redirectUri);
         try {
-            Map<?, ?> body = restClient.post().uri(tokenUri)
+            OAuthTokenResponse body = restClient.post().uri(tokenUri)
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                     .body(form)
                     .retrieve()
-                    .body(Map.class);
-            Object refreshToken = body == null ? null : body.get("refresh_token");
-            if (refreshToken == null) {
+                    .body(OAuthTokenResponse.class);
+            if (body == null || body.refreshToken() == null) {
                 // 재동의 없이 받은 코드는 access_token만 온다 — 클라이언트가 강제 동의 옵션을 빠뜨린 것
                 log.warn("Google 토큰 응답에 refresh_token 없음 — 클라이언트의 serverAuthCode 요청 옵션 확인 필요");
                 return Optional.empty();
             }
-            return Optional.of(refreshToken.toString()).filter(token -> !token.isBlank());
+            return Optional.of(body.refreshToken()).filter(token -> !token.isBlank());
         } catch (RestClientResponseException e) {
             log.warn("Google 토큰 교환 거절: status={}, body={}", e.getStatusCode().value(), e.getResponseBodyAsString());
             return Optional.empty();
