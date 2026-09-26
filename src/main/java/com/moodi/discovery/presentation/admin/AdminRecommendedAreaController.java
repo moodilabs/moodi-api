@@ -3,6 +3,8 @@ package com.moodi.discovery.presentation.admin;
 import com.moodi.discovery.application.AreaSuggestService;
 import com.moodi.discovery.application.RecommendedAreaService;
 import com.moodi.discovery.presentation.dto.AreaSuggestResponse;
+import com.moodi.discovery.presentation.dto.RecommendedAreaRequest;
+import com.moodi.discovery.presentation.dto.RecommendedAreaResponse;
 import com.moodi.shared.auth.AdminRequired;
 import com.moodi.shared.response.SuccessResponse;
 import jakarta.validation.Valid;
@@ -40,10 +42,15 @@ public class AdminRecommendedAreaController {
     public record IdResponse(Long id) {}
 
     public record OrderRequest(@NotNull List<Long> ids) {}
+
     @GetMapping
-    public SuccessResponse<List<RecommendedAreaService.View>> list() {
-        return SuccessResponse.of(service.getAll());
+    public SuccessResponse<List<RecommendedAreaResponse>> list() {
+        List<RecommendedAreaResponse> responses = service.getAll().stream()
+                .map(RecommendedAreaResponse::from)
+                .toList();
+        return SuccessResponse.of(responses);
     }
+
     /**
      * 추천 지역 등록 폼의 자동완성. 관리자 웹은 `/api/admin/**`만 호출하므로
      * 앱용 `/api/v1/picks/areas`(회원 토큰 필요)를 그대로 쓸 수 없어 같은 후보를 여기서 내보낸다.
@@ -55,25 +62,30 @@ public class AdminRecommendedAreaController {
                 .toList();
         return SuccessResponse.of(responses);
     }
+
     @GetMapping("/{id}")
-    public SuccessResponse<RecommendedAreaService.View> get(@PathVariable Long id) {
-        return SuccessResponse.of(service.get(id));
+    public SuccessResponse<RecommendedAreaResponse> get(@PathVariable Long id) {
+        return SuccessResponse.of(RecommendedAreaResponse.from(service.get(id)));
     }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public SuccessResponse<IdResponse> create(@RequestBody RecommendedAreaService.Command request) {
-        return SuccessResponse.of(new IdResponse(service.create(request)));
+    public SuccessResponse<IdResponse> create(@RequestBody RecommendedAreaRequest request) {
+        return SuccessResponse.of(new IdResponse(service.create(request.toCommand())));
     }
+
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void update(@PathVariable Long id, @RequestBody RecommendedAreaService.Command request) {
-        service.update(id, request);
+    public void update(@PathVariable Long id, @RequestBody RecommendedAreaRequest request) {
+        service.update(id, request.toCommand());
     }
+
     @PutMapping("/order")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void reorder(@Valid @RequestBody OrderRequest request) {
         service.reorder(request.ids());
     }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
