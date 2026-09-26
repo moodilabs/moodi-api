@@ -31,7 +31,7 @@ public class RouteSaveService {
     private final LegCalculator legCalculator;
 
     @Transactional
-    public Route save(RouteSaveCommand command) {
+    public RouteSaveResult save(RouteSaveCommand command) {
         List<Long> allSpotIds = extractAllSpotIds(command.days());
         Map<Long, SpotSnapshot> snapshotMap = loadSnapshots(allSpotIds);
 
@@ -42,11 +42,11 @@ public class RouteSaveService {
                 command.startDate(), command.endDate(), days
         );
 
-        return initializeDays(routeRepository.save(route));
+        return RouteSaveResult.from(routeRepository.save(route));
     }
 
     @Transactional
-    public Route update(UUID publicId, RouteSaveCommand command) {
+    public RouteSaveResult update(UUID publicId, RouteSaveCommand command) {
         Route route = routeRepository.findByPublicId(publicId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROUTE_NOT_FOUND));
 
@@ -97,11 +97,11 @@ public class RouteSaveService {
             }
         }
 
-        return initializeDays(route);
+        return RouteSaveResult.from(route);
     }
 
     @Transactional
-    public Route addSpotToLastDay(UUID publicId, UUID memberId, Long spotId) {
+    public RouteSaveResult addSpotToLastDay(UUID publicId, UUID memberId, Long spotId) {
         Route route = routeRepository.findByPublicId(publicId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROUTE_NOT_FOUND));
 
@@ -139,19 +139,7 @@ public class RouteSaveService {
             ));
         }
 
-        return initializeDays(route);
-    }
-
-    /**
-     * 컨트롤러가 응답을 만들 때는 트랜잭션이 끝나 있어(open-in-view=false) 지연 로딩이 불가능하다.
-     * 트랜잭션 안에서 days → spots/legs 컬렉션을 모두 초기화한 뒤 돌려준다.
-     */
-    private Route initializeDays(Route route) {
-        for (RouteDay day : route.getDays()) {
-            day.getSpots().size();
-            day.getLegs().size();
-        }
-        return route;
+        return RouteSaveResult.from(route);
     }
 
     /**

@@ -11,6 +11,7 @@ import com.moodi.route.application.RouteListRow;
 import com.moodi.route.application.RouteQueryService;
 import com.moodi.route.application.RouteSaveCommand;
 import com.moodi.route.application.RouteSaveCommand.DayCommand;
+import com.moodi.route.application.RouteSaveResult;
 import com.moodi.route.application.RouteSaveService;
 import com.moodi.route.application.RouteCopyService;
 import com.moodi.route.application.RouteShareLinkBuilder;
@@ -128,8 +129,8 @@ public class RouteController {
             @AuthMember UUID memberId,
             @Valid @RequestBody RouteSaveRequest request) {
         RouteSaveCommand command = toSaveCommand(memberId, request);
-        Route route = routeSaveService.save(command);
-        return SuccessResponse.of(RouteSaveResponse.from(route));
+        RouteSaveResult result = routeSaveService.save(command);
+        return SuccessResponse.of(RouteSaveResponse.from(result));
     }
 
     @PutMapping("/{publicId}")
@@ -138,8 +139,8 @@ public class RouteController {
             @PathVariable UUID publicId,
             @Valid @RequestBody RouteSaveRequest request) {
         RouteSaveCommand command = toSaveCommand(memberId, request);
-        Route route = routeSaveService.update(publicId, command);
-        return SuccessResponse.of(RouteSaveResponse.from(route));
+        RouteSaveResult result = routeSaveService.update(publicId, command);
+        return SuccessResponse.of(RouteSaveResponse.from(result));
     }
 
     @GetMapping("/{publicId}")
@@ -164,8 +165,8 @@ public class RouteController {
             @AuthMember UUID memberId,
             @PathVariable UUID publicId,
             @Valid @RequestBody RouteAddSpotRequest request) {
-        Route route = routeSaveService.addSpotToLastDay(publicId, memberId, request.spotId());
-        return SuccessResponse.of(RouteSaveResponse.from(route));
+        RouteSaveResult result = routeSaveService.addSpotToLastDay(publicId, memberId, request.spotId());
+        return SuccessResponse.of(RouteSaveResponse.from(result));
     }
 
     /**
