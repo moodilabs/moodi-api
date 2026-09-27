@@ -53,7 +53,7 @@ jobs:
         env:
           ADMIN_ALLOWED_ORIGINS: ${{ secrets.ADMIN_ALLOWED_ORIGINS }}
         run: |
-          env_vars="^|^SPRING_PROFILES_ACTIVE=prod|APPLE_CLIENT_ID=kr.moodi.app,moodi.test"
+          env_vars="^|^SPRING_PROFILES_ACTIVE=prod,llm|APPLE_CLIENT_ID=kr.moodi.app,moodi.test"
           if [ -n "${ADMIN_ALLOWED_ORIGINS}" ]; then
             env_vars="${env_vars}|ADMIN_ALLOWED_ORIGINS=${ADMIN_ALLOWED_ORIGINS}"
           fi
@@ -66,4 +66,4 @@ jobs:
             --memory=1Gi \
             --add-cloudsql-instances=moodi-app-2026:asia-northeast3:moodi-db \
             --update-env-vars="${env_vars}" \
-            --update-secrets="REDIS_URL=REDIS_URL:latest"
+            --update-secrets="REDIS_URL=REDIS_URL:latest,LLM_API_KEY=LLM_API_KEY:latest"
