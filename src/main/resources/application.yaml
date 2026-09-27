@@ -99,6 +99,13 @@ moodi:
   llm:
     api-key: ${LLM_API_KEY:}
     model: gpt-4o-mini
+    protection:
+      mode: ${LLM_PROTECTION_MODE:local}
+      max-concurrent: ${LLM_MAX_CONCURRENT:2}
+      acquire-timeout-millis: ${LLM_ACQUIRE_TIMEOUT:10000}
+      max-requests-per-minute: ${LLM_MAX_RPM:20}
+      circuit-failure-threshold: ${LLM_CIRCUIT_THRESHOLD:5}
+      circuit-open-duration-seconds: ${LLM_CIRCUIT_OPEN_DURATION:30}
   kakao:
     rest-api-key: ${KAKAO_REST_API_KEY:}
   feed:
