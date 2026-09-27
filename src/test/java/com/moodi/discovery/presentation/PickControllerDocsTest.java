@@ -117,7 +117,7 @@ class PickControllerDocsTest extends AuthenticatedRestDocsSupport {
     @DisplayName("사진과 지역으로 스팟 추천")
     void recommend() throws Exception {
         when(pickService.recommend(eq(memberId), anyString(), anyList()))
-                .thenReturn(new PickResult(PICK_ID, List.of(item(101L, "서울숲"), item(102L, "이바구길")), List.of()));
+                .thenReturn(new PickResult(PICK_ID, "AI", List.of(item(101L, "서울숲"), item(102L, "이바구길")), List.of()));
 
         mockMvc.perform(post("/api/v1/picks")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -144,6 +144,8 @@ class PickControllerDocsTest extends AuthenticatedRestDocsSupport {
                                 fieldWithPath("data").type(JsonFieldType.OBJECT).description("추천 결과"),
                                 fieldWithPath("data.pickId").type(JsonFieldType.STRING)
                                         .description("추천 요청 ID"),
+                                fieldWithPath("data.analysisType").type(JsonFieldType.STRING)
+                                        .description("추천 방식. `AI`(무드 분석 기반) 또는 `POPULAR`(인기순 fallback)"),
                                 fieldWithPath("data.spots").type(JsonFieldType.ARRAY)
                                         .description("선택 지역 안의 추천 스팟. 최대 5개"),
                                 fieldWithPath("data.spots[].spotId").type(JsonFieldType.NUMBER).description("스팟 ID"),
@@ -173,7 +175,7 @@ class PickControllerDocsTest extends AuthenticatedRestDocsSupport {
     @DisplayName("추천 결과가 없으면 빈 배열과 대체 추천을 응답한다")
     void recommend_empty_result() throws Exception {
         when(pickService.recommend(eq(memberId), anyString(), anyList()))
-                .thenReturn(new PickResult(PICK_ID, List.of(), List.of(item(201L, "감천문화마을"))));
+                .thenReturn(new PickResult(PICK_ID, "AI", List.of(), List.of(item(201L, "감천문화마을"))));
 
         mockMvc.perform(post("/api/v1/picks")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -197,7 +199,7 @@ class PickControllerDocsTest extends AuthenticatedRestDocsSupport {
     @DisplayName("저장된 추천 결과 재조회")
     void get_pick() throws Exception {
         when(pickService.getPick(eq(memberId), eq(PICK_ID)))
-                .thenReturn(new PickResult(PICK_ID, List.of(item(101L, "Seoul Forest"), item(102L, "Ibagu-gil")), List.of()));
+                .thenReturn(new PickResult(PICK_ID, "AI", List.of(item(101L, "Seoul Forest"), item(102L, "Ibagu-gil")), List.of()));
 
         mockMvc.perform(get("/api/v1/picks/{pickId}", PICK_ID))
                 .andExpect(status().isOk())
@@ -208,6 +210,8 @@ class PickControllerDocsTest extends AuthenticatedRestDocsSupport {
                         responseFields(
                                 fieldWithPath("data").type(JsonFieldType.OBJECT).description("추천 결과"),
                                 fieldWithPath("data.pickId").type(JsonFieldType.STRING).description("추천 요청 ID"),
+                                fieldWithPath("data.analysisType").type(JsonFieldType.STRING)
+                                        .description("추천 방식. `AI`(무드 분석 기반) 또는 `POPULAR`(인기순 fallback)"),
                                 fieldWithPath("data.spots").type(JsonFieldType.ARRAY)
                                         .description("저장된 순위 그대로 내려간다. 사진을 다시 분석하지 않아 순서가 바뀌지 않는다"),
                                 fieldWithPath("data.spots[].spotId").type(JsonFieldType.NUMBER).description("스팟 ID"),

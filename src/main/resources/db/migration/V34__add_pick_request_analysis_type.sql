@@ -1,0 +1,1 @@
+ALTER TABLE pick_request ADD COLUMN analysis_type VARCHAR(20) NOT NULL DEFAULT 'AI';

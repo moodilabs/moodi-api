@@ -27,6 +27,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-json")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
+	implementation("io.lettuce:lettuce-core")
 
 	runtimeOnly("org.postgresql:postgresql")
 	runtimeOnly("com.google.cloud.sql:postgres-socket-factory:1.24.1")
@@ -57,6 +58,7 @@ dependencies {
 	testRuntimeOnly("com.h2database:h2")
 	testImplementation("org.springframework.boot:spring-boot-testcontainers")
 	testImplementation("org.testcontainers:postgresql:1.20.6")
+	testImplementation("org.testcontainers:junit-jupiter:1.20.6")
 	testCompileOnly("org.projectlombok:lombok")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
@@ -66,7 +68,17 @@ dependencies {
 tasks.named("test") {
 	outputs.dir(snippetsDir)
 	(this as Test).useJUnitPlatform {
-		excludeTags("postgresql")
+		excludeTags("postgresql", "redis")
+	}
+}
+
+tasks.register<Test>("testRedis") {
+	group = "verification"
+	description = "Redis 통합 테스트 (Docker 필요)"
+	testClassesDirs = sourceSets["test"].output.classesDirs
+	classpath = sourceSets["test"].runtimeClasspath
+	useJUnitPlatform {
+		includeTags("redis")
 	}
 }
 

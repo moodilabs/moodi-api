@@ -46,14 +46,13 @@ jobs:
 
       - run: docker push --all-tags ${{ env.IMAGE }}
 
-      # JWT_SECRET, GOOGLE_CLIENT_ID, KAKAO_REST_API_KEY, ADMIN_BOOTSTRAP_PASSWORD 는
-      # Cloud Run → Secret Manager 참조로 관리한다. 값 변경은 GCP 콘솔에서.
+      # 시크릿은 전부 --update-secrets로 관리한다. 값 변경은 GCP Secret Manager에서.
       # ADMIN_ALLOWED_ORIGINS 는 비어 있으면 application.yaml 기본값(https://admin.moodi.kr + 로컬)을 쓴다.
       - name: Deploy to Cloud Run
         env:
           ADMIN_ALLOWED_ORIGINS: ${{ secrets.ADMIN_ALLOWED_ORIGINS }}
         run: |
-          env_vars="^|^SPRING_PROFILES_ACTIVE=prod|APPLE_CLIENT_ID=kr.moodi.app,moodi.test"
+          env_vars="^|^SPRING_PROFILES_ACTIVE=prod,llm|APPLE_CLIENT_ID=kr.moodi.app,moodi.test"
           if [ -n "${ADMIN_ALLOWED_ORIGINS}" ]; then
             env_vars="${env_vars}|ADMIN_ALLOWED_ORIGINS=${ADMIN_ALLOWED_ORIGINS}"
           fi
@@ -65,4 +64,5 @@ jobs:
             --port=8080 \
             --memory=1Gi \
             --add-cloudsql-instances=moodi-app-2026:asia-northeast3:moodi-db \
-            --update-env-vars="${env_vars}"
+            --update-env-vars="${env_vars}" \
+            --update-secrets="DB_USERNAME=DB_USERNAME:latest,DB_PASSWORD=DB_PASSWORD:latest,JWT_SECRET=JWT_SECRET:latest,GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest,KAKAO_REST_API_KEY=KAKAO_REST_API_KEY:latest,ADMIN_BOOTSTRAP_PASSWORD=ADMIN_BOOTSTRAP_PASSWORD:latest,APPLE_TEAM_ID=APPLE_TEAM_ID:latest,APPLE_KEY_ID=APPLE_KEY_ID:latest,APPLE_PRIVATE_KEY=APPLE_PRIVATE_KEY:latest,REDIS_URL=REDIS_URL:latest,LLM_API_KEY=LLM_API_KEY:latest"

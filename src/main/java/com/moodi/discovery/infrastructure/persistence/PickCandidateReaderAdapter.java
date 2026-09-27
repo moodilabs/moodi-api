@@ -81,6 +81,15 @@ public class PickCandidateReaderAdapter implements PickCandidateReader {
     }
 
     @Override
+    public List<PickCandidate> readPopularByAreas(UUID memberId, PickAreas areas, int limit) {
+        Map<String, Object> params = baseParams(memberId, limit);
+        String sql = SELECT + areaFilter(areas, params)
+                + "ORDER BY (SELECT COUNT(*) FROM bookmark b WHERE b.spot_id = s.id) DESC, s.id\n"
+                + "LIMIT :limit";
+        return execute(sql, params);
+    }
+
+    @Override
     public List<PickCandidate> readBySpotIds(UUID memberId, List<Long> spotIds) {
         if (spotIds.isEmpty()) {
             return List.of();

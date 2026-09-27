@@ -100,6 +100,7 @@ class PickServiceTest {
         PickResult result = pickService.recommend(memberId, IMAGE_KEY, List.of(SEOUL));
 
         assertThat(result.spots()).hasSize(5);
+        assertThat(result.analysisType()).isEqualTo("AI");
         assertThat(result.spots().get(0).spotId()).isEqualTo(2L);
         assertThat(result.spots().get(1).spotId()).isEqualTo(3L);
     }
@@ -176,14 +177,34 @@ class PickServiceTest {
     }
 
     @Test
-    @DisplayName("무드 분석이 실패하면 재시도 가능한 오류로 바꿔 던진다")
-    void recommend_wraps_analysis_failure() {
+    @DisplayName("무드 분석이 실패하면 지역 내 인기순 fallback을 반환한다")
+    void recommend_returns_popular_fallback_on_analysis_failure() {
+        givenPickRequestSaved();
         given(imageStorageClient.issueReadUrl(IMAGE_KEY)).willReturn("https://read");
         given(moodAnalysisClient.analyze(anyString())).willThrow(new IllegalStateException("LLM 호출 실패"));
+        given(pickCandidateReader.readPopularByAreas(any(), any(PickAreas.class), anyInt()))
+                .willReturn(List.of(candidate(1L, null), candidate(2L, null)));
 
-        assertThatThrownBy(() -> pickService.recommend(memberId, IMAGE_KEY, List.of(SEOUL)))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PICK_ANALYSIS_FAILED);
+        PickResult result = pickService.recommend(memberId, IMAGE_KEY, List.of(SEOUL));
+
+        assertThat(result.spots()).hasSize(2);
+        assertThat(result.pickId()).isNotNull();
+        assertThat(result.analysisType()).isEqualTo("POPULAR");
+    }
+
+    @Test
+    @DisplayName("무드 분석이 실패하면 EMA 선호 벡터를 갱신하지 않는다")
+    void recommend_does_not_update_preferred_mood_on_analysis_failure() {
+        givenPickRequestSaved();
+        given(imageStorageClient.issueReadUrl(IMAGE_KEY)).willReturn("https://read");
+        given(moodAnalysisClient.analyze(anyString())).willThrow(new IllegalStateException("LLM 호출 실패"));
+        given(pickCandidateReader.readPopularByAreas(any(), any(PickAreas.class), anyInt()))
+                .willReturn(List.of(candidate(1L, null)));
+
+        pickService.recommend(memberId, IMAGE_KEY, List.of(SEOUL));
+
+        verify(preferredVectorWriter, never()).save(any(), any());
+        verify(preferredMoodWriter, never()).overwrite(any(), anyList());
     }
 
     @Test

@@ -6,7 +6,6 @@ import com.moodi.spot.infrastructure.openai.ChatCompletionResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -19,7 +18,6 @@ import java.util.Map;
 @Profile("llm")
 public class LlmSpotDescriptionClient implements SpotDescriptionClient {
 
-    private static final String OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
     private static final int MAX_RETRIES = 3;
     private static final long BASE_DELAY_MS = 1000;
 
@@ -27,29 +25,11 @@ public class LlmSpotDescriptionClient implements SpotDescriptionClient {
     private final String model;
 
     public LlmSpotDescriptionClient(
-            @Value("${moodi.llm.api-key}") String apiKey,
+            RestClient openAiRestClient,
             @Value("${moodi.llm.model:gpt-4o-mini}") String model
     ) {
-        this.restClient = RestClient.builder()
-                .baseUrl(OPENAI_API_URL)
-                .defaultHeader("Authorization", "Bearer " + apiKey)
-                .requestFactory(createRequestFactory())
-                .defaultStatusHandler(
-                        status -> status.isSameCodeAs(HttpStatusCode.valueOf(429)),
-                        (request, response) -> {
-                            throw new RateLimitException(
-                                    "OpenAI API rate limit (429): " + response.getStatusCode());
-                        }
-                )
-                .build();
+        this.restClient = openAiRestClient;
         this.model = model;
-    }
-
-    private static org.springframework.http.client.ClientHttpRequestFactory createRequestFactory() {
-        var factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(java.time.Duration.ofSeconds(10));
-        factory.setReadTimeout(java.time.Duration.ofSeconds(30));
-        return factory;
     }
 
     @Override

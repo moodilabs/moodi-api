@@ -19,14 +19,20 @@ public class PickRequest extends BaseEntity {
     private UUID id;
     private UUID memberId;
     private String imageKey;
+    private String analysisType;
 
-    private PickRequest(UUID memberId, String imageKey) {
+    private PickRequest(UUID memberId, String imageKey, String analysisType) {
         this.memberId = memberId;
         this.imageKey = imageKey;
+        this.analysisType = analysisType;
     }
 
     public static PickRequest create(UUID memberId, String imageKey) {
-        return new PickRequest(memberId, imageKey);
+        return new PickRequest(memberId, imageKey, "AI");
+    }
+
+    public static PickRequest createPopularFallback(UUID memberId, String imageKey) {
+        return new PickRequest(memberId, imageKey, "POPULAR");
     }
 
     public boolean isOwnedBy(UUID candidateMemberId) {

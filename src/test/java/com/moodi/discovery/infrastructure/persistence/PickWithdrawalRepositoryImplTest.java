@@ -50,8 +50,8 @@ class PickWithdrawalRepositoryImplTest extends RepositoryTestSupport {
 
     private UUID insertRequest(UUID memberId, String imageKey) {
         UUID id = UUID.randomUUID();
-        em.createNativeQuery("INSERT INTO pick_request (id, member_id, image_key, created_at, updated_at) "
-                        + "VALUES (:id, :memberId, :imageKey, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+        em.createNativeQuery("INSERT INTO pick_request (id, member_id, image_key, analysis_type, created_at, updated_at) "
+                        + "VALUES (:id, :memberId, :imageKey, 'AI', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
                 .setParameter("id", id).setParameter("memberId", memberId).setParameter("imageKey", imageKey)
                 .executeUpdate();
         return id;
