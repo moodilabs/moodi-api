@@ -8,6 +8,7 @@ import java.util.UUID;
 
 public record PickResponse(
         UUID pickId,
+        String analysisType,
         List<PickSpotResponse> spots,
         List<PickSpotResponse> fallbackSpots
 ) {
@@ -15,6 +16,7 @@ public record PickResponse(
     public static PickResponse from(PickResult result) {
         return new PickResponse(
                 result.pickId(),
+                result.analysisType(),
                 toResponses(result.spots()),
                 toResponses(result.fallbackSpots())
         );

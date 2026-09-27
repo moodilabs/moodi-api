@@ -94,7 +94,7 @@ public class PickService {
 
         UUID pickId = persist(memberId, imageKey, areas, spots, fallbackSpots);
         updatePreferredMood(memberId, uploaded);
-        return new PickResult(pickId, toItems(spots), toItems(fallbackSpots));
+        return new PickResult(pickId, "AI", toItems(spots), toItems(fallbackSpots));
     }
 
     /**
@@ -116,6 +116,7 @@ public class PickService {
 
         return new PickResult(
                 pickId,
+                pickRequest.getAnalysisType(),
                 hydrate(saved, candidates, false),
                 hydrate(saved, candidates, true)
         );
@@ -201,12 +202,12 @@ public class PickService {
         List<PickResultItem> items = popular.stream().map(PickResultItem::from).toList();
 
         UUID pickId = persistFallback(memberId, imageKey, areas, popular);
-        return new PickResult(pickId, items, List.of());
+        return new PickResult(pickId, "POPULAR", items, List.of());
     }
 
     private UUID persistFallback(UUID memberId, String imageKey, PickAreas areas,
                                  List<PickCandidate> popular) {
-        PickRequest pickRequest = pickRequestRepository.save(PickRequest.create(memberId, imageKey));
+        PickRequest pickRequest = pickRequestRepository.save(PickRequest.createPopularFallback(memberId, imageKey));
 
         List<PickArea> values = areas.values();
         for (int i = 0; i < values.size(); i++) {
