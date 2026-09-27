@@ -525,6 +525,9 @@
             <basic name="imageKey">
                 <column name="image_key" nullable="false" length="500"/>
             </basic>
+            <basic name="analysisType">
+                <column name="analysis_type" nullable="false" length="20"/>
+            </basic>
         </attributes>
     </entity>
 
