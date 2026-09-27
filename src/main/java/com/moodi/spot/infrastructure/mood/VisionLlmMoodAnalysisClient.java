@@ -20,7 +20,6 @@ import com.moodi.spot.infrastructure.openai.ChatCompletionResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -32,7 +31,6 @@ import tools.jackson.databind.ObjectMapper;
 @Profile("llm")
 public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
 
-    private static final String OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final int MAX_RETRIES = 1;
 
@@ -42,30 +40,11 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
     private final AtomicInteger rateLimitCounter = new AtomicInteger(0);
 
     public VisionLlmMoodAnalysisClient(
-            @Value("${moodi.llm.api-key}") String apiKey,
+            RestClient openAiRestClient,
             @Value("${moodi.llm.model:gpt-4o-mini}") String model
     ) {
-        this.restClient = RestClient.builder()
-                .baseUrl(OPENAI_API_URL)
-                .defaultHeader("Authorization", "Bearer " + apiKey)
-                .requestFactory(createRequestFactory())
-                .defaultStatusHandler(
-                        status -> status.isSameCodeAs(HttpStatusCode.valueOf(429)),
-                        (request, response) -> {
-                            rateLimitCounter.incrementAndGet();
-                            throw new RateLimitException(
-                                    "OpenAI API rate limit (429): " + response.getStatusCode());
-                        }
-                )
-                .build();
+        this.restClient = openAiRestClient;
         this.model = model;
-    }
-
-    private static org.springframework.http.client.ClientHttpRequestFactory createRequestFactory() {
-        var factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(java.time.Duration.ofSeconds(10));
-        factory.setReadTimeout(java.time.Duration.ofSeconds(60));
-        return factory;
     }
 
     @Override
@@ -174,17 +153,22 @@ public class VisionLlmMoodAnalysisClient implements MoodAnalysisClient {
                 "temperature", 0.2
         );
 
-        ChatCompletionResponse response = restClient.post()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(requestBody)
-                .retrieve()
-                .body(ChatCompletionResponse.class);
+        try {
+            ChatCompletionResponse response = restClient.post()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(requestBody)
+                    .retrieve()
+                    .body(ChatCompletionResponse.class);
 
-        String content = response.extractContent();
-        if (content.startsWith("```")) {
-            content = content.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "");
+            String content = response.extractContent();
+            if (content.startsWith("```")) {
+                content = content.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "");
+            }
+            return content;
+        } catch (RateLimitException e) {
+            rateLimitCounter.incrementAndGet();
+            throw e;
         }
-        return content;
     }
 
     private MoodVector parseVector(String content) {
