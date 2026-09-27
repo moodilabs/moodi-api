@@ -54,8 +54,8 @@ class MemberWithdrawalIntegrationTest extends RepositoryTestSupport {
         Route theirs = RouteFixture.createRoute(other, "theirs", START, START, List.of(RouteFixture.createDay(1, START, 1)));
         em.persist(mine);
         em.persist(theirs);
-        em.createNativeQuery("INSERT INTO pick_request (id, member_id, image_key, created_at, updated_at) "
-                        + "VALUES (:id, :memberId, 'picks/a.jpg', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+        em.createNativeQuery("INSERT INTO pick_request (id, member_id, image_key, analysis_type, created_at, updated_at) "
+                        + "VALUES (:id, :memberId, 'picks/a.jpg', 'AI', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
                 .setParameter("id", UUID.randomUUID()).setParameter("memberId", memberId).executeUpdate();
         em.flush();
 

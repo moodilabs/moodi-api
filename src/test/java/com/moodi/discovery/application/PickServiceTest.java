@@ -100,6 +100,7 @@ class PickServiceTest {
         PickResult result = pickService.recommend(memberId, IMAGE_KEY, List.of(SEOUL));
 
         assertThat(result.spots()).hasSize(5);
+        assertThat(result.analysisType()).isEqualTo("AI");
         assertThat(result.spots().get(0).spotId()).isEqualTo(2L);
         assertThat(result.spots().get(1).spotId()).isEqualTo(3L);
     }
@@ -188,6 +189,7 @@ class PickServiceTest {
 
         assertThat(result.spots()).hasSize(2);
         assertThat(result.pickId()).isNotNull();
+        assertThat(result.analysisType()).isEqualTo("POPULAR");
     }
 
     @Test
