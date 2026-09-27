@@ -22,6 +22,13 @@ public interface PickCandidateReader {
     List<PickCandidate> readByMoodTags(UUID memberId, List<MoodTag> moodTags, int limit);
 
     /**
+     * 선택 지역 안의 후보를 북마크 수 내림차순으로 읽는다 (AI 실패 시 fallback).
+     *
+     * <p>무드 벡터가 없어도 인기순으로 추천할 수 있다.
+     */
+    List<PickCandidate> readPopularByAreas(UUID memberId, PickAreas areas, int limit);
+
+    /**
      * 저장된 추천 결과를 다시 채울 때 쓴다 (DSC-05 재조회).
      *
      * <p>스팟 정보를 저장 시점 값으로 굳히지 않고 그때그때 읽는다. 저장 여부(북마크)는 그 사이 바뀔 수 있고,

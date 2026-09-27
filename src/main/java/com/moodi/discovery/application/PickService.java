@@ -14,6 +14,7 @@ import com.moodi.shared.error.ErrorCode;
 import com.moodi.shared.mood.MoodTag;
 import com.moodi.shared.mood.MoodTagRuleEngine;
 import com.moodi.shared.mood.MoodVector;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,7 @@ import java.util.UUID;
  * SQL로 코사인 유사도를 계산하려면 6개 축을 전부 펼쳐야 해서 쿼리가 읽기 어려워지고 인덱스도 못 탄다.
  * 후보를 먼저 좁힌 뒤라 자바에서 정렬해도 감당된다.
  */
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 public class PickService {
@@ -77,6 +79,11 @@ public class PickService {
     public PickResult recommend(UUID memberId, String imageKey, List<PickArea> requestedAreas) {
         PickAreas areas = PickAreas.of(requestedAreas);
         MoodVector uploaded = analyze(imageKey);
+
+        // AI 분석 실패 → 지역 내 인기순 fallback
+        if (uploaded == null) {
+            return popularFallback(memberId, imageKey, areas);
+        }
 
         List<Ranked> spots = rank(
                 pickCandidateReader.readByAreas(memberId, areas, pickProperties.candidateLimit()), uploaded);
@@ -165,16 +172,51 @@ public class PickService {
         return rank(pickCandidateReader.readByMoodTags(memberId, tags, pickProperties.candidateLimit()), uploaded);
     }
 
+    /**
+     * 사진을 무드 벡터로 분석한다. 외부 AI 실패 시 {@code null}을 반환하여 fallback 신호로 쓴다.
+     *
+     * <p>인증·권한·DB 오류({@link BusinessException})는 그대로 전파한다.
+     * 429·타임아웃·호출 거부 등 외부 AI 관련 {@link RuntimeException}만 fallback 대상이다.
+     */
     private MoodVector analyze(String imageKey) {
-        // 비공개 버킷이라 분석기가 바로 읽을 수 없다. 읽기용 서명 URL을 그때그때 발급해 넘긴다.
         String readUrl = imageStorageClient.issueReadUrl(imageKey);
         try {
             return moodAnalysisClient.analyze(readUrl);
         } catch (BusinessException e) {
             throw e;
         } catch (RuntimeException e) {
-            throw new BusinessException(ErrorCode.PICK_ANALYSIS_FAILED);
+            log.warn("AI 무드 분석 실패 — 인기순 fallback으로 전환: {}", e.getMessage());
+            return null;
         }
+    }
+
+    /**
+     * AI 분석 없이 지역 내 북마크 수(인기순)로 추천한다.
+     *
+     * <p>무드 벡터가 없으므로 EMA 선호 벡터를 갱신하지 않는다.
+     */
+    private PickResult popularFallback(UUID memberId, String imageKey, PickAreas areas) {
+        List<PickCandidate> popular = pickCandidateReader.readPopularByAreas(
+                memberId, areas, RESULT_LIMIT);
+        List<PickResultItem> items = popular.stream().map(PickResultItem::from).toList();
+
+        UUID pickId = persistFallback(memberId, imageKey, areas, popular);
+        return new PickResult(pickId, items, List.of());
+    }
+
+    private UUID persistFallback(UUID memberId, String imageKey, PickAreas areas,
+                                 List<PickCandidate> popular) {
+        PickRequest pickRequest = pickRequestRepository.save(PickRequest.create(memberId, imageKey));
+
+        List<PickArea> values = areas.values();
+        for (int i = 0; i < values.size(); i++) {
+            pickRequestAreaRepository.save(PickRequestArea.of(pickRequest.getId(), values.get(i), i));
+        }
+        for (int i = 0; i < popular.size(); i++) {
+            pickResultSpotRepository.save(PickResultSpot.of(
+                    pickRequest.getId(), popular.get(i).spotId(), i, 0.0, true));
+        }
+        return pickRequest.getId();
     }
 
     /**
